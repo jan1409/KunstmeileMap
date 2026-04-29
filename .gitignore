@@ -15,6 +15,13 @@ dist-ssr
 *.local
 .vite
 
+# Local-only splat files (development only — production splats live on R2).
+public/*.splat
+public/*.ply
+public/*.compressed.ply
+public/*.ksplat
+public/*.spz
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

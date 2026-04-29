@@ -1,6 +1,8 @@
 import { SplatViewer } from '../../components/SplatViewer';
 
-const PLACEHOLDER_SPLAT = 'https://sparkjs.dev/sample/garden.splat';
+// Placeholder splat for development before A2-T13 wires up event.splat_url.
+// Local file in public/ (gitignored — see .gitignore).
+const PLACEHOLDER_SPLAT = '/OldTrainStation.splat';
 
 export default function EventViewPage() {
   return (

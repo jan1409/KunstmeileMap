@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SplatMesh } from '@sparkjsdev/spark';
+import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
 
 export interface SplatSceneOptions {
   canvas: HTMLCanvasElement;
@@ -12,43 +12,57 @@ export interface SplatSceneHandle {
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
   splatMesh: SplatMesh;
+  spark: SparkRenderer;
   dispose: () => void;
 }
 
+/**
+ * Build a Three.js + Spark v2 Gaussian-Splat scene attached to the given canvas.
+ *
+ * Spark v2 requirements (learned the hard way — see Specs/06):
+ *   1. WebGLRenderer must be `antialias: false` — WebGL MSAA actively hurts
+ *      Gaussian-splat rendering and Spark's docs explicitly require this.
+ *   2. A `SparkRenderer` instance must be added to the scene; it drives the
+ *      per-frame splat sort + LoD pipeline. Without it, splats load but render
+ *      as nothing (cube renders for one frame, then state corruption).
+ *   3. The render loop MUST use `renderer.setAnimationLoop()`, not raw
+ *      `requestAnimationFrame`. Spark hooks into Three's lifecycle.
+ *   4. Most splats are captured with inverted Y; apply a 180° X quaternion flip
+ *      (`splatMesh.quaternion.set(1, 0, 0, 0)`) to right them.
+ */
 export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSceneHandle> {
   const { canvas, splatUrl, origin = { x: 0, y: 0, z: 0 } } = opts;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+  renderer.setSize(canvas.clientWidth || 800, canvas.clientHeight || 600, false);
+  renderer.setClearColor(0x101820, 1);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 500);
-  camera.position.set(0, 5, 15);
+  const aspect = (canvas.clientWidth || 800) / (canvas.clientHeight || 600);
+  const camera = new THREE.PerspectiveCamera(60, aspect, 0.01, 1000);
+  camera.position.set(0, 0, 8);
   camera.lookAt(0, 0, 0);
+
+  const spark = new SparkRenderer({ renderer });
+  scene.add(spark);
 
   const splatMesh = new SplatMesh({ url: splatUrl });
   splatMesh.position.set(origin.x, origin.y, origin.z);
+  splatMesh.quaternion.set(1, 0, 0, 0); // 180° X-flip; most splats are inverted-Y.
   scene.add(splatMesh);
 
-  // Wait for Spark to download + decode the splat. Spark v2.x exposes the
-  // load promise as `initialized` on SplatMesh (see node_modules types). We
-  // also probe `ready` defensively for compatibility with possible API shifts.
-  const meshAsRecord = splatMesh as unknown as Record<string, unknown>;
-  const initialized = meshAsRecord.initialized;
-  const ready = meshAsRecord.ready;
-  if (initialized && typeof (initialized as Promise<unknown>).then === 'function') {
-    await (initialized as Promise<unknown>);
-  } else if (ready && typeof (ready as Promise<unknown>).then === 'function') {
-    await (ready as Promise<unknown>);
+  // Spark v2 exposes the load promise as `initialized`. Defensive probe `ready`
+  // too in case a future version renames it.
+  const m = splatMesh as unknown as Record<string, unknown>;
+  const loadPromise = (m.initialized ?? m.ready) as Promise<unknown> | undefined;
+  if (loadPromise && typeof loadPromise.then === 'function') {
+    await loadPromise;
   }
 
-  let raf = 0;
-  const tick = () => {
-    raf = requestAnimationFrame(tick);
+  renderer.setAnimationLoop(() => {
     renderer.render(scene, camera);
-  };
-  tick();
+  });
 
   const onResize = () => {
     const w = canvas.clientWidth;
@@ -60,13 +74,14 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
   window.addEventListener('resize', onResize);
 
   const dispose = () => {
-    cancelAnimationFrame(raf);
+    renderer.setAnimationLoop(null);
     window.removeEventListener('resize', onResize);
+    spark.dispose();
     renderer.dispose();
     if ('dispose' in splatMesh && typeof (splatMesh as { dispose?: () => void }).dispose === 'function') {
       (splatMesh as { dispose: () => void }).dispose();
     }
   };
 
-  return { scene, camera, renderer, splatMesh, dispose };
+  return { scene, camera, renderer, splatMesh, spark, dispose };
 }
