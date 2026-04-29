@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Kunstmeile",
+    "loading": "Lädt 3D-Szene...",
+    "error_load": "Die 3D-Ansicht konnte nicht geladen werden",
+    "retry": "Erneut versuchen"
+  },
+  "search": {
+    "placeholder": "Stand suchen...",
+    "no_results": "Keine Treffer"
+  },
+  "category": {
+    "all": "Alle anzeigen",
+    "filter_label": "Kategorie"
+  },
+  "side_panel": {
+    "category": "Kategorie",
+    "address": "Adresse",
+    "website": "Webseite",
+    "instagram": "Instagram",
+    "facebook": "Facebook",
+    "share": "Link kopieren",
+    "close": "Schließen"
+  },
+  "footer": {
+    "impressum": "Impressum",
+    "datenschutz": "Datenschutz"
+  }
+}
