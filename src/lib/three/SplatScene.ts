@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
 
 export interface SplatSceneOptions {
@@ -13,6 +14,7 @@ export interface SplatSceneHandle {
   renderer: THREE.WebGLRenderer;
   splatMesh: SplatMesh;
   spark: SparkRenderer;
+  controls: OrbitControls;
   dispose: () => void;
 }
 
@@ -47,6 +49,20 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
   const spark = new SparkRenderer({ renderer });
   scene.add(spark);
 
+  // Camera controls — orbit/pan/zoom with touch gestures.
+  // 1-finger drag: rotate. Pinch / scroll: zoom. 2-finger drag / right-click drag: pan.
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 200;
+  controls.maxPolarAngle = Math.PI / 2 + 0.2; // small underhang allowed; mostly above-horizon
+  controls.touches = {
+    ONE: THREE.TOUCH.ROTATE,
+    TWO: THREE.TOUCH.DOLLY_PAN,
+  };
+
   const splatMesh = new SplatMesh({ url: splatUrl });
   splatMesh.position.set(origin.x, origin.y, origin.z);
   splatMesh.quaternion.set(1, 0, 0, 0); // 180° X-flip; most splats are inverted-Y.
@@ -61,6 +77,7 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
   }
 
   renderer.setAnimationLoop(() => {
+    controls.update(); // required when enableDamping = true
     renderer.render(scene, camera);
   });
 
@@ -76,6 +93,7 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
   const dispose = () => {
     renderer.setAnimationLoop(null);
     window.removeEventListener('resize', onResize);
+    controls.dispose();
     spark.dispose();
     renderer.dispose();
     if ('dispose' in splatMesh && typeof (splatMesh as { dispose?: () => void }).dispose === 'function') {
@@ -83,5 +101,5 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
     }
   };
 
-  return { scene, camera, renderer, splatMesh, spark, dispose };
+  return { scene, camera, renderer, splatMesh, spark, controls, dispose };
 }
