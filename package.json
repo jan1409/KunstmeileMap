@@ -13,7 +13,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "type-check": "tsc -b --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "types:gen": "supabase gen types typescript --linked > src/types/supabase.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
