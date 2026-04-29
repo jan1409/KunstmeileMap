@@ -1,6 +1,6 @@
 # Kunstmeile Web App (KunstmeileMap)
 
-Phase 1 implementation. See the [Obsidian vault](C:/Users/jan.poepke/OneDrive/17_Projekte/Kunstmeile_Projekt) for the full spec and plan.
+Phase 1 implementation. Internal planning docs live in a private Obsidian vault (not in this repo).
 
 ## Local dev
 
