@@ -8,11 +8,15 @@ export interface MarkerData {
   dimmed?: boolean;
 }
 
+// Empirical: at FOV 60°, this factor times camera-distance gives roughly
+// 64 px tall markers at 1080p. Tweakable later if marker visual prominence
+// needs to change.
+const SCREEN_SCALE_FACTOR = 0.05;
+
 /**
  * A scene layer that renders billboarded sprite markers at world coordinates.
- * Use setMarkers() to update the rendered set; old markers not in the new set
- * are removed and disposed. Use hitTest() to find which marker (if any) is
- * under a given screen-space NDC coordinate.
+ * Markers maintain a roughly constant on-screen pixel size regardless of
+ * camera distance (per-frame scale update via onBeforeRender).
  */
 export class MarkerLayer {
   readonly group: THREE.Group;
@@ -20,8 +24,6 @@ export class MarkerLayer {
 
   constructor() {
     this.group = new THREE.Group();
-    // Markers always render on top of the splat — splats can be opaque/translucent
-    // and markers should never be occluded.
     this.group.renderOrder = 999;
   }
 
@@ -37,18 +39,16 @@ export class MarkerLayer {
         this.sprites.set(m.id, sprite);
         this.group.add(sprite);
       } else if (sprite.userData.icon !== icon) {
-        // Icon changed — rebuild the texture.
         const old = sprite.material;
         sprite.material = createMarkerMaterial(icon);
         old.map?.dispose();
         old.dispose();
       }
       sprite.userData.icon = icon;
+      sprite.userData.selected = m.selected === true;
       sprite.position.set(m.position.x, m.position.y, m.position.z);
-      const scale = m.selected ? 1.3 : 1.0;
-      sprite.scale.set(scale, scale, 1);
       sprite.material.opacity = m.dimmed ? 0.4 : 1.0;
-      sprite.material.depthTest = false; // ensure markers always visible
+      sprite.material.depthTest = false;
       sprite.material.transparent = true;
     }
     for (const [id, sprite] of this.sprites) {
@@ -61,7 +61,6 @@ export class MarkerLayer {
     }
   }
 
-  /** Hit-test screen-space NDC; returns the marker id under the pointer or null. */
   hitTest(pointerNDC: THREE.Vector2, camera: THREE.Camera): string | null {
     if (this.sprites.size === 0) return null;
     const raycaster = new THREE.Raycaster();
@@ -85,9 +84,15 @@ export class MarkerLayer {
 
 function createMarkerSprite(icon: string | null): THREE.Sprite {
   const sprite = new THREE.Sprite(createMarkerMaterial(icon));
-  // World-space size so markers stay roughly the same physical size in the
-  // scene. Tweakable per use case.
-  sprite.scale.set(1, 1, 1);
+  // Per-frame: rescale based on camera distance so markers look roughly
+  // constant size on screen. Selected markers get a 30% size boost.
+  sprite.onBeforeRender = (_renderer, _scene, camera) => {
+    const distance = camera.position.distanceTo(sprite.position);
+    const base = distance * SCREEN_SCALE_FACTOR;
+    const boost = sprite.userData.selected === true ? 1.3 : 1.0;
+    const s = Math.max(base * boost, 0.05);
+    sprite.scale.set(s, s, 1);
+  };
   return sprite;
 }
 
@@ -97,21 +102,17 @@ function createMarkerMaterial(icon: string | null): THREE.SpriteMaterial {
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    // Outer halo
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.beginPath();
     ctx.arc(64, 64, 60, 0, Math.PI * 2);
     ctx.fill();
-    // Inner pin face
     ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.beginPath();
     ctx.arc(64, 64, 50, 0, Math.PI * 2);
     ctx.fill();
-    // Border
     ctx.strokeStyle = 'rgba(10, 10, 10, 0.8)';
     ctx.lineWidth = 4;
     ctx.stroke();
-    // Icon
     ctx.fillStyle = '#0a0a0a';
     ctx.font = '64px sans-serif';
     ctx.textAlign = 'center';

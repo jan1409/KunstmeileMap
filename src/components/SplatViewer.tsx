@@ -26,6 +26,11 @@ export function SplatViewer({
   const layerRef = useRef<MarkerLayer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  // Flips true after createSplatScene resolves and the MarkerLayer is in the
+  // scene. Markers effect uses this in its deps so it re-runs once the layer
+  // is ready (otherwise the initial markers never get placed because the
+  // markers effect ran before the async scene init finished).
+  const [sceneReady, setSceneReady] = useState(false);
   const { t } = useTranslation();
 
   // Initialise scene + marker layer once per splat URL/origin.
@@ -48,6 +53,7 @@ export function SplatViewer({
         h.scene.add(layer.group);
         onSceneReady?.(h);
         setLoading(false);
+        setSceneReady(true);
       })
       .catch((e: unknown) => {
         if (cancelled) return;
@@ -57,6 +63,7 @@ export function SplatViewer({
 
     return () => {
       cancelled = true;
+      setSceneReady(false);
       layerRef.current?.dispose();
       layerRef.current = null;
       handleRef.current?.dispose();
@@ -64,9 +71,12 @@ export function SplatViewer({
     };
   }, [splatUrl, origin?.x, origin?.y, origin?.z, onSceneReady]);
 
-  // Sync markers + selection state into the layer.
+  // Sync markers + selection state into the layer. Depends on `sceneReady` so
+  // it re-runs after the async scene init completes — without this, markers
+  // passed in on first render never get placed because layerRef.current is
+  // still null when the effect fires.
   useEffect(() => {
-    if (!layerRef.current) return;
+    if (!sceneReady || !layerRef.current) return;
     const list = markers ?? [];
     layerRef.current.setMarkers(
       list.map((m) => ({
@@ -75,7 +85,7 @@ export function SplatViewer({
         dimmed: selectedTentId != null && m.id !== selectedTentId,
       })),
     );
-  }, [markers, selectedTentId]);
+  }, [markers, selectedTentId, sceneReady]);
 
   // Tap-vs-drag click detection on the canvas.
   useEffect(() => {
