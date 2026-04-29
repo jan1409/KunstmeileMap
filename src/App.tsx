@@ -5,9 +5,14 @@ export default function App() {
   const [status, setStatus] = useState('connecting...');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ error }) => {
-      setStatus(error ? `error: ${error.message}` : 'connected');
-    });
+    supabase.auth.getSession()
+      .then(({ error }) => {
+        setStatus(error ? `error: ${error.message}` : 'connected');
+      })
+      .catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        setStatus(`error: ${msg}`);
+      });
   }, []);
 
   return (

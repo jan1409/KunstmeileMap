@@ -7,6 +7,7 @@ if (!url || !anonKey) {
   throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY env vars.');
 }
 
+// TODO(A1-T07): switch to createClient<Database>(...) once supabase gen types runs.
 export const supabase = createClient(url, anonKey, {
   auth: { persistSession: true, autoRefreshToken: true },
 });
