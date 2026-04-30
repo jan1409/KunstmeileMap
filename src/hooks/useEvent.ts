@@ -15,6 +15,7 @@ export function useEvent(slug: string | undefined): UseEventResult {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset loading/error before async fetch; React 19's preferred derived-state alternative would require a state-tracking refactor or a query library.
     setLoading(true);
     setError(null);
 
