@@ -71,6 +71,12 @@ export default function EventListPage() {
                   >
                     Categories
                   </Link>
+                  <Link
+                    to={`/admin/events/${e.slug}/settings`}
+                    className="underline"
+                  >
+                    Settings
+                  </Link>
                   <button
                     type="button"
                     onClick={() => setDup(e)}
