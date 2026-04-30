@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- useAuth co-located with context for cohesion; HMR fallback to full reload is acceptable for this top-level provider.
 export function useAuth(): AuthCtx {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');

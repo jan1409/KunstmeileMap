@@ -495,8 +495,8 @@ Note: `userEvent` lives in `@testing-library/user-event`, which is **not** curre
 
 - [ ] **Step 2: Add `@testing-library/user-event` as a dev dependency**
 
-Run: `npm install --save-dev @testing-library/user-event`
-Expected: package added to `devDependencies` in `package.json`. Pin to whatever version npm resolves (currently `^14.x` is the v19-React-compatible line).
+Run: `pnpm add -D @testing-library/user-event`
+Expected: package added to `devDependencies` in `package.json`; `pnpm-lock.yaml` updated. (Repo uses pnpm — `pnpm-lock.yaml` is the lockfile, not `package-lock.json`.) Pin to whatever version pnpm resolves (currently `^14.x` is the React-19-compatible line).
 
 - [ ] **Step 3: Run the test, confirm it fails**
 
@@ -792,7 +792,7 @@ Stop the dev server (Ctrl+C in the terminal running `npm run dev`).
 
 Run:
 ```bash
-git add src/components/RequireAuth.tsx src/pages/admin src/routes.tsx package.json package-lock.json tests/unit/components/RequireAuth.test.tsx tests/unit/pages
+git add src/components/RequireAuth.tsx src/pages/admin src/routes.tsx package.json pnpm-lock.yaml tests/unit/components/RequireAuth.test.tsx tests/unit/pages
 git commit -m "feat(admin): protected admin shell — login, dashboard, layout, route guard"
 ```
 
