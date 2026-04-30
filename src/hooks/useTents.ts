@@ -15,6 +15,7 @@ export function useTents(eventId: string | undefined): UseTentsResult {
 
   useEffect(() => {
     if (!eventId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronizes hook state when input becomes falsy; not derived state. Long-term: migrate to TanStack Query.
       setTents([]);
       setLoading(false);
       return;

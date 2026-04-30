@@ -69,6 +69,7 @@ export function SplatViewer({
       handleRef.current?.dispose();
       handleRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- destructured origin coords avoid re-init when parent passes a fresh {x,y,z} object literal each render with unchanged values.
   }, [splatUrl, origin?.x, origin?.y, origin?.z, onSceneReady]);
 
   // Sync markers + selection state into the layer. Depends on `sceneReady` so
