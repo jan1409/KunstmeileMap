@@ -55,12 +55,18 @@ export default function EventListPage() {
                 <td>{e.year}</td>
                 <td>{e.status}</td>
                 <td>{e.is_featured ? '⭐' : ''}</td>
-                <td>
+                <td className="space-x-3">
                   <Link
                     to={`/admin/events/${e.slug}/tents`}
                     className="underline"
                   >
                     Manage
+                  </Link>
+                  <Link
+                    to={`/admin/events/${e.slug}/categories`}
+                    className="underline"
+                  >
+                    Categories
                   </Link>
                 </td>
               </tr>
