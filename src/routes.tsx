@@ -10,6 +10,7 @@ import TentListPage from './pages/admin/TentListPage';
 import TentEditPage from './pages/admin/TentEditPage';
 import TentImportPage from './pages/admin/TentImportPage';
 import CategoryListPage from './pages/admin/CategoryListPage';
+import EventSettingsPage from './pages/admin/EventSettingsPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import { RequireAuth } from './components/RequireAuth';
 
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
       { path: 'events/:eventSlug/tents/import', element: <TentImportPage /> },
       { path: 'events/:eventSlug/tents/:tentId', element: <TentEditPage /> },
       { path: 'events/:eventSlug/categories', element: <CategoryListPage /> },
+      { path: 'events/:eventSlug/settings', element: <EventSettingsPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
