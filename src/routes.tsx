@@ -6,6 +6,7 @@ import NotFoundPage from './pages/public/NotFoundPage';
 import LoginPage from './pages/admin/LoginPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import EventListPage from './pages/admin/EventListPage';
+import TentListPage from './pages/admin/TentListPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import { RequireAuth } from './components/RequireAuth';
 
@@ -26,7 +27,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'events', element: <EventListPage /> },
-      // tent/category routes added in later A3 tasks
+      { path: 'events/:eventSlug/tents', element: <TentListPage /> },
+      // tent edit / category routes added in later A3 tasks
     ],
   },
   { path: '*', element: <NotFoundPage /> },
