@@ -3,7 +3,9 @@
     "title": "Kunstmeile",
     "loading": "Lädt 3D-Szene...",
     "error_load": "Die 3D-Ansicht konnte nicht geladen werden",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "menu_open": "Menü öffnen",
+    "menu_close": "Menü schließen"
   },
   "search": {
     "placeholder": "Stand suchen...",

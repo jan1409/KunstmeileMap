@@ -3,7 +3,9 @@
     "title": "Kunstmeile",
     "loading": "Loading 3D scene...",
     "error_load": "The 3D view could not be loaded",
-    "retry": "Try again"
+    "retry": "Try again",
+    "menu_open": "Open menu",
+    "menu_close": "Close menu"
   },
   "search": {
     "placeholder": "Search booth...",
