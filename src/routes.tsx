@@ -8,6 +8,7 @@ import DashboardPage from './pages/admin/DashboardPage';
 import EventListPage from './pages/admin/EventListPage';
 import TentListPage from './pages/admin/TentListPage';
 import TentEditPage from './pages/admin/TentEditPage';
+import TentImportPage from './pages/admin/TentImportPage';
 import CategoryListPage from './pages/admin/CategoryListPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import { RequireAuth } from './components/RequireAuth';
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
       { path: 'events', element: <EventListPage /> },
       { path: 'events/:eventSlug/tents', element: <TentListPage /> },
       { path: 'events/:eventSlug/tents/new', element: <TentEditPage /> },
+      { path: 'events/:eventSlug/tents/import', element: <TentImportPage /> },
       { path: 'events/:eventSlug/tents/:tentId', element: <TentEditPage /> },
       { path: 'events/:eventSlug/categories', element: <CategoryListPage /> },
     ],
