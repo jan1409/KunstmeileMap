@@ -6,6 +6,7 @@ export function usePhotos(tentId: string | undefined): string[] {
 
   useEffect(() => {
     if (!tentId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronizes hook state when input becomes falsy; not derived state. Long-term: migrate to TanStack Query.
       setUrls([]);
       return;
     }
