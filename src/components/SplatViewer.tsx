@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { useTranslation } from 'react-i18next';
 import { createSplatScene, type SplatSceneHandle } from '../lib/three/SplatScene';
 import { MarkerLayer, type MarkerData } from '../lib/three/MarkerLayer';
+import { PlaceModeController } from '../lib/three/PlaceMode';
 
 interface Props {
   splatUrl: string;
@@ -11,6 +12,14 @@ interface Props {
   selectedTentId?: string | null;
   onMarkerClick?: (id: string) => void;
   onSceneReady?: (handle: SplatSceneHandle) => void;
+  /**
+   * When true, the cursor turns to a crosshair and pointer events on the
+   * canvas raycast against the splat surface. Hits are reported via
+   * `onPlaceHover` / `onPlaceClick` as world-space coordinates.
+   */
+  placeMode?: boolean;
+  onPlaceHover?: (point: { x: number; y: number; z: number } | null) => void;
+  onPlaceClick?: (point: { x: number; y: number; z: number }) => void;
 }
 
 export function SplatViewer({
@@ -20,6 +29,9 @@ export function SplatViewer({
   selectedTentId,
   onMarkerClick,
   onSceneReady,
+  placeMode,
+  onPlaceHover,
+  onPlaceClick,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<SplatSceneHandle | null>(null);
@@ -126,6 +138,24 @@ export function SplatViewer({
       canvas.removeEventListener('pointerup', onUp);
     };
   }, [onMarkerClick]);
+
+  // Place mode: raycast against the splat surface and report hits via the
+  // hover/click callbacks. Depends on `sceneReady` so we don't try to install
+  // listeners before `handleRef.current.splatMesh` exists.
+  useEffect(() => {
+    if (!placeMode || !sceneReady) return;
+    const handle = handleRef.current;
+    const canvas = canvasRef.current;
+    if (!handle || !canvas) return;
+    const ctrl = new PlaceModeController({
+      canvas,
+      camera: handle.camera,
+      splatMesh: handle.splatMesh,
+      onHover: (p) => onPlaceHover?.(p ? { x: p.x, y: p.y, z: p.z } : null),
+      onClick: (p) => onPlaceClick?.({ x: p.x, y: p.y, z: p.z }),
+    });
+    return () => ctrl.dispose();
+  }, [placeMode, sceneReady, onPlaceHover, onPlaceClick]);
 
   return (
     <div className="relative h-full w-full">
