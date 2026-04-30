@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase, type Event } from '../../lib/supabase';
+import { DuplicateEventModal } from '../../components/DuplicateEventModal';
 
 export default function EventListPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dup, setDup] = useState<Event | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,7 +23,7 @@ export default function EventListPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadTick]);
 
   return (
     <div>
@@ -68,11 +71,25 @@ export default function EventListPage() {
                   >
                     Categories
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => setDup(e)}
+                    className="underline"
+                  >
+                    Duplicate
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+      {dup && (
+        <DuplicateEventModal
+          source={dup}
+          onClose={() => setDup(null)}
+          onCreated={() => setReloadTick((n) => n + 1)}
+        />
       )}
     </div>
   );

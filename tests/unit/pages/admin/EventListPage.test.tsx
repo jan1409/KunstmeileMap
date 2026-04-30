@@ -12,6 +12,33 @@ vi.mock('../../../../src/lib/supabase', () => {
   };
 });
 
+// Stub the modal: render a marker + a stub "Created" button so we can drive
+// the onCreated callback from the test without going through the real
+// supabase.rpc path (which DuplicateEventModal owns and tests separately).
+const modalProps: { current: Record<string, unknown> | null } = { current: null };
+vi.mock('../../../../src/components/DuplicateEventModal', () => ({
+  DuplicateEventModal: (props: Record<string, unknown>) => {
+    modalProps.current = props;
+    const source = props.source as { title_de: string };
+    return (
+      <div data-testid="duplicate-modal" data-source-title={source.title_de}>
+        <button
+          type="button"
+          onClick={() => {
+            (props.onCreated as (id: string) => void)('new-id');
+            (props.onClose as () => void)();
+          }}
+        >
+          stub-created
+        </button>
+        <button type="button" onClick={props.onClose as () => void}>
+          stub-close
+        </button>
+      </div>
+    );
+  },
+}));
+
 import EventListPage from '../../../../src/pages/admin/EventListPage';
 
 const sampleEvents = [
@@ -50,6 +77,7 @@ function renderApp() {
 describe('EventListPage', () => {
   beforeEach(() => {
     order.mockReset();
+    modalProps.current = null;
   });
 
   it('lists events fetched from supabase, ordered by year descending', async () => {
@@ -108,5 +136,63 @@ describe('EventListPage', () => {
 
     await waitFor(() => expect(screen.queryByText('…')).not.toBeInTheDocument());
     expect(screen.getByText('Kunstmeile 2026')).toBeInTheDocument();
+  });
+
+  it('opens the duplicate modal with the clicked event as source', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default;
+    const user = userEvent.setup();
+    order.mockResolvedValue({ data: sampleEvents, error: null });
+    renderApp();
+    await screen.findByText('Kunstmeile 2026');
+
+    expect(screen.queryByTestId('duplicate-modal')).not.toBeInTheDocument();
+
+    // Click the Duplicate button on the first row (Kunstmeile 2026).
+    await user.click(screen.getAllByRole('button', { name: /duplicate/i })[0]!);
+
+    const modal = await screen.findByTestId('duplicate-modal');
+    expect(modal).toHaveAttribute('data-source-title', 'Kunstmeile 2026');
+  });
+
+  it('refetches the list after a successful duplicate and closes the modal', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default;
+    const user = userEvent.setup();
+    order.mockResolvedValue({ data: sampleEvents, error: null });
+    renderApp();
+    await screen.findByText('Kunstmeile 2026');
+    expect(order).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getAllByRole('button', { name: /duplicate/i })[0]!);
+    await screen.findByTestId('duplicate-modal');
+
+    // Drive onCreated via the stub button.
+    await user.click(screen.getByRole('button', { name: /stub-created/i }));
+
+    // Modal closes (page also drives onClose internally on success), and the
+    // list re-fetches via the reloadTick effect.
+    await waitFor(() =>
+      expect(screen.queryByTestId('duplicate-modal')).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(order).toHaveBeenCalledTimes(2));
+  });
+
+  it('closes the modal without refetching when Cancel is clicked', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default;
+    const user = userEvent.setup();
+    order.mockResolvedValue({ data: sampleEvents, error: null });
+    renderApp();
+    await screen.findByText('Kunstmeile 2026');
+    expect(order).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getAllByRole('button', { name: /duplicate/i })[0]!);
+    await screen.findByTestId('duplicate-modal');
+
+    await user.click(screen.getByRole('button', { name: /stub-close/i }));
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('duplicate-modal')).not.toBeInTheDocument(),
+    );
+    // No additional fetch — close path doesn't bump reloadTick.
+    expect(order).toHaveBeenCalledTimes(1);
   });
 });
