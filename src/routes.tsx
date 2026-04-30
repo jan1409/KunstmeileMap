@@ -8,6 +8,7 @@ import DashboardPage from './pages/admin/DashboardPage';
 import EventListPage from './pages/admin/EventListPage';
 import TentListPage from './pages/admin/TentListPage';
 import TentEditPage from './pages/admin/TentEditPage';
+import CategoryListPage from './pages/admin/CategoryListPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import { RequireAuth } from './components/RequireAuth';
 
@@ -31,7 +32,7 @@ export const router = createBrowserRouter([
       { path: 'events/:eventSlug/tents', element: <TentListPage /> },
       { path: 'events/:eventSlug/tents/new', element: <TentEditPage /> },
       { path: 'events/:eventSlug/tents/:tentId', element: <TentEditPage /> },
-      // category routes added in later A3 tasks
+      { path: 'events/:eventSlug/categories', element: <CategoryListPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
