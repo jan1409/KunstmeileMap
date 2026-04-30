@@ -1,149 +1,135 @@
 import { useMemo, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useEvent } from '../../hooks/useEvent';
+import { useTents } from '../../hooks/useTents';
+import { useCategories } from '../../hooks/useCategories';
+import { usePhotos } from '../../hooks/usePhotos';
 import { SplatViewer } from '../../components/SplatViewer';
 import { SidePanel } from '../../components/SidePanel';
 import { TopBar } from '../../components/TopBar';
 import type { MarkerData } from '../../lib/three/MarkerLayer';
-import type { Tent, Category } from '../../lib/supabase';
 
+// Fallback splat used when an event has no splat_url assigned yet (pre-capture).
+// Lives in public/ (gitignored — production splats go to Cloudflare R2 via the
+// admin Settings page in A3-T12).
 const PLACEHOLDER_SPLAT = '/OldTrainStation.splat';
 
-const TEST_CATEGORIES: Record<string, Category> = {
-  c1: {
-    id: 'c1',
-    event_id: 'e1',
-    slug: 'holzkunst',
-    name_de: 'Holzkunst',
-    name_en: 'Woodcraft',
-    icon: '🌳',
-    display_order: 1,
-    created_at: new Date().toISOString(),
-  },
-  c2: {
-    id: 'c2',
-    event_id: 'e1',
-    slug: 'keramik',
-    name_de: 'Keramik',
-    name_en: 'Ceramics',
-    icon: '🏺',
-    display_order: 2,
-    created_at: new Date().toISOString(),
-  },
-  c3: {
-    id: 'c3',
-    event_id: 'e1',
-    slug: 'malerei',
-    name_de: 'Malerei',
-    name_en: 'Painting',
-    icon: '🎨',
-    display_order: 3,
-    created_at: new Date().toISOString(),
-  },
-};
-
-function makeTestTent(
-  id: string,
-  name: string,
-  description_de: string,
-  address: string,
-  category_id: string,
-  position: { x: number; y: number; z: number },
-  links: { website?: string; instagram?: string; facebook?: string },
-): Tent {
-  const now = new Date().toISOString();
-  return {
-    id,
-    slug: id,
-    event_id: 'e1',
-    name,
-    description_de,
-    description_en: null,
-    address,
-    category_id,
-    position,
-    website_url: links.website ?? null,
-    instagram_url: links.instagram ?? null,
-    facebook_url: links.facebook ?? null,
-    email_public: null,
-    created_at: now,
-    updated_at: now,
-    created_by: null,
-    updated_by: null,
-  };
+function isXyz(v: unknown): v is { x: number; y: number; z: number } {
+  return (
+    typeof v === 'object' && v !== null &&
+    typeof (v as { x?: unknown }).x === 'number' &&
+    typeof (v as { y?: unknown }).y === 'number' &&
+    typeof (v as { z?: unknown }).z === 'number'
+  );
 }
 
-const TEST_TENTS: Record<string, Tent> = {
-  t1: makeTestTent(
-    't1',
-    'Alice Holzkunst',
-    'Handgemachte Holzfiguren aus Eiche und Birke.',
-    'Mühlenweg 1',
-    'c1',
-    { x: 0, y: 0, z: 0 },
-    { website: 'https://example.com', instagram: 'https://instagram.com/alice' },
-  ),
-  t2: makeTestTent(
-    't2',
-    "Bob's Töpferstube",
-    'Geschirr und Vasen, alle handgedreht.',
-    'Mühlenweg 3',
-    'c2',
-    { x: 2, y: 0, z: 1 },
-    { facebook: 'https://facebook.com/bob' },
-  ),
-  t3: makeTestTent(
-    't3',
-    'Carla Malt',
-    'Aquarelle und Öl. Nordseelandschaften.',
-    'Mühlenweg 5',
-    'c3',
-    { x: -2, y: 0, z: -1 },
-    { website: 'https://carla.example.com' },
-  ),
-};
-
 export default function EventViewPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const { eventSlug, tentSlug } = useParams();
+  const navigate = useNavigate();
+
+  const { event, loading: loadingEvent, error: errorEvent } = useEvent(eventSlug);
+  const { tents } = useTents(event?.id);
+  const { categories } = useCategories(event?.id);
+
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
 
-  const tents = useMemo(() => Object.values(TEST_TENTS), []);
-  const categories = useMemo(
-    () => Object.values(TEST_CATEGORIES).sort((a, b) => a.display_order - b.display_order),
-    [],
+  const selectedTent = useMemo(
+    () => tents.find((tnt) => tnt.slug === tentSlug) ?? null,
+    [tents, tentSlug],
   );
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c.id === selectedTent?.category_id) ?? null,
+    [categories, selectedTent],
+  );
+  const photoUrls = usePhotos(selectedTent?.id);
 
-  const tent = selectedId ? TEST_TENTS[selectedId] ?? null : null;
-  const category = tent?.category_id ? TEST_CATEGORIES[tent.category_id] ?? null : null;
+  const splatUrl = event?.splat_url ?? PLACEHOLDER_SPLAT;
+  const splatOrigin = useMemo(() => {
+    const o = event?.splat_origin;
+    return isXyz(o) ? o : undefined;
+  }, [event?.splat_origin]);
 
-  // Build markers for SplatViewer. When the category filter is active, mark
-  // non-matching markers as dimmed (they stay visible but faded).
+  // Build markers from real tents. Skip rows whose `position` JSON isn't a
+  // valid {x,y,z} (defensive — admin Place Mode in A3-T05 will only emit valid).
   const markers: MarkerData[] = useMemo(() => {
     const filterActive = selectedCategoryIds.size > 0;
-    return tents.map((t) => {
-      const matchesFilter =
-        !filterActive || (t.category_id != null && selectedCategoryIds.has(t.category_id));
-      const cat = t.category_id ? TEST_CATEGORIES[t.category_id] : null;
-      return {
-        id: t.id,
-        position: t.position as { x: number; y: number; z: number },
-        category_icon: cat?.icon ?? null,
-        dimmed: !matchesFilter,
-      };
-    });
-  }, [tents, selectedCategoryIds]);
+    return tents
+      .filter((tnt): tnt is typeof tnt & { position: { x: number; y: number; z: number } } =>
+        isXyz(tnt.position),
+      )
+      .map((tnt) => {
+        const matchesFilter =
+          !filterActive || (tnt.category_id != null && selectedCategoryIds.has(tnt.category_id));
+        const cat = categories.find((c) => c.id === tnt.category_id);
+        return {
+          id: tnt.id,
+          position: tnt.position,
+          category_icon: cat?.icon ?? null,
+          dimmed: !matchesFilter,
+        };
+      });
+  }, [tents, categories, selectedCategoryIds]);
+
+  function selectTentBySlug(slug: string | null) {
+    if (!event) return;
+    if (slug) {
+      navigate(`/${event.slug}/tent/${slug}`);
+    } else {
+      navigate(`/${event.slug}`);
+    }
+  }
+
+  // Loading + error states
+  if (loadingEvent) {
+    return (
+      <main className="flex h-screen w-screen items-center justify-center text-white/70">
+        <p className="text-sm">{t('app.loading')}</p>
+      </main>
+    );
+  }
+  if (errorEvent) {
+    return (
+      <main className="flex h-screen w-screen flex-col items-center justify-center gap-3 text-white">
+        <p className="text-sm text-red-300">{t('app.error_load')}</p>
+        <p className="text-xs text-white/50">{errorEvent.message}</p>
+        <button
+          onClick={() => location.reload()}
+          className="rounded bg-white/10 px-3 py-1 text-sm hover:bg-white/20"
+        >
+          {t('app.retry')}
+        </button>
+      </main>
+    );
+  }
+  if (!event) {
+    return (
+      <main className="flex h-screen w-screen items-center justify-center text-white/70">
+        <p className="text-sm">No event found.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <SplatViewer
-        splatUrl={PLACEHOLDER_SPLAT}
+        splatUrl={splatUrl}
+        origin={splatOrigin}
         markers={markers}
-        selectedTentId={selectedId}
-        onMarkerClick={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+        selectedTentId={selectedTent?.id ?? null}
+        onMarkerClick={(id) => {
+          const tnt = tents.find((x) => x.id === id);
+          if (!tnt) return;
+          // Toggle: same tent selected → deselect.
+          selectTentBySlug(tnt.slug === tentSlug ? null : tnt.slug);
+        }}
       />
       <TopBar
         tents={tents}
         categories={categories}
         selectedCategoryIds={selectedCategoryIds}
-        onSelectTent={(t) => setSelectedId(t.id)}
+        onSelectTent={(tnt) => selectTentBySlug(tnt.slug)}
         onToggleCategory={(id) => {
           setSelectedCategoryIds((prev) => {
             const next = new Set(prev);
@@ -155,10 +141,10 @@ export default function EventViewPage() {
         onClearCategories={() => setSelectedCategoryIds(new Set())}
       />
       <SidePanel
-        tent={tent}
-        category={category}
-        photoUrls={[]}
-        onClose={() => setSelectedId(null)}
+        tent={selectedTent}
+        category={selectedCategory}
+        photoUrls={photoUrls}
+        onClose={() => selectTentBySlug(null)}
       />
     </main>
   );
