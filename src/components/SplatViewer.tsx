@@ -82,7 +82,11 @@ export function SplatViewer({
       list.map((m) => ({
         ...m,
         selected: m.id === selectedTentId,
-        dimmed: selectedTentId != null && m.id !== selectedTentId,
+        // Dim if EITHER the caller marked it dimmed (e.g., category filter
+        // excludes it) OR a different tent is selected.
+        dimmed:
+          m.dimmed === true ||
+          (selectedTentId != null && m.id !== selectedTentId),
       })),
     );
   }, [markers, selectedTentId, sceneReady]);
