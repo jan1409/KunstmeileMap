@@ -31,12 +31,20 @@ export default function TentListPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{event.title_de} — Tents</h1>
-        <Link
-          to={`/admin/events/${event.slug}/tents/new`}
-          className="rounded bg-white/20 px-3 py-1 text-sm"
-        >
-          + New tent
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to={`/admin/events/${event.slug}/tents/import`}
+            className="rounded bg-white/10 px-3 py-1 text-sm"
+          >
+            CSV import
+          </Link>
+          <Link
+            to={`/admin/events/${event.slug}/tents/new`}
+            className="rounded bg-white/20 px-3 py-1 text-sm"
+          >
+            + New tent
+          </Link>
+        </div>
       </div>
       <table className="w-full text-left text-sm">
         <thead className="border-b border-white/10 text-xs text-white/60">
