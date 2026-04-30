@@ -1,16 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SplatViewer } from '../../components/SplatViewer';
 import { SidePanel } from '../../components/SidePanel';
+import { TopBar } from '../../components/TopBar';
 import type { MarkerData } from '../../lib/three/MarkerLayer';
 import type { Tent, Category } from '../../lib/supabase';
 
 const PLACEHOLDER_SPLAT = '/OldTrainStation.splat';
-
-const TEST_MARKERS: MarkerData[] = [
-  { id: 't1', position: { x: 0, y: 0, z: 0 }, category_icon: '🌳' },
-  { id: 't2', position: { x: 2, y: 0, z: 1 }, category_icon: '🏺' },
-  { id: 't3', position: { x: -2, y: 0, z: -1 }, category_icon: '🎨' },
-];
 
 const TEST_CATEGORIES: Record<string, Category> = {
   c1: {
@@ -108,16 +103,56 @@ const TEST_TENTS: Record<string, Tent> = {
 
 export default function EventViewPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
+
+  const tents = useMemo(() => Object.values(TEST_TENTS), []);
+  const categories = useMemo(
+    () => Object.values(TEST_CATEGORIES).sort((a, b) => a.display_order - b.display_order),
+    [],
+  );
+
   const tent = selectedId ? TEST_TENTS[selectedId] ?? null : null;
   const category = tent?.category_id ? TEST_CATEGORIES[tent.category_id] ?? null : null;
 
+  // Build markers for SplatViewer. When the category filter is active, mark
+  // non-matching markers as dimmed (they stay visible but faded).
+  const markers: MarkerData[] = useMemo(() => {
+    const filterActive = selectedCategoryIds.size > 0;
+    return tents.map((t) => {
+      const matchesFilter =
+        !filterActive || (t.category_id != null && selectedCategoryIds.has(t.category_id));
+      const cat = t.category_id ? TEST_CATEGORIES[t.category_id] : null;
+      return {
+        id: t.id,
+        position: t.position as { x: number; y: number; z: number },
+        category_icon: cat?.icon ?? null,
+        dimmed: !matchesFilter,
+      };
+    });
+  }, [tents, selectedCategoryIds]);
+
   return (
-    <main className="h-screen w-screen">
+    <main className="relative h-screen w-screen overflow-hidden">
       <SplatViewer
         splatUrl={PLACEHOLDER_SPLAT}
-        markers={TEST_MARKERS}
+        markers={markers}
         selectedTentId={selectedId}
         onMarkerClick={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+      />
+      <TopBar
+        tents={tents}
+        categories={categories}
+        selectedCategoryIds={selectedCategoryIds}
+        onSelectTent={(t) => setSelectedId(t.id)}
+        onToggleCategory={(id) => {
+          setSelectedCategoryIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+          });
+        }}
+        onClearCategories={() => setSelectedCategoryIds(new Set())}
       />
       <SidePanel
         tent={tent}
