@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -318,6 +318,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      duplicate_event: {
+        Args: {
+          clone_categories?: boolean
+          clone_splat_url?: boolean
+          clone_tent_positions?: boolean
+          clone_tents?: boolean
+          new_slug: string
+          new_title_de: string
+          new_year: number
+          source_event_id: string
+        }
+        Returns: string
+      }
       has_event_role: {
         Args: {
           eid: string
