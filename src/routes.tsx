@@ -4,6 +4,7 @@ import ImpressumPage from './pages/public/ImpressumPage';
 import DatenschutzPage from './pages/public/DatenschutzPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import LoginPage from './pages/admin/LoginPage';
+import NoAccessPage from './pages/admin/NoAccessPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import EventListPage from './pages/admin/EventListPage';
 import TentListPage from './pages/admin/TentListPage';
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
   { path: '/impressum', element: <ImpressumPage /> },
   { path: '/datenschutz', element: <DatenschutzPage /> },
   { path: '/admin/login', element: <LoginPage /> },
+  { path: '/admin/no-access', element: <NoAccessPage /> },
   {
     path: '/admin',
     element: (
