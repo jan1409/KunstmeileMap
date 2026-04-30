@@ -4,6 +4,7 @@ import { supabase, type Tent } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 import { useCategories } from '../../hooks/useCategories';
 import { SplatViewer } from '../../components/SplatViewer';
+import { PhotoUploadZone } from '../../components/PhotoUploadZone';
 import {
   TentEditForm,
   type TentFormValues,
@@ -93,6 +94,11 @@ export default function TentEditPage() {
           onRequestPlace={() => setPlaceMode(true)}
           onSubmit={onSubmit}
         />
+        {tent && (
+          <div className="mt-6">
+            <PhotoUploadZone eventId={event.id} tentId={tent.id} />
+          </div>
+        )}
       </div>
       <div className="relative h-[60vh] overflow-hidden rounded lg:h-[80vh]">
         <SplatViewer
