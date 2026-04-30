@@ -60,6 +60,14 @@ vi.mock('../../../../src/components/SplatViewer', () => ({
   },
 }));
 
+// PhotoUploadZone hits Supabase Storage + tent_photos directly; stub it here
+// so the page-level tests don't have to mock that surface.
+vi.mock('../../../../src/components/PhotoUploadZone', () => ({
+  PhotoUploadZone: ({ eventId, tentId }: { eventId: string; tentId: string }) => (
+    <div data-testid="photo-upload-zone" data-event-id={eventId} data-tent-id={tentId} />
+  ),
+}));
+
 import TentEditPage from '../../../../src/pages/admin/TentEditPage';
 
 const sampleEvent = {
