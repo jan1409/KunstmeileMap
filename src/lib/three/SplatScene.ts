@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
+import { applyCameraDefault, type CameraDefault } from './cameraDefault';
 
 export interface SplatSceneOptions {
   canvas: HTMLCanvasElement;
   splatUrl: string;
   origin?: { x: number; y: number; z: number };
+  cameraDefault?: CameraDefault | null;
 }
 
 export interface SplatSceneHandle {
@@ -43,8 +45,6 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
   const scene = new THREE.Scene();
   const aspect = (canvas.clientWidth || 800) / (canvas.clientHeight || 600);
   const camera = new THREE.PerspectiveCamera(60, aspect, 0.01, 1000);
-  camera.position.set(0, 0, 8);
-  camera.lookAt(0, 0, 0);
 
   const spark = new SparkRenderer({ renderer });
   scene.add(spark);
@@ -62,6 +62,9 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
     ONE: THREE.TOUCH.ROTATE,
     TWO: THREE.TOUCH.DOLLY_PAN,
   };
+
+  // Apply the per-event camera default (or fall back to (0,0,8) → (0,0,0)).
+  applyCameraDefault(camera, controls, opts.cameraDefault ?? null);
 
   const splatMesh = new SplatMesh({ url: splatUrl });
   splatMesh.position.set(origin.x, origin.y, origin.z);
