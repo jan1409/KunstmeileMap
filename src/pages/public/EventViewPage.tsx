@@ -9,6 +9,7 @@ import { SplatViewer } from '../../components/SplatViewer';
 import { SidePanel } from '../../components/SidePanel';
 import { TopBar } from '../../components/TopBar';
 import { SetCameraDefaultButton } from '../../components/SetCameraDefaultButton';
+import type { Category } from '../../lib/supabase';
 import type { MarkerData } from '../../lib/three/MarkerLayer';
 import type { SplatSceneHandle } from '../../lib/three/SplatScene';
 import { parseCameraDefault } from '../../lib/three/cameraDefault';
@@ -42,9 +43,9 @@ export default function EventViewPage() {
     () => tents.find((tnt) => tnt.slug === tentSlug) ?? null,
     [tents, tentSlug],
   );
-  const selectedCategory = useMemo(
-    () => categories.find((c) => c.id === selectedTent?.category_id) ?? null,
-    [categories, selectedTent],
+  const selectedCategories = useMemo<Category[]>(
+    () => selectedTent?.categories ?? [],
+    [selectedTent],
   );
   const photoUrls = usePhotos(selectedTent?.id);
 
@@ -65,6 +66,7 @@ export default function EventViewPage() {
 
   // Build markers from real tents. Skip rows whose `position` JSON isn't a
   // valid {x,y,z} (defensive — admin Place Mode in A3-T05 will only emit valid).
+  // Filter is OR-semantics: a tent matches if ANY of its categories is selected.
   const markers: MarkerData[] = useMemo(() => {
     const filterActive = selectedCategoryIds.size > 0;
     return tents
@@ -73,16 +75,15 @@ export default function EventViewPage() {
       )
       .map((tnt) => {
         const matchesFilter =
-          !filterActive || (tnt.category_id != null && selectedCategoryIds.has(tnt.category_id));
-        const cat = categories.find((c) => c.id === tnt.category_id);
+          !filterActive || tnt.categories.some((c) => selectedCategoryIds.has(c.id));
         return {
           id: tnt.id,
           position: tnt.position,
-          category_icon: cat?.icon ?? null,
+          label: tnt.display_number != null ? String(tnt.display_number) : null,
           dimmed: !matchesFilter,
         };
       });
-  }, [tents, categories, selectedCategoryIds]);
+  }, [tents, selectedCategoryIds]);
 
   function selectTentBySlug(slug: string | null) {
     if (!event) return;
@@ -156,7 +157,7 @@ export default function EventViewPage() {
       />
       <SidePanel
         tent={selectedTent}
-        category={selectedCategory}
+        categories={selectedCategories}
         photoUrls={photoUrls}
         onClose={() => selectTentBySlug(null)}
       />
