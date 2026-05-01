@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Tent } from '../lib/supabase';
+import type { TentWithCategories } from '../lib/supabase';
+import { flattenTentCategories } from '../lib/tentCategories';
 
 interface UseTentsResult {
-  tents: Tent[];
+  tents: TentWithCategories[];
   loading: boolean;
   error: Error | null;
 }
 
 export function useTents(eventId: string | undefined): UseTentsResult {
-  const [tents, setTents] = useState<Tent[]>([]);
+  const [tents, setTents] = useState<TentWithCategories[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -26,12 +27,12 @@ export function useTents(eventId: string | undefined): UseTentsResult {
 
     supabase
       .from('tents')
-      .select('*')
+      .select('*, tent_categories(category:categories(*))')
       .eq('event_id', eventId)
       .then(({ data, error: err }) => {
         if (cancelled) return;
         if (err) setError(new Error(err.message));
-        else setTents(data ?? []);
+        else setTents(flattenTentCategories((data ?? []) as never));
         setLoading(false);
       });
 
