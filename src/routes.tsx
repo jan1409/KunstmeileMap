@@ -6,6 +6,7 @@ import DatenschutzPage from './pages/public/DatenschutzPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import { RequireAuth } from './components/RequireAuth';
 import { CookieBanner } from './components/CookieBanner';
+import { ToastProvider } from './components/ToastProvider';
 
 // Admin pages are gated behind /admin and not part of the public visitor flow,
 // so they live in their own chunks. RequireAuth short-circuits non-admins with
@@ -39,10 +40,10 @@ function suspended(node: ReactElement): ReactElement {
 // and has access to the Router context (Link).
 function RootLayout() {
   return (
-    <>
+    <ToastProvider>
       <Outlet />
       <CookieBanner />
-    </>
+    </ToastProvider>
   );
 }
 

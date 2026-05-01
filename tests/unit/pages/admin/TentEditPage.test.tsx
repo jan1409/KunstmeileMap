@@ -130,6 +130,7 @@ vi.mock('../../../../src/components/PhotoUploadZone', () => ({
 }));
 
 import TentEditPage from '../../../../src/pages/admin/TentEditPage';
+import { ToastProvider } from '../../../../src/components/ToastProvider';
 
 const sampleEvent = {
   id: 'evt-1',
@@ -163,22 +164,24 @@ const sampleTent = {
 
 function renderAt(initial: string) {
   return render(
-    <MemoryRouter initialEntries={[initial]}>
-      <Routes>
-        <Route
-          path="/admin/events/:eventSlug/tents/new"
-          element={<TentEditPage />}
-        />
-        <Route
-          path="/admin/events/:eventSlug/tents/:tentId"
-          element={<TentEditPage />}
-        />
-        <Route
-          path="/admin/events/:eventSlug/tents"
-          element={<div>tent-list-page</div>}
-        />
-      </Routes>
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter initialEntries={[initial]}>
+        <Routes>
+          <Route
+            path="/admin/events/:eventSlug/tents/new"
+            element={<TentEditPage />}
+          />
+          <Route
+            path="/admin/events/:eventSlug/tents/:tentId"
+            element={<TentEditPage />}
+          />
+          <Route
+            path="/admin/events/:eventSlug/tents"
+            element={<div>tent-list-page</div>}
+          />
+        </Routes>
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -300,6 +303,23 @@ describe('TentEditPage', () => {
     // category_ids must NOT be in the tents row
     expect(payload).not.toHaveProperty('category_ids');
     expect(payload).not.toHaveProperty('category_id');
+  });
+
+  it('shows an error toast and stays on the page when the tent update fails', async () => {
+    tentsSingle.mockResolvedValue({ data: sampleTent, error: null });
+    tentsEq.mockReturnValue({ single: tentsSingle });
+    tentsUpdateEq.mockResolvedValue({ data: null, error: { message: 'permission denied' } });
+
+    const user = userEvent.setup();
+    renderAt('/admin/events/kunstmeile-2026/tents/tent-1');
+
+    expect(await screen.findByDisplayValue('galerie-nord')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/permission denied/i);
+    // No navigation — user stays on the edit page
+    expect(screen.queryByText('tent-list-page')).toBeNull();
   });
 
   it('updates the tent row and replaces tent_categories on save (edit path)', async () => {
