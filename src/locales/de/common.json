@@ -5,7 +5,9 @@
     "error_load": "Die 3D-Ansicht konnte nicht geladen werden",
     "retry": "Erneut versuchen",
     "menu_open": "Menü öffnen",
-    "menu_close": "Menü schließen"
+    "menu_close": "Menü schließen",
+    "auth_loading": "Authentifizierung lädt …",
+    "auth_profile_error": "Profilabruf fehlgeschlagen. Bitte abmelden und erneut versuchen."
   },
   "search": {
     "placeholder": "Stand suchen...",

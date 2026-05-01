@@ -1,10 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
+import '../../../src/lib/i18n';
+import i18n from 'i18next';
+
 const useAuthMock = vi.fn();
+const signOutMock = vi.fn();
 vi.mock('../../../src/components/AuthProvider', () => ({
-  useAuth: () => useAuthMock(),
+  useAuth: () => ({ ...useAuthMock(), signOut: signOutMock }),
 }));
 
 const useProfileMock = vi.fn();
@@ -81,5 +86,42 @@ describe('RequireAuth', () => {
     useProfileMock.mockReturnValue({ profile: null, loading: false, error: null });
     renderAt('/admin');
     expect(screen.getByText('no-access-screen')).toBeInTheDocument();
+  });
+
+  it('shows an inline error block (not a redirect) when the profile fetch errored', async () => {
+    await i18n.changeLanguage('en');
+    useAuthMock.mockReturnValue({ session: { user: { id: 'u1' } }, loading: false });
+    useProfileMock.mockReturnValue({
+      profile: null,
+      loading: false,
+      error: new Error('rls denied profiles'),
+    });
+    renderAt('/admin');
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent(/profile fetch failed/i);
+    expect(alert).toHaveTextContent('rls denied profiles');
+    // Not redirected to no-access.
+    expect(screen.queryByText('no-access-screen')).toBeNull();
+    // Sign-out button is the recovery affordance.
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+  });
+
+  it('signs out and navigates to /admin/login when the sign-out button on the error block is clicked', async () => {
+    await i18n.changeLanguage('en');
+    signOutMock.mockReset();
+    signOutMock.mockResolvedValue(undefined);
+    useAuthMock.mockReturnValue({ session: { user: { id: 'u1' } }, loading: false });
+    useProfileMock.mockReturnValue({
+      profile: null,
+      loading: false,
+      error: new Error('rls denied'),
+    });
+    const user = userEvent.setup();
+    renderAt('/admin');
+
+    await user.click(screen.getByRole('button', { name: /sign out/i }));
+
+    expect(signOutMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('login-screen')).toBeInTheDocument();
   });
 });

@@ -148,6 +148,18 @@ describe('DuplicateEventModal', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('moves keyboard focus inside the modal on mount (focus trap)', () => {
+    render(
+      <DuplicateEventModal
+        source={sourceEvent}
+        onClose={onClose}
+        onCreated={onCreated}
+      />,
+    );
+    const slug = screen.getByLabelText(/^slug$/i);
+    expect(slug).toHaveFocus();
+  });
+
   it('calls onClose without invoking rpc when Cancel is clicked', async () => {
     const user = userEvent.setup();
     render(

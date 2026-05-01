@@ -5,7 +5,9 @@
     "error_load": "The 3D view could not be loaded",
     "retry": "Try again",
     "menu_open": "Open menu",
-    "menu_close": "Close menu"
+    "menu_close": "Close menu",
+    "auth_loading": "Loading authentication…",
+    "auth_profile_error": "Profile fetch failed. Please sign out and try again."
   },
   "search": {
     "placeholder": "Search booth...",

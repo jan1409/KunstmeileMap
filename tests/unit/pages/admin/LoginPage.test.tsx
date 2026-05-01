@@ -29,8 +29,8 @@ describe('LoginPage', () => {
 
   it('renders email + password fields and a submit button', () => {
     renderApp();
-    expect(screen.getByPlaceholderText(/email/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
@@ -39,8 +39,8 @@ describe('LoginPage', () => {
     const user = userEvent.setup();
     renderApp();
 
-    await user.type(screen.getByPlaceholderText(/email/i), 'a@b.de');
-    await user.type(screen.getByPlaceholderText(/password/i), 'pw');
+    await user.type(screen.getByLabelText(/email/i), 'a@b.de');
+    await user.type(screen.getByLabelText(/password/i), 'pw');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(signIn).toHaveBeenCalledWith('a@b.de', 'pw');
@@ -52,11 +52,12 @@ describe('LoginPage', () => {
     const user = userEvent.setup();
     renderApp();
 
-    await user.type(screen.getByPlaceholderText(/email/i), 'a@b.de');
-    await user.type(screen.getByPlaceholderText(/password/i), 'bad');
+    await user.type(screen.getByLabelText(/email/i), 'a@b.de');
+    await user.type(screen.getByLabelText(/password/i), 'bad');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
-    expect(await screen.findByText('Invalid login')).toBeInTheDocument();
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Invalid login');
   });
 
   it('preserves the deep-link search and hash on successful sign-in', async () => {
@@ -84,8 +85,8 @@ describe('LoginPage', () => {
       </MemoryRouter>,
     );
 
-    await user.type(screen.getByPlaceholderText(/email/i), 'a@b.de');
-    await user.type(screen.getByPlaceholderText(/password/i), 'pw');
+    await user.type(screen.getByLabelText(/email/i), 'a@b.de');
+    await user.type(screen.getByLabelText(/password/i), 'pw');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByTestId('loc')).toHaveTextContent('/admin/events?filter=open#row5');

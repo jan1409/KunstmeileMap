@@ -39,23 +39,33 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center p-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-2xl font-semibold">Admin Login</h1>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          className="w-full rounded bg-white/10 p-2 text-white"
-        />
-        <input
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="w-full rounded bg-white/10 p-2 text-white"
-        />
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        <label className="block">
+          <span className="sr-only">Email</span>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="w-full rounded bg-white/10 p-2 text-white"
+          />
+        </label>
+        <label className="block">
+          <span className="sr-only">Password</span>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="w-full rounded bg-white/10 p-2 text-white"
+          />
+        </label>
+        {error && (
+          <p role="alert" className="text-sm text-red-400">
+            {error}
+          </p>
+        )}
         <button
           disabled={busy}
           className="w-full rounded bg-white/20 p-2 hover:bg-white/30 disabled:opacity-50"
