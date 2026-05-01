@@ -1,14 +1,18 @@
 import * as THREE from 'three';
 import {
-  polarAngleFromUp,
+  cameraDownTiltAngle,
   SIGNPOST_THRESHOLD,
   SIGNPOST_HYSTERESIS,
 } from './cameraAngle';
 
-const POST_HEIGHT = 1.3;
+// Sign-post geometry — bumped 1.5× from the v1 spec after on-splat smoke
+// testing showed the discs were too small to read from horizontal-view
+// distances. Total height ~2.3 m. Post radius stays slim; fattening it
+// looked cartoonish.
+const POST_HEIGHT = 1.95;
 const POST_RADIUS = 0.025;
-const DISC_RADIUS = 0.15;
-const DISC_Y = 1.4;
+const DISC_RADIUS = 0.225;
+const DISC_Y = 2.1;
 const SCREEN_SCALE_FACTOR = 0.05; // matches MarkerLayer's existing factor
 
 /**
@@ -16,10 +20,11 @@ const SCREEN_SCALE_FACTOR = 0.05; // matches MarkerLayer's existing factor
  *   - a flat numbered Sprite (visible when looking near top-down)
  *   - a 3D sign-post (visible when tilted toward horizontal)
  *
- * `update(camera)` per frame computes the polar angle between camera-to-
- * marker and world up; with hysteresis around SIGNPOST_THRESHOLD,
- * toggles which mode is visible. The disc Y-axis-billboards toward the
- * camera so the number is always readable from the side.
+ * `update(camera)` per frame reads the camera's GLOBAL tilt from
+ * straight-down (NOT a per-marker angle — see cameraDownTiltAngle for
+ * why) and toggles between modes with hysteresis around
+ * SIGNPOST_THRESHOLD. The disc Y-axis-billboards toward the camera so
+ * the number is always readable from the side.
  *
  * Sprite scale is recomputed each frame so the on-screen size stays
  * roughly constant regardless of camera distance — same idiom as the
@@ -102,7 +107,7 @@ export class SignPostMarker {
     // at a time (the mode toggle in update() preserves this invariant), so
     // update() always runs every frame regardless of mode.
     const tick = (_renderer: THREE.WebGLRenderer, _scene: THREE.Scene, camera: THREE.Camera) => {
-      if (camera instanceof THREE.PerspectiveCamera) this.update(camera);
+      this.update(camera);
     };
     this.flatSprite.onBeforeRender = tick;
     this.discMesh.onBeforeRender = tick;
@@ -133,12 +138,14 @@ export class SignPostMarker {
   }
 
   /**
-   * Per-frame update: angle-based mode switch + sprite distance scaling +
+   * Per-frame update: camera-tilt mode switch + sprite distance scaling +
    * disc Y-axis billboard.
    */
-  update(camera: THREE.PerspectiveCamera): void {
-    // 1. Mode switch with hysteresis.
-    const angle = polarAngleFromUp(camera.position, this.group.position);
+  update(camera: THREE.Camera): void {
+    // 1. Mode switch with hysteresis. Angle is camera-global (same value
+    // for every marker in the scene this frame), which keeps top-down
+    // views consistent across markers regardless of their xz position.
+    const angle = cameraDownTiltAngle(camera);
     if (this.mode === 'flat' && angle > SIGNPOST_THRESHOLD + SIGNPOST_HYSTERESIS) {
       this.mode = 'signpost';
       this.flatSprite.visible = false;
