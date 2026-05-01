@@ -14,12 +14,10 @@ const TentSchema = z.object({
   address: z.string().optional(),
   // Accept empty string (map to undefined) or a positive integer.
   // The blank case lets the DB trigger auto-assign the number.
-  display_number: z
-    .union([
-      z.literal('').transform(() => undefined),
-      z.coerce.number().int().positive(),
-    ])
-    .optional(),
+  display_number: z.preprocess(
+    (v) => (v === '' || v == null ? undefined : Number(v)),
+    z.number().int().positive().optional(),
+  ),
   category_ids: z.array(z.string().uuid()).default([]),
   website_url: z.url().optional().or(z.literal('')),
   instagram_url: z.url().optional().or(z.literal('')),
@@ -48,8 +46,8 @@ export function TentEditForm({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<z.output<typeof TentSchema>>({
-    resolver: zodResolver(TentSchema) as never,
+  } = useForm<z.input<typeof TentSchema>, unknown, z.output<typeof TentSchema>>({
+    resolver: zodResolver(TentSchema),
     defaultValues: {
       slug: initial?.slug ?? '',
       name: initial?.name ?? '',
@@ -82,7 +80,7 @@ export function TentEditForm({
       <Field label="Adresse">
         <input {...register('address')} className="input" />
       </Field>
-      <Field label="#">
+      <Field label="#" error={errors.display_number?.message}>
         <input
           type="number"
           inputMode="numeric"
@@ -91,6 +89,9 @@ export function TentEditForm({
           className="input"
         />
       </Field>
+      {/* Checkbox group can't live inside <Field> because Field wraps children
+          in a <label>; nested <label> elements are invalid HTML. We replicate
+          Field's label-span styling on a <div> wrapper instead. */}
       <div>
         <span className="block text-xs text-white/60">Kategorien</span>
         <div className="flex flex-wrap gap-2">

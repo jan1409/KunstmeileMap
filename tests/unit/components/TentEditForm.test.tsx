@@ -53,7 +53,12 @@ describe('TentEditForm', () => {
     expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Beschreibung \(DE\)/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Description \(EN\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/adresse/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^#$|^Nummer$|display number/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/website/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/instagram/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/facebook/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/public email/i)).toBeInTheDocument();
     // Categories now appear as checkboxes.
     expect(screen.getByRole('checkbox', { name: /Galerie/i })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /Atelier/i })).toBeInTheDocument();
