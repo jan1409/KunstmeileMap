@@ -69,6 +69,14 @@ Each step should succeed without console errors.
 - [ ] **Side panel becomes a bottom sheet** on viewports < 768 px.
 - [ ] **Touch gestures** work (tap, drag, pinch).
 
+## Marker angle-switching (PR B — sign-post billboard)
+
+- [ ] Top-down view (orbit camera up to look almost straight down): markers render as flat numbered circles
+- [ ] Tilt the camera toward horizontal (drag down): when you cross ~45° from up, markers swap to **vertical sign-posts** (post + disc with the number on it)
+- [ ] Tilt back up: markers swap back to flat circles
+- [ ] Slow tilts at the threshold should NOT flicker (hysteresis ±0.03 rad)
+- [ ] Tap a sign-post (post or disc) → side panel opens (recursive hit-test still works)
+
 ## Sign-off
 
 When all green:
