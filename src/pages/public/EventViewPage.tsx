@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from '../../hooks/useEvent';
 import { useTents } from '../../hooks/useTents';
@@ -146,6 +146,14 @@ export default function EventViewPage() {
         photoUrls={photoUrls}
         onClose={() => selectTentBySlug(null)}
       />
+      <footer className="absolute bottom-0 left-0 right-0 z-10 flex justify-center gap-4 bg-gradient-to-t from-black/60 to-transparent p-2 text-xs text-white/70">
+        <Link to="/impressum" className="hover:text-white">
+          {t('footer.impressum')}
+        </Link>
+        <Link to="/datenschutz" className="hover:text-white">
+          {t('footer.datenschutz')}
+        </Link>
+      </footer>
     </main>
   );
 }
