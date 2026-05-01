@@ -194,6 +194,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tent_categories: {
+        Row: {
+          category_id: string
+          tent_id: string
+        }
+        Insert: {
+          category_id: string
+          tent_id: string
+        }
+        Update: {
+          category_id?: string
+          tent_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tent_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tent_categories_tent_id_fkey"
+            columns: ["tent_id"]
+            isOneToOne: false
+            referencedRelation: "tents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tent_photos: {
         Row: {
           caption_de: string | null
@@ -241,11 +271,11 @@ export type Database = {
       tents: {
         Row: {
           address: string | null
-          category_id: string | null
           created_at: string
           created_by: string | null
           description_de: string | null
           description_en: string | null
+          display_number: number | null
           email_public: string | null
           event_id: string
           facebook_url: string | null
@@ -260,11 +290,11 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description_de?: string | null
           description_en?: string | null
+          display_number?: number | null
           email_public?: string | null
           event_id: string
           facebook_url?: string | null
@@ -279,11 +309,11 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description_de?: string | null
           description_en?: string | null
+          display_number?: number | null
           email_public?: string | null
           event_id?: string
           facebook_url?: string | null
@@ -297,13 +327,6 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "tents_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "tents_event_id_fkey"
             columns: ["event_id"]

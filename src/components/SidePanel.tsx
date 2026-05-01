@@ -1,16 +1,16 @@
 import { useTranslation } from 'react-i18next';
-import type { Tent, Category } from '../lib/supabase';
+import type { Category, TentWithCategories } from '../lib/supabase';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface Props {
-  tent: Tent | null;
-  category: Category | null;
+  tent: TentWithCategories | null;
+  categories: Category[];
   photoUrls: string[];
   onClose: () => void;
   onShare?: () => void;
 }
 
-export function SidePanel({ tent, category, photoUrls, onClose, onShare }: Props) {
+export function SidePanel({ tent, categories, photoUrls, onClose, onShare }: Props) {
   const { t, i18n } = useTranslation();
   const trapRef = useFocusTrap<HTMLElement>(tent !== null);
   if (!tent) return null;
@@ -18,8 +18,8 @@ export function SidePanel({ tent, category, photoUrls, onClose, onShare }: Props
   const lang = i18n.language as 'de' | 'en';
   const description =
     (lang === 'de' ? tent.description_de : tent.description_en) || tent.description_de;
-  const categoryName =
-    (category && (lang === 'de' ? category.name_de : category.name_en)) || category?.name_de;
+  const categoryLabel = (c: Category) =>
+    (lang === 'en' ? c.name_en : c.name_de) ?? c.name_de;
 
   return (
     <aside
@@ -39,12 +39,24 @@ export function SidePanel({ tent, category, photoUrls, onClose, onShare }: Props
         ✕
       </button>
 
-      <h2 className="pr-8 text-2xl font-semibold">{tent.name}</h2>
+      <h2 className="pr-8 text-2xl font-semibold">
+        {tent.display_number != null && (
+          <span className="mr-2 text-white/50">#{tent.display_number}</span>
+        )}
+        {tent.name}
+      </h2>
 
-      {category && (
-        <p className="mt-1 text-sm text-white/60">
-          {category.icon} {categoryName ?? category.name_de}
-        </p>
+      {categories.length > 0 && (
+        <ul className="mt-1 flex flex-wrap gap-1">
+          {categories.map((c) => (
+            <li
+              key={c.id}
+              className="rounded bg-white/10 px-2 py-0.5 text-xs text-white/80"
+            >
+              {c.icon} {categoryLabel(c)}
+            </li>
+          ))}
+        </ul>
       )}
 
       {photoUrls.length > 0 && (

@@ -18,6 +18,7 @@ export default function TentEditPage() {
   const { event } = useEvent(eventSlug);
   const { categories } = useCategories(event?.id);
   const [tent, setTent] = useState<Tent | null>(null);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [position, setPosition] = useState<Position | null>(null);
   const [placeMode, setPlaceMode] = useState(false);
   const [hoverPoint, setHoverPoint] = useState<Position | null>(null);
@@ -28,13 +29,22 @@ export default function TentEditPage() {
     let cancelled = false;
     supabase
       .from('tents')
-      .select('*')
+      .select('*, tent_categories(category_id)')
       .eq('id', tentId)
       .single()
       .then(({ data }) => {
         if (cancelled || !data) return;
-        setTent(data);
-        setPosition(data.position as unknown as Position);
+        // tent_categories is an array of { category_id }; flatten to string[].
+        const tcRaw = (data as unknown as { tent_categories?: Array<{ category_id: string }> })
+          .tent_categories ?? [];
+        const loadedCategoryIds = tcRaw.map((tc) => tc.category_id);
+        // Strip the join wrapper before storing as Tent.
+        const { tent_categories: _ignored, ...rest } = data as unknown as Record<string, unknown> & {
+          tent_categories?: unknown;
+        };
+        setTent(rest as Tent);
+        setCategoryIds(loadedCategoryIds);
+        setPosition((rest as { position?: unknown }).position as Position);
       });
     return () => {
       cancelled = true;
@@ -53,24 +63,63 @@ export default function TentEditPage() {
 
   async function onSubmit(values: TentFormValues) {
     if (!event || !position) return;
-    const payload = {
-      ...values,
-      event_id: event.id,
-      position,
-      category_id: values.category_id || null,
+
+    // Fields written on both insert and update. event_id is the partition key
+    // and must NOT appear in the update payload — it would be a no-op at best
+    // and a constraint violation if we ever lock the column down later. The
+    // trigger fills display_number when omitted (we still send null on update
+    // for explicit-null-clears the admin makes via the form).
+    const sharedFields = {
+      slug: values.slug,
+      name: values.name,
       description_de: values.description_de || null,
       description_en: values.description_en || null,
       address: values.address || null,
+      display_number: values.display_number ?? null,
       website_url: values.website_url || null,
       instagram_url: values.instagram_url || null,
       facebook_url: values.facebook_url || null,
       email_public: values.email_public || null,
+      position,
     };
+
+    let savedTentId: string;
+
     if (tent) {
-      await supabase.from('tents').update(payload).eq('id', tent.id);
+      // Edit: update the row.
+      const { error } = await supabase.from('tents').update(sharedFields).eq('id', tent.id);
+      // Throw rather than silently return: handleSubmit's promise rejects,
+      // RHF resets isSubmitting, and the admin's form is no longer frozen.
+      // TODO: replace with a toast surface once we have one (PR 5 of A4).
+      if (error) throw new Error(error.message);
+      savedTentId = tent.id;
     } else {
-      await supabase.from('tents').insert(payload);
+      // New: insert and grab the trigger-assigned row's id.
+      const { data, error } = await supabase
+        .from('tents')
+        .insert({ event_id: event.id, ...sharedFields })
+        .select('id')
+        .single();
+      if (error || !data) throw new Error(error?.message ?? 'tent insert returned no row');
+      savedTentId = (data as { id: string }).id;
     }
+
+    // Replace tent_categories: delete-all-then-insert. Simpler than diffing.
+    const { error: delErr } = await supabase
+      .from('tent_categories')
+      .delete()
+      .eq('tent_id', savedTentId);
+    if (delErr) throw new Error(delErr.message);
+
+    if (values.category_ids.length > 0) {
+      const { error: insErr } = await supabase
+        .from('tent_categories')
+        .insert(
+          values.category_ids.map((cid) => ({ tent_id: savedTentId, category_id: cid })),
+        );
+      if (insErr) throw new Error(insErr.message);
+    }
+
     navigate(`/admin/events/${event.slug}/tents`);
   }
 
@@ -88,7 +137,7 @@ export default function TentEditPage() {
           {tent ? `Edit: ${tent.name}` : 'New Tent'}
         </h1>
         <TentEditForm
-          initial={tent ?? undefined}
+          initial={tent ? { ...tent, category_ids: categoryIds } : undefined}
           categories={categories}
           position={position}
           onRequestPlace={() => setPlaceMode(true)}

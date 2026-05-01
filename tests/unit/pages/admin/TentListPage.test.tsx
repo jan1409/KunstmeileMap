@@ -33,20 +33,24 @@ const sampleEvent = {
   is_featured: true,
 };
 
+// Two rows pre-sorted by display_number ascending (the order the page now
+// requests). Numbered out-of-creation-order to verify the sort key changed.
 const sampleTents = [
-  {
-    id: 'tent-a',
-    event_id: 'evt-1',
-    slug: 'galerie-nord',
-    name: 'Galerie Nord',
-    position: { x: 1, y: 0, z: 2 },
-  },
   {
     id: 'tent-b',
     event_id: 'evt-1',
     slug: 'atelier-sued',
     name: 'Atelier Süd',
+    display_number: 1,
     position: { x: -3, y: 0, z: 5 },
+  },
+  {
+    id: 'tent-a',
+    event_id: 'evt-1',
+    slug: 'galerie-nord',
+    name: 'Galerie Nord',
+    display_number: 2,
+    position: { x: 1, y: 0, z: 2 },
   },
 ];
 
@@ -111,7 +115,22 @@ describe('TentListPage', () => {
     await screen.findByText('Galerie Nord');
 
     expect(eq).toHaveBeenCalledWith('event_id', 'evt-1');
-    expect(order).toHaveBeenCalledWith('name');
+    expect(order).toHaveBeenCalledWith('display_number', {
+      ascending: true,
+      nullsFirst: false,
+    });
+  });
+
+  it('renders a # column showing display_number for each row', async () => {
+    useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
+    order.mockResolvedValue({ data: sampleTents, error: null });
+
+    renderApp();
+    await screen.findByText('Galerie Nord');
+
+    expect(screen.getByRole('columnheader', { name: '#' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '1' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '2' })).toBeInTheDocument();
   });
 
   it('shows an empty-state row when there are no tents yet', async () => {

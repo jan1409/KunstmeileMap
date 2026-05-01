@@ -8,7 +8,8 @@ import { useCategories } from '../../hooks/useCategories';
 interface CsvRow {
   slug: string;
   name: string;
-  category_slug?: string;
+  display_number?: string;
+  category_slugs?: string;
   description_de?: string;
   description_en?: string;
   address?: string;
@@ -43,22 +44,63 @@ export default function TentImportPage() {
     setBusy(true);
     setLog([]);
     for (const r of rows) {
-      const cat = categories.find((c) => c.slug === r.category_slug);
-      const { error } = await supabase.from('tents').insert({
-        event_id: event.id,
-        slug: r.slug,
-        name: r.name,
-        description_de: r.description_de || null,
-        description_en: r.description_en || null,
-        address: r.address || null,
-        website_url: r.website_url || null,
-        instagram_url: r.instagram_url || null,
-        facebook_url: r.facebook_url || null,
-        category_id: cat?.id ?? null,
-        position: { x: Number(r.x), y: Number(r.y), z: Number(r.z) },
-      });
-      const line = error ? `❌ ${r.slug}: ${error.message}` : `✓ ${r.slug}`;
-      setLog((prev) => [...prev, line]);
+      const slugList = (r.category_slugs ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const matched: Array<{ slug: string; id: string }> = [];
+      const missing: string[] = [];
+      for (const slug of slugList) {
+        const cat = categories.find((c) => c.slug === slug);
+        if (cat) matched.push({ slug, id: cat.id });
+        else missing.push(slug);
+      }
+      const displayNumberRaw = r.display_number?.trim()
+        ? Number.parseInt(r.display_number, 10)
+        : null;
+      const displayNumber =
+        displayNumberRaw !== null && Number.isFinite(displayNumberRaw)
+          ? displayNumberRaw
+          : null;
+
+      const { data: inserted, error: tentErr } = await supabase
+        .from('tents')
+        .insert({
+          event_id: event.id,
+          slug: r.slug,
+          name: r.name,
+          description_de: r.description_de || null,
+          description_en: r.description_en || null,
+          address: r.address || null,
+          website_url: r.website_url || null,
+          instagram_url: r.instagram_url || null,
+          facebook_url: r.facebook_url || null,
+          display_number: displayNumber,
+          position: { x: Number(r.x), y: Number(r.y), z: Number(r.z) },
+        })
+        .select('id')
+        .single();
+
+      if (tentErr || !inserted) {
+        setLog((prev) => [...prev, `❌ ${r.slug}: ${tentErr?.message ?? 'no row returned'}`]);
+        continue;
+      }
+
+      if (matched.length > 0) {
+        const { error: joinErr } = await supabase
+          .from('tent_categories')
+          .insert(matched.map((m) => ({ tent_id: inserted.id, category_id: m.id })));
+        if (joinErr) {
+          setLog((prev) => [
+            ...prev,
+            `⚠️ ${r.slug}: tent inserted but category link failed: ${joinErr.message}`,
+          ]);
+          continue;
+        }
+      }
+      const missingNote =
+        missing.length > 0 ? ` (unknown categories skipped: ${missing.join(',')})` : '';
+      setLog((prev) => [...prev, `✓ ${r.slug}${missingNote}`]);
     }
     setBusy(false);
   }
@@ -69,8 +111,7 @@ export default function TentImportPage() {
       <p className="mb-2 text-sm text-white/60">
         Expected columns:{' '}
         <code className="font-mono text-xs">
-          slug, name, category_slug, description_de, description_en, address,
-          website_url, instagram_url, facebook_url, x, y, z
+          slug, name, display_number, category_slugs, description_de, description_en, address, website_url, instagram_url, facebook_url, x, y, z
         </code>
       </p>
       <label className="block text-xs">

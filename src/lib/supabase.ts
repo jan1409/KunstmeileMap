@@ -19,3 +19,10 @@ export type Tent = Tables['tents']['Row'];
 export type TentPhoto = Tables['tent_photos']['Row'];
 export type Profile = Tables['profiles']['Row'];
 export type EventAdmin = Tables['event_admins']['Row'];
+export type TentCategory = Tables['tent_categories']['Row'];
+
+/**
+ * Tent + the array of categories pulled via the tent_categories join.
+ * Returned by useTents and consumed by EventViewPage / SidePanel.
+ */
+export type TentWithCategories = Tent & { categories: Category[] };

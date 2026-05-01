@@ -12,7 +12,13 @@ const TentSchema = z.object({
   description_de: z.string().optional(),
   description_en: z.string().optional(),
   address: z.string().optional(),
-  category_id: z.string().optional(),
+  // Accept empty string (map to undefined) or a positive integer.
+  // The blank case lets the DB trigger auto-assign the number.
+  display_number: z.preprocess(
+    (v) => (v === '' || v == null ? undefined : Number(v)),
+    z.number().int().positive().optional(),
+  ),
+  category_ids: z.array(z.string().uuid()).default([]),
   website_url: z.url().optional().or(z.literal('')),
   instagram_url: z.url().optional().or(z.literal('')),
   facebook_url: z.url().optional().or(z.literal('')),
@@ -22,7 +28,7 @@ const TentSchema = z.object({
 export type TentFormValues = z.infer<typeof TentSchema>;
 
 interface Props {
-  initial?: Partial<Tent>;
+  initial?: Partial<Tent> & { display_number?: number | null; category_ids?: string[] };
   categories: Category[];
   position: { x: number; y: number; z: number } | null;
   onRequestPlace: () => void;
@@ -40,7 +46,7 @@ export function TentEditForm({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<TentFormValues>({
+  } = useForm<z.input<typeof TentSchema>, unknown, z.output<typeof TentSchema>>({
     resolver: zodResolver(TentSchema),
     defaultValues: {
       slug: initial?.slug ?? '',
@@ -48,7 +54,8 @@ export function TentEditForm({
       description_de: initial?.description_de ?? '',
       description_en: initial?.description_en ?? '',
       address: initial?.address ?? '',
-      category_id: (initial?.category_id ?? '') as string,
+      display_number: initial?.display_number ?? undefined,
+      category_ids: initial?.category_ids ?? [],
       website_url: initial?.website_url ?? '',
       instagram_url: initial?.instagram_url ?? '',
       facebook_url: initial?.facebook_url ?? '',
@@ -73,16 +80,36 @@ export function TentEditForm({
       <Field label="Adresse">
         <input {...register('address')} className="input" />
       </Field>
-      <Field label="Kategorie">
-        <select {...register('category_id')} className="input">
-          <option value="">—</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.icon} {c.name_de}
-            </option>
-          ))}
-        </select>
+      <Field label="#" error={errors.display_number?.message}>
+        <input
+          type="number"
+          inputMode="numeric"
+          placeholder="auto"
+          {...register('display_number')}
+          className="input"
+        />
       </Field>
+      {/* Checkbox group can't live inside <Field> because Field wraps children
+          in a <label>; nested <label> elements are invalid HTML. We replicate
+          Field's label-span styling on a <div> wrapper instead. */}
+      <div>
+        <span className="block text-xs text-white/60">Kategorien</span>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((c) => (
+            <label key={c.id} className="flex items-center gap-1 text-sm">
+              <input
+                type="checkbox"
+                value={c.id}
+                {...register('category_ids')}
+                className="h-4 w-4"
+              />
+              <span>
+                {c.icon} {c.name_de}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
       <Field label="Website" error={errors.website_url?.message}>
         <input {...register('website_url')} className="input" />
       </Field>
