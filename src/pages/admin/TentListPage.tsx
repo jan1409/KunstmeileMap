@@ -15,7 +15,7 @@ export default function TentListPage() {
       .from('tents')
       .select('*')
       .eq('event_id', event.id)
-      .order('name')
+      .order('display_number', { ascending: true, nullsFirst: false })
       .then(({ data }) => {
         if (cancelled) return;
         setTents(data ?? []);
@@ -49,7 +49,8 @@ export default function TentListPage() {
       <table className="w-full text-left text-sm">
         <thead className="border-b border-white/10 text-xs text-white/60">
           <tr>
-            <th className="py-2">Name</th>
+            <th className="py-2">#</th>
+            <th>Name</th>
             <th>Slug</th>
             <th>Position</th>
             <th></th>
@@ -58,7 +59,8 @@ export default function TentListPage() {
         <tbody>
           {tents.map((t) => (
             <tr key={t.id} className="border-b border-white/5">
-              <td className="py-2">{t.name}</td>
+              <td className="py-2 font-mono text-xs">{t.display_number ?? '—'}</td>
+              <td>{t.name}</td>
               <td className="font-mono text-xs">{t.slug}</td>
               <td className="font-mono text-xs">{JSON.stringify(t.position)}</td>
               <td className="space-x-3">
@@ -81,7 +83,7 @@ export default function TentListPage() {
           ))}
           {tents.length === 0 && (
             <tr>
-              <td colSpan={4} className="py-4 text-center text-white/50">
+              <td colSpan={5} className="py-4 text-center text-white/50">
                 No tents yet.
               </td>
             </tr>
