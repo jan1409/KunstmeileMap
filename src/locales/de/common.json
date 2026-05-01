@@ -30,6 +30,11 @@
     "impressum": "Impressum",
     "datenschutz": "Datenschutz"
   },
+  "cookie_banner": {
+    "text": "Diese Seite verwendet ausschließlich technisch notwendige Cookies und lokale Speicherung für Spracheinstellungen und (im Admin-Bereich) Login-Sitzungen.",
+    "privacy_link": "Mehr in der Datenschutzerklärung",
+    "ok": "OK"
+  },
   "no_access": {
     "title": "Kein Zugriff",
     "body": "Dieses Konto hat keine Admin-Berechtigung. Bitte wende dich an den Veranstalter, falls du Zugriff benötigst.",

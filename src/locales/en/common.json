@@ -30,6 +30,11 @@
     "impressum": "Imprint",
     "datenschutz": "Privacy Policy"
   },
+  "cookie_banner": {
+    "text": "This site uses only strictly necessary cookies and local storage for language preferences and (in the admin area) login sessions.",
+    "privacy_link": "More in the Privacy Policy",
+    "ok": "OK"
+  },
   "no_access": {
     "title": "No access",
     "body": "This account does not have admin permission. Please contact the event organizer if you need access.",
