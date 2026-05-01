@@ -1,17 +1,20 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../components/AuthProvider';
+import { useToast } from '../../components/ToastProvider';
 
 export default function NoAccessPage() {
   const { t } = useTranslation();
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const { showError } = useToast();
 
   async function handleSignOut() {
     try {
       await signOut();
     } catch (err) {
-      console.warn('Sign out failed:', err);
+      const msg = err instanceof Error ? err.message : 'unknown';
+      showError(`Sign out failed: ${msg}`);
     }
     navigate('/admin/login', { replace: true });
   }

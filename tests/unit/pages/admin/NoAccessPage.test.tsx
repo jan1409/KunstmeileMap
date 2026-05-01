@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { ToastProvider } from '../../../../src/components/ToastProvider';
 
 import '../../../../src/lib/i18n';
 import i18n from 'i18next';
@@ -15,12 +16,14 @@ import NoAccessPage from '../../../../src/pages/admin/NoAccessPage';
 
 function renderApp() {
   return render(
-    <MemoryRouter initialEntries={['/admin/no-access']}>
-      <Routes>
-        <Route path="/admin/no-access" element={<NoAccessPage />} />
-        <Route path="/admin/login" element={<div>login-screen</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter initialEntries={['/admin/no-access']}>
+        <Routes>
+          <Route path="/admin/no-access" element={<NoAccessPage />} />
+          <Route path="/admin/login" element={<div>login-screen</div>} />
+        </Routes>
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -55,8 +58,7 @@ describe('NoAccessPage', () => {
     expect(await screen.findByText('login-screen')).toBeInTheDocument();
   });
 
-  it('still navigates to /admin/login when signOut rejects', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('still navigates to /admin/login when signOut rejects, and shows an error toast', async () => {
     signOut.mockRejectedValueOnce(new Error('network down'));
     const user = userEvent.setup();
     renderApp();
@@ -64,7 +66,6 @@ describe('NoAccessPage', () => {
     await user.click(screen.getByRole('button', { name: /abmelden/i }));
 
     expect(await screen.findByText('login-screen')).toBeInTheDocument();
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
+    expect(screen.getByRole('alert')).toHaveTextContent(/network down/i);
   });
 });

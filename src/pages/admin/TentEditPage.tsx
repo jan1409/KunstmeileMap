@@ -5,6 +5,7 @@ import { useEvent } from '../../hooks/useEvent';
 import { useCategories } from '../../hooks/useCategories';
 import { SplatViewer } from '../../components/SplatViewer';
 import { PhotoUploadZone } from '../../components/PhotoUploadZone';
+import { useToast } from '../../components/ToastProvider';
 import {
   TentEditForm,
   type TentFormValues,
@@ -17,6 +18,7 @@ export default function TentEditPage() {
   const navigate = useNavigate();
   const { event } = useEvent(eventSlug);
   const { categories } = useCategories(event?.id);
+  const { showError } = useToast();
   const [tent, setTent] = useState<Tent | null>(null);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [position, setPosition] = useState<Position | null>(null);
@@ -83,44 +85,47 @@ export default function TentEditPage() {
       position,
     };
 
-    let savedTentId: string;
+    try {
+      let savedTentId: string;
 
-    if (tent) {
-      // Edit: update the row.
-      const { error } = await supabase.from('tents').update(sharedFields).eq('id', tent.id);
-      // Throw rather than silently return: handleSubmit's promise rejects,
-      // RHF resets isSubmitting, and the admin's form is no longer frozen.
-      // TODO: replace with a toast surface once we have one (PR 5 of A4).
-      if (error) throw new Error(error.message);
-      savedTentId = tent.id;
-    } else {
-      // New: insert and grab the trigger-assigned row's id.
-      const { data, error } = await supabase
-        .from('tents')
-        .insert({ event_id: event.id, ...sharedFields })
-        .select('id')
-        .single();
-      if (error || !data) throw new Error(error?.message ?? 'tent insert returned no row');
-      savedTentId = (data as { id: string }).id;
-    }
+      if (tent) {
+        // Edit: update the row.
+        const { error } = await supabase.from('tents').update(sharedFields).eq('id', tent.id);
+        if (error) throw new Error(error.message);
+        savedTentId = tent.id;
+      } else {
+        // New: insert and grab the trigger-assigned row's id.
+        const { data, error } = await supabase
+          .from('tents')
+          .insert({ event_id: event.id, ...sharedFields })
+          .select('id')
+          .single();
+        if (error || !data) throw new Error(error?.message ?? 'tent insert returned no row');
+        savedTentId = (data as { id: string }).id;
+      }
 
-    // Replace tent_categories: delete-all-then-insert. Simpler than diffing.
-    const { error: delErr } = await supabase
-      .from('tent_categories')
-      .delete()
-      .eq('tent_id', savedTentId);
-    if (delErr) throw new Error(delErr.message);
-
-    if (values.category_ids.length > 0) {
-      const { error: insErr } = await supabase
+      // Replace tent_categories: delete-all-then-insert. Simpler than diffing.
+      const { error: delErr } = await supabase
         .from('tent_categories')
-        .insert(
-          values.category_ids.map((cid) => ({ tent_id: savedTentId, category_id: cid })),
-        );
-      if (insErr) throw new Error(insErr.message);
-    }
+        .delete()
+        .eq('tent_id', savedTentId);
+      if (delErr) throw new Error(delErr.message);
 
-    navigate(`/admin/events/${event.slug}/tents`);
+      if (values.category_ids.length > 0) {
+        const { error: insErr } = await supabase
+          .from('tent_categories')
+          .insert(
+            values.category_ids.map((cid) => ({ tent_id: savedTentId, category_id: cid })),
+          );
+        if (insErr) throw new Error(insErr.message);
+      }
+
+      navigate(`/admin/events/${event.slug}/tents`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Save failed';
+      showError(`Save failed: ${msg}`);
+      // Don't re-throw — let RHF reset isSubmitting normally.
+    }
   }
 
   if (!event) return null;
