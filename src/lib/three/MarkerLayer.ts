@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export interface MarkerData {
   id: string;
   position: { x: number; y: number; z: number };
-  category_icon?: string | null;
+  label?: string | null;
   selected?: boolean;
   dimmed?: boolean;
 }
@@ -32,19 +32,19 @@ export class MarkerLayer {
     for (const m of markers) {
       seen.add(m.id);
       let sprite = this.sprites.get(m.id);
-      const icon = m.category_icon ?? null;
+      const label = m.label ?? null;
       if (!sprite) {
-        sprite = createMarkerSprite(icon);
+        sprite = createMarkerSprite(label);
         sprite.userData.id = m.id;
         this.sprites.set(m.id, sprite);
         this.group.add(sprite);
-      } else if (sprite.userData.icon !== icon) {
+      } else if (sprite.userData.label !== label) {
         const old = sprite.material;
-        sprite.material = createMarkerMaterial(icon);
+        sprite.material = createMarkerMaterial(label);
         old.map?.dispose();
         old.dispose();
       }
-      sprite.userData.icon = icon;
+      sprite.userData.label = label;
       sprite.userData.selected = m.selected === true;
       sprite.position.set(m.position.x, m.position.y, m.position.z);
       sprite.material.opacity = m.dimmed ? 0.4 : 1.0;
@@ -82,8 +82,8 @@ export class MarkerLayer {
   }
 }
 
-function createMarkerSprite(icon: string | null): THREE.Sprite {
-  const sprite = new THREE.Sprite(createMarkerMaterial(icon));
+function createMarkerSprite(label: string | null): THREE.Sprite {
+  const sprite = new THREE.Sprite(createMarkerMaterial(label));
   // Per-frame: rescale based on camera distance so markers look roughly
   // constant size on screen. Selected markers get a 30% size boost.
   sprite.onBeforeRender = (_renderer, _scene, camera) => {
@@ -96,7 +96,7 @@ function createMarkerSprite(icon: string | null): THREE.Sprite {
   return sprite;
 }
 
-function createMarkerMaterial(icon: string | null): THREE.SpriteMaterial {
+function createMarkerMaterial(label: string | null): THREE.SpriteMaterial {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 128;
@@ -114,10 +114,11 @@ function createMarkerMaterial(icon: string | null): THREE.SpriteMaterial {
     ctx.lineWidth = 4;
     ctx.stroke();
     ctx.fillStyle = '#0a0a0a';
-    ctx.font = '64px sans-serif';
+    // Slightly tighter font + bold so 3-digit numbers fit.
+    ctx.font = 'bold 56px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(icon ?? '•', 64, 68);
+    ctx.fillText(label ?? '•', 64, 68);
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
