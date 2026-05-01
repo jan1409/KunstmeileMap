@@ -35,15 +35,15 @@ describe('flattenTentCategories', () => {
     ];
     const flat = flattenTentCategories(raw as never);
     expect(flat).toHaveLength(1);
-    expect(flat[0].categories.map((c) => c.slug).sort()).toEqual(['atelier', 'galerie']);
+    expect(flat[0]!.categories.map((c) => c.slug).sort()).toEqual(['atelier', 'galerie']);
     // Inner wrapper field is not on the result type.
-    expect((flat[0] as unknown as { tent_categories?: unknown }).tent_categories).toBeUndefined();
+    expect((flat[0]! as unknown as { tent_categories?: unknown }).tent_categories).toBeUndefined();
   });
 
   it('returns an empty categories array for tents with no joins', () => {
     const raw = [{ id: 't2', slug: 'b', name: 'B', display_number: 2, tent_categories: [] }];
     const flat = flattenTentCategories(raw as never);
-    expect(flat[0].categories).toEqual([]);
+    expect(flat[0]!.categories).toEqual([]);
   });
 
   it('drops null categories defensively (e.g. ON DELETE SET NULL — should not happen given our cascade)', () => {
@@ -57,6 +57,6 @@ describe('flattenTentCategories', () => {
       },
     ];
     const flat = flattenTentCategories(raw as never);
-    expect(flat[0].categories).toEqual([galerie]);
+    expect(flat[0]!.categories).toEqual([galerie]);
   });
 });
