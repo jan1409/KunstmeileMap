@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase, type Event } from '../lib/supabase';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface Props {
   source: Event;
@@ -17,6 +18,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
   const [cloneSplat, setCloneSplat] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
 
   async function submit() {
     setBusy(true);
@@ -47,7 +49,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
       aria-labelledby="duplicate-event-title"
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
     >
-      <div className="w-full max-w-md rounded bg-neutral-900 p-6">
+      <div ref={trapRef} className="w-full max-w-md rounded bg-neutral-900 p-6">
         <h2 id="duplicate-event-title" className="mb-4 text-lg font-semibold">
           Duplicate "{source.title_de}"
         </h2>

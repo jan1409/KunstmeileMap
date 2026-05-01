@@ -6,12 +6,22 @@ export default function AdminLayout() {
   const navigate = useNavigate();
 
   async function onSignOut() {
-    await signOut();
+    try {
+      await signOut();
+    } catch (err) {
+      console.warn('Sign out failed:', err);
+    }
     navigate('/admin/login', { replace: true });
   }
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#main"
+        className="sr-only rounded bg-white/10 p-2 text-sm focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50"
+      >
+        Skip to main content
+      </a>
       <header className="flex items-center justify-between border-b border-white/10 p-4">
         <nav className="flex gap-4 text-sm">
           <Link to="/admin">Dashboard</Link>
@@ -27,7 +37,7 @@ export default function AdminLayout() {
           </button>
         </div>
       </header>
-      <main className="flex-1 p-6"><Outlet /></main>
+      <main id="main" className="flex-1 p-6"><Outlet /></main>
     </div>
   );
 }

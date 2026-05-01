@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Tent, Category } from '../lib/supabase';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface Props {
   tent: Tent | null;
@@ -11,6 +12,7 @@ interface Props {
 
 export function SidePanel({ tent, category, photoUrls, onClose, onShare }: Props) {
   const { t, i18n } = useTranslation();
+  const trapRef = useFocusTrap<HTMLElement>(tent !== null);
   if (!tent) return null;
 
   const lang = i18n.language as 'de' | 'en';
@@ -21,6 +23,7 @@ export function SidePanel({ tent, category, photoUrls, onClose, onShare }: Props
 
   return (
     <aside
+      ref={trapRef}
       role="dialog"
       aria-label={tent.name}
       className="fixed bottom-0 right-0 z-30 flex h-[60vh] w-full flex-col overflow-y-auto bg-neutral-900/95 p-6 text-white shadow-2xl backdrop-blur-md md:top-0 md:h-full md:w-[400px] md:rounded-l-lg"
