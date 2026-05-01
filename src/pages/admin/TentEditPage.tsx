@@ -64,10 +64,12 @@ export default function TentEditPage() {
   async function onSubmit(values: TentFormValues) {
     if (!event || !position) return;
 
-    // Common fields written to the tents row (NO category_ids — categories
-    // live in tent_categories). The trigger fills display_number when omitted.
-    const tentRow = {
-      event_id: event.id,
+    // Fields written on both insert and update. event_id is the partition key
+    // and must NOT appear in the update payload — it would be a no-op at best
+    // and a constraint violation if we ever lock the column down later. The
+    // trigger fills display_number when omitted (we still send null on update
+    // for explicit-null-clears the admin makes via the form).
+    const sharedFields = {
       slug: values.slug,
       name: values.name,
       description_de: values.description_de || null,
@@ -85,17 +87,20 @@ export default function TentEditPage() {
 
     if (tent) {
       // Edit: update the row.
-      const { error } = await supabase.from('tents').update(tentRow).eq('id', tent.id);
-      if (error) return; // TODO surface error in UI; currently silent like the prior code
+      const { error } = await supabase.from('tents').update(sharedFields).eq('id', tent.id);
+      // Throw rather than silently return: handleSubmit's promise rejects,
+      // RHF resets isSubmitting, and the admin's form is no longer frozen.
+      // TODO: replace with a toast surface once we have one (PR 5 of A4).
+      if (error) throw new Error(error.message);
       savedTentId = tent.id;
     } else {
       // New: insert and grab the trigger-assigned row's id.
       const { data, error } = await supabase
         .from('tents')
-        .insert(tentRow)
+        .insert({ event_id: event.id, ...sharedFields })
         .select('id')
         .single();
-      if (error || !data) return;
+      if (error || !data) throw new Error(error?.message ?? 'tent insert returned no row');
       savedTentId = (data as { id: string }).id;
     }
 
@@ -104,7 +109,7 @@ export default function TentEditPage() {
       .from('tent_categories')
       .delete()
       .eq('tent_id', savedTentId);
-    if (delErr) return;
+    if (delErr) throw new Error(delErr.message);
 
     if (values.category_ids.length > 0) {
       const { error: insErr } = await supabase
@@ -112,7 +117,7 @@ export default function TentEditPage() {
         .insert(
           values.category_ids.map((cid) => ({ tent_id: savedTentId, category_id: cid })),
         );
-      if (insErr) return;
+      if (insErr) throw new Error(insErr.message);
     }
 
     navigate(`/admin/events/${event.slug}/tents`);
