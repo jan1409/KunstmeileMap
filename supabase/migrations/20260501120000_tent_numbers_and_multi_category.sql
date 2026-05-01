@@ -40,6 +40,14 @@ alter table tents drop column category_id;
 -- ===== 5. unique constraint on display_number per event =====
 -- Partial unique index allows NULL (would only happen briefly between INSERT
 -- and the BEFORE trigger; defensive).
+--
+-- Concurrency note: the trigger below reads max(display_number) per
+-- event_id without a lock. Two simultaneous INSERTs in the same event
+-- could each pick the same max+1; this unique index catches the conflict
+-- and the second INSERT fails with a duplicate-key error which the UI
+-- surfaces. Acceptable at single-admin concurrency; for higher
+-- concurrency we'd swap to SELECT … FOR UPDATE on a per-event lock row
+-- or pg_advisory_xact_lock(event_id) inside the trigger.
 create unique index tents_display_number_per_event
   on tents (event_id, display_number)
   where display_number is not null;
@@ -91,7 +99,7 @@ create trigger tents_before_insert_display_number
   for each row execute function tents_assign_display_number();
 
 comment on column tents.display_number is
-  'Sequential per-event tent number rendered on the map. Auto-filled on insert via tents_assign_display_number(); admin may override. Unique per (event_id, display_number) when not null.';
+  'Sequential per-event tent number rendered on the map. Auto-filled on INSERT via tents_assign_display_number(); admin may override. The trigger fires only on INSERT — clearing this column to NULL via UPDATE persists as NULL and does NOT auto-renumber. Unique per (event_id, display_number) when not null.';
 comment on table tent_categories is
   'Many-to-many tent ↔ category join. Replaced tents.category_id in the 2026-05-01 migration.';
 
