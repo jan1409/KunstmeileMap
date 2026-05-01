@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from '../../hooks/useEvent';
@@ -8,7 +8,10 @@ import { usePhotos } from '../../hooks/usePhotos';
 import { SplatViewer } from '../../components/SplatViewer';
 import { SidePanel } from '../../components/SidePanel';
 import { TopBar } from '../../components/TopBar';
+import { SetCameraDefaultButton } from '../../components/SetCameraDefaultButton';
 import type { MarkerData } from '../../lib/three/MarkerLayer';
+import type { SplatSceneHandle } from '../../lib/three/SplatScene';
+import { parseCameraDefault } from '../../lib/three/cameraDefault';
 
 // Fallback splat used when an event has no splat_url assigned yet (pre-capture).
 // Lives in public/ (gitignored — production splats go to Cloudflare R2 via the
@@ -50,6 +53,15 @@ export default function EventViewPage() {
     const o = event?.splat_origin;
     return isXyz(o) ? o : undefined;
   }, [event?.splat_origin]);
+  const cameraDefault = useMemo(
+    () => parseCameraDefault(event?.splat_camera_default),
+    [event?.splat_camera_default],
+  );
+
+  const sceneHandleRef = useRef<SplatSceneHandle | null>(null);
+  const onSceneReady = useCallback((handle: SplatSceneHandle) => {
+    sceneHandleRef.current = handle;
+  }, []);
 
   // Build markers from real tents. Skip rows whose `position` JSON isn't a
   // valid {x,y,z} (defensive — admin Place Mode in A3-T05 will only emit valid).
@@ -116,6 +128,7 @@ export default function EventViewPage() {
       <SplatViewer
         splatUrl={splatUrl}
         origin={splatOrigin}
+        cameraDefault={cameraDefault}
         markers={markers}
         selectedTentId={selectedTent?.id ?? null}
         onMarkerClick={(id) => {
@@ -124,6 +137,7 @@ export default function EventViewPage() {
           // Toggle: same tent selected → deselect.
           selectTentBySlug(tnt.slug === tentSlug ? null : tnt.slug);
         }}
+        onSceneReady={onSceneReady}
       />
       <TopBar
         tents={tents}
@@ -146,6 +160,7 @@ export default function EventViewPage() {
         photoUrls={photoUrls}
         onClose={() => selectTentBySlug(null)}
       />
+      <SetCameraDefaultButton eventId={event.id} sceneHandleRef={sceneHandleRef} />
       <footer className="absolute bottom-0 left-0 right-0 z-10 flex justify-center gap-4 bg-gradient-to-t from-black/60 to-transparent p-2 text-xs text-white/70">
         <Link to="/impressum" className="hover:text-white">
           {t('footer.impressum')}

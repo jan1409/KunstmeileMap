@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { createSplatScene, type SplatSceneHandle } from '../lib/three/SplatScene';
 import { MarkerLayer, type MarkerData } from '../lib/three/MarkerLayer';
 import { PlaceModeController } from '../lib/three/PlaceMode';
+import { applyCameraDefault, type CameraDefault } from '../lib/three/cameraDefault';
 
 interface Props {
   splatUrl: string;
@@ -12,6 +13,12 @@ interface Props {
   selectedTentId?: string | null;
   onMarkerClick?: (id: string) => void;
   onSceneReady?: (handle: SplatSceneHandle) => void;
+  /**
+   * Initial camera position + target. Applied on scene init AND when the
+   * value changes after init (so admin "save as default" → next render
+   * snaps the camera to the saved view).
+   */
+  cameraDefault?: CameraDefault | null;
   /**
    * When true, the cursor turns to a crosshair and pointer events on the
    * canvas raycast against the splat surface. Hits are reported via
@@ -29,6 +36,7 @@ export function SplatViewer({
   selectedTentId,
   onMarkerClick,
   onSceneReady,
+  cameraDefault,
   placeMode,
   onPlaceHover,
   onPlaceClick,
@@ -53,7 +61,7 @@ export function SplatViewer({
     setLoading(true);
     setError(null);
 
-    createSplatScene({ canvas, splatUrl, origin })
+    createSplatScene({ canvas, splatUrl, origin, cameraDefault })
       .then((h) => {
         if (cancelled) {
           h.dispose();
@@ -81,8 +89,17 @@ export function SplatViewer({
       handleRef.current?.dispose();
       handleRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- destructured origin coords avoid re-init when parent passes a fresh {x,y,z} object literal each render with unchanged values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- destructured origin coords avoid re-init when parent passes a fresh {x,y,z} object literal each render with unchanged values. cameraDefault is intentionally NOT a dep here — it would force a full scene re-init (re-downloads the splat) every time it changes; instead the next useEffect re-applies it cheaply on the existing handle.
   }, [splatUrl, origin?.x, origin?.y, origin?.z, onSceneReady]);
+
+  // Re-apply the camera default whenever the prop changes after the scene is
+  // up. This is the admin-save-then-refetch path: after saving, the parent
+  // re-fetches the event row → cameraDefault prop changes → camera snaps to
+  // the saved view without rebuilding the scene.
+  useEffect(() => {
+    if (!sceneReady || !handleRef.current) return;
+    applyCameraDefault(handleRef.current.camera, handleRef.current.controls, cameraDefault ?? null);
+  }, [cameraDefault, sceneReady]);
 
   // Sync markers + selection state into the layer. Depends on `sceneReady` so
   // it re-runs after the async scene init completes — without this, markers
