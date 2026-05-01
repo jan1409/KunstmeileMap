@@ -67,9 +67,18 @@ export class SignPostMarker {
       POST_HEIGHT,
       8,
     );
-    this.postMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5f5 });
+    // depthTest: false + transparent: true matches the flat sprite's posture
+    // so the post stacks consistently above splat geometry. With Spark v2's
+    // depth output being permissive, default depthTest=true would let splat
+    // pixels occlude the post unpredictably.
+    this.postMaterial = new THREE.MeshBasicMaterial({
+      color: 0xf5f5f5,
+      depthTest: false,
+      transparent: true,
+    });
     const postMesh = new THREE.Mesh(this.postGeometry, this.postMaterial);
     postMesh.position.y = POST_HEIGHT / 2;
+    postMesh.renderOrder = 999;
     this.signPost.add(postMesh);
 
     this.discGeometry = new THREE.CircleGeometry(DISC_RADIUS, 32);
@@ -77,20 +86,26 @@ export class SignPostMarker {
     this.discMaterial = new THREE.MeshBasicMaterial({
       map: this.texture,
       transparent: true,
+      depthTest: false,
       side: THREE.DoubleSide,
     });
     this.discMesh = new THREE.Mesh(this.discGeometry, this.discMaterial);
     this.discMesh.position.y = DISC_Y;
+    this.discMesh.renderOrder = 999;
     this.signPost.add(this.discMesh);
 
     this.group.add(this.signPost);
 
-    // Per-frame hook: Three.js calls onBeforeRender on each object before
-    // rendering any of its descendants — same pattern as the flat-sprite
-    // implementation that was in MarkerLayer previously.
-    this.group.onBeforeRender = (_renderer, _scene, camera) => {
+    // Per-frame hook. Three.js does NOT call onBeforeRender on Groups (they
+    // have no geometry); only objects that actually render get the hook.
+    // Install on BOTH the flat sprite and the disc — exactly one is visible
+    // at a time (the mode toggle in update() preserves this invariant), so
+    // update() always runs every frame regardless of mode.
+    const tick = (_renderer: THREE.WebGLRenderer, _scene: THREE.Scene, camera: THREE.Camera) => {
       if (camera instanceof THREE.PerspectiveCamera) this.update(camera);
     };
+    this.flatSprite.onBeforeRender = tick;
+    this.discMesh.onBeforeRender = tick;
   }
 
   setPosition(x: number, y: number, z: number): void {
@@ -113,7 +128,8 @@ export class SignPostMarker {
     this.spriteMaterial.opacity = opacity;
     this.discMaterial.opacity = opacity;
     this.postMaterial.opacity = opacity;
-    this.postMaterial.transparent = opacity < 1;
+    // All three materials are always transparent (set in constructor); don't
+    // toggle the flag here, otherwise alpha blending breaks at opacity=1.
   }
 
   /**
