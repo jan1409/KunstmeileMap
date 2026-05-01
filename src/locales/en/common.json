@@ -27,5 +27,10 @@
   "footer": {
     "impressum": "Imprint",
     "datenschutz": "Privacy Policy"
+  },
+  "no_access": {
+    "title": "No access",
+    "body": "This account does not have admin permission. Please contact the event organizer if you need access.",
+    "sign_out": "Sign out"
   }
 }
