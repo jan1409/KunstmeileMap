@@ -52,6 +52,23 @@ describe('useProfile', () => {
     expect(result.current.error?.message).toBe('boom');
   });
 
+  it('reports loading=true on the render where userId transitions from undefined to a real id (regression: silent admin redirect)', async () => {
+    single.mockResolvedValue({ data: adminProfile, error: null });
+    const { result, rerender } = renderHook(
+      ({ id }: { id: string | undefined }) => useProfile(id),
+      { initialProps: { id: undefined as string | undefined } },
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.profile).toBeNull();
+
+    rerender({ id: 'u-admin' });
+    expect(result.current.loading).toBe(true);
+    expect(result.current.profile).toBeNull();
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.profile?.role).toBe('admin');
+  });
+
   it('refetches when userId changes', async () => {
     single
       .mockResolvedValueOnce({ data: adminProfile, error: null })
