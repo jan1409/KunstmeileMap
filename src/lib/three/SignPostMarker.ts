@@ -53,13 +53,22 @@ export class SignPostMarker {
     this.texture.minFilter = THREE.LinearFilter;
     this.texture.needsUpdate = true;
 
-    // Flat sprite (existing marker style).
+    // Flat sprite. depthTest:false + depthWrite:false + renderOrder:999
+    // together force the sprite to draw AFTER the splat regardless of
+    // position, and prevent the sprite from polluting the depth buffer
+    // for any subsequent pass. Without renderOrder:999, top-down views
+    // across a wide splat can have the splat's transparent-pass sort
+    // place it after individual markers, alpha-blending splat color over
+    // the marker and making it look half-faded. The marker is still
+    // there (raycaster still hits it) but is visually washed out.
     this.spriteMaterial = new THREE.SpriteMaterial({
       map: this.texture,
       depthTest: false,
+      depthWrite: false,
       transparent: true,
     });
     this.flatSprite = new THREE.Sprite(this.spriteMaterial);
+    this.flatSprite.renderOrder = 999;
     this.group.add(this.flatSprite);
 
     // 3D sign-post group.
@@ -79,6 +88,7 @@ export class SignPostMarker {
     this.postMaterial = new THREE.MeshBasicMaterial({
       color: 0xf5f5f5,
       depthTest: false,
+      depthWrite: false,
       transparent: true,
     });
     const postMesh = new THREE.Mesh(this.postGeometry, this.postMaterial);
@@ -92,6 +102,7 @@ export class SignPostMarker {
       map: this.texture,
       transparent: true,
       depthTest: false,
+      depthWrite: false,
       side: THREE.DoubleSide,
     });
     this.discMesh = new THREE.Mesh(this.discGeometry, this.discMaterial);
@@ -204,17 +215,29 @@ function redrawCanvas(canvas: HTMLCanvasElement, label: string | null): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+
+  // Soft white halo for visual lift against complex splat backgrounds.
+  // Bigger + brighter than v1 so the sprite reads at top-down distances.
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
   ctx.beginPath();
-  ctx.arc(64, 64, 60, 0, Math.PI * 2);
+  ctx.arc(64, 64, 62, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+
+  // Solid white inner disc — fully opaque (alpha 1.0) so splat colour
+  // can't bleed through to make the number look faded.
+  ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
   ctx.beginPath();
   ctx.arc(64, 64, 50, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(10, 10, 10, 0.8)';
-  ctx.lineWidth = 4;
+
+  // Hard dark outline — full opacity, slightly thicker — to delineate
+  // the marker against bright splat regions where the white halo would
+  // otherwise blend in.
+  ctx.strokeStyle = 'rgba(10, 10, 10, 1.0)';
+  ctx.lineWidth = 5;
   ctx.stroke();
+
+  // The number itself.
   ctx.fillStyle = '#0a0a0a';
   ctx.font = 'bold 56px sans-serif';
   ctx.textAlign = 'center';
