@@ -22,6 +22,9 @@ public/*.compressed.ply
 public/*.ksplat
 public/*.spz
 
+# Brainstorming session state (visual companion)
+.superpowers/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
