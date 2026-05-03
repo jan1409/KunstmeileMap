@@ -77,6 +77,7 @@ export default function EventViewPage() {
   const [walkMode, setWalkMode] = useState(false);
   const walkModeRef = useRef<WalkModeController | null>(null);
   const walkEntryRef = useRef<WalkAnimateHandle | null>(null);
+  const walkPriorControlsRef = useRef<{ enabled: boolean; damping: boolean } | null>(null);
   // Flips true once the SplatScene is ready. Used as a dep in the cold-load
   // deep-link effect so it re-runs when the scene finishes initialising.
   const [sceneReady, setSceneReady] = useState(false);
@@ -179,9 +180,17 @@ export default function EventViewPage() {
     if (walkEntryRef.current) return;
 
     if (walkMode) {
-      // EXIT: dispose controller, fly back to overview.
+      // EXIT: dispose controller, restore controls flags, fly back to overview.
       walkModeRef.current?.dispose();
       walkModeRef.current = null;
+      // Restore controls BEFORE flyHome — flyHome's flyTo saves the current
+      // state at start and restores to the same at end. We want it to land
+      // back at the user's pre-walk-mode flags, so we restore here first.
+      if (walkPriorControlsRef.current) {
+        handle.controls.enabled = walkPriorControlsRef.current.enabled;
+        handle.controls.enableDamping = walkPriorControlsRef.current.damping;
+        walkPriorControlsRef.current = null;
+      }
       setWalkMode(false);
       flyHome();
       return;
@@ -200,7 +209,18 @@ export default function EventViewPage() {
     if (!groundHit) return; // no ground beneath — silently fail; toast TBD in W2
 
     const dropTarget = computeEyePose(groundHit);
+    // Save originals so we can restore on exit. Both flags must be disabled
+    // during walk mode: enabled=false stops user input from OrbitControls;
+    // enableDamping=false stops controls.update() from fighting walkAnimateTo's
+    // y writes each frame (the render loop runs frame hooks BEFORE
+    // controls.update(), so without this the damping pulls the camera back
+    // toward the orbit center every frame and the drop never lands).
+    walkPriorControlsRef.current = {
+      enabled: handle.controls.enabled,
+      damping: handle.controls.enableDamping,
+    };
     handle.controls.enabled = false;
+    handle.controls.enableDamping = false;
     const dx = dropTarget.x - handle.camera.position.x;
     const dz = dropTarget.z - handle.camera.position.z;
     const distXZ = Math.hypot(dx, dz);
@@ -241,7 +261,11 @@ export default function EventViewPage() {
       .catch(() => {
         walkEntryRef.current = null;
         // Cancelled (e.g. user toggled exit during drop) — restore controls.
-        handle.controls.enabled = true;
+        if (walkPriorControlsRef.current) {
+          handle.controls.enabled = walkPriorControlsRef.current.enabled;
+          handle.controls.enableDamping = walkPriorControlsRef.current.damping;
+          walkPriorControlsRef.current = null;
+        }
       });
   }, [walkMode, flyHome, tents]);
 
@@ -350,7 +374,7 @@ export default function EventViewPage() {
         onPhotosChanged={() => setPhotosReloadKey((n) => n + 1)}
       />
       <SetCameraDefaultButton eventId={event.id} sceneHandleRef={sceneHandleRef} />
-      <WalkModeButton active={walkMode} onToggle={toggleWalkMode} />
+      <WalkModeButton active={walkMode} onToggle={toggleWalkMode} panelOpen={selectedTent !== null} />
       <BackToOverviewButton
         visible={cameraAwayFromDefault && cameraDefault != null}
         onClick={flyHome}
