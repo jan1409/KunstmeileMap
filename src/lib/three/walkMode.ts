@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { FrameHookRegistrar } from './cameraFlyby';
+import type { SplatMesh } from '@sparkjsdev/spark';
 
 // Per-event override deferred. Same pattern as the flyby's polar clamp.
 export const EYE_HEIGHT_M = 1.7;
@@ -173,4 +174,211 @@ export function walkAnimateTo(
   };
 
   return { promise, cancel };
+}
+
+export interface WalkModeControllerOptions {
+  canvas: HTMLCanvasElement;
+  camera: THREE.PerspectiveCamera;
+  splatMesh: SplatMesh;
+  addFrameHook: FrameHookRegistrar;
+  /** Tents in world space; used to detect "tap on sign" vs "tap on ground". */
+  signs: Array<{ id: string; position: THREE.Vector3 }>;
+  /** Called when an auto-walk targeting a sign reaches its approach point. */
+  onTentReached?: (tentId: string) => void;
+}
+
+type SplatHit = THREE.Intersection;
+
+interface YawPitch {
+  yaw: number;
+  pitch: number;
+}
+
+const SIGN_HIT_RADIUS_M = 1.5; // a tap within this xz of a sign counts as a sign tap
+const TAP_PIXEL_THRESHOLD = 6;
+const TAP_TIME_THRESHOLD_MS = 500;
+
+/**
+ * Walk-mode pointer + camera owner. Consumes pointer events on the canvas,
+ * drives auto-walks via walkAnimateTo, manages drag-to-rotate.
+ *
+ * Does NOT manage entry/exit transitions — the parent does those via
+ * walkAnimateTo (entry) and the existing flyHome (exit).
+ */
+export class WalkModeController {
+  private readonly canvas: HTMLCanvasElement;
+  private readonly camera: THREE.PerspectiveCamera;
+  private readonly splatMesh: SplatMesh;
+  private readonly addFrameHook: FrameHookRegistrar;
+  private readonly signs: Array<{ id: string; position: THREE.Vector3 }>;
+  private readonly onTentReached?: (tentId: string) => void;
+
+  private readonly raycaster = new THREE.Raycaster();
+  private readonly downwardRay = new THREE.Raycaster(
+    new THREE.Vector3(),
+    new THREE.Vector3(0, -1, 0),
+    0,
+    50,
+  );
+
+  private inFlightWalk: WalkAnimateHandle | null = null;
+  private yawPitch: YawPitch;
+
+  private dragStart: { clientX: number; clientY: number; yaw: number; pitch: number; t: number } | null = null;
+
+  constructor(opts: WalkModeControllerOptions) {
+    this.canvas = opts.canvas;
+    this.camera = opts.camera;
+    this.splatMesh = opts.splatMesh;
+    this.addFrameHook = opts.addFrameHook;
+    this.signs = opts.signs;
+    this.onTentReached = opts.onTentReached;
+
+    this.yawPitch = this.readYawPitchFromCamera();
+    this.canvas.addEventListener('pointerdown', this.handlePointerDown);
+    this.canvas.addEventListener('pointermove', this.handlePointerMove);
+    this.canvas.addEventListener('pointerup', this.handlePointerUp);
+    this.canvas.style.cursor = 'pointer';
+  }
+
+  dispose(): void {
+    this.inFlightWalk?.cancel();
+    this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
+    this.canvas.removeEventListener('pointermove', this.handlePointerMove);
+    this.canvas.removeEventListener('pointerup', this.handlePointerUp);
+    this.canvas.style.cursor = '';
+  }
+
+  /**
+   * Public for tests + EventViewPage's "drop to ground" entry transition.
+   * Returns the ground y at the camera's current xz, or null if no ground hit.
+   */
+  sampleGroundY(x: number, z: number): number | null {
+    this.downwardRay.ray.origin.set(x, this.camera.position.y + 5, z);
+    this.downwardRay.ray.direction.set(0, -1, 0);
+    const hits: THREE.Intersection[] = [];
+    this.splatMesh.raycast(this.downwardRay, hits);
+    for (const h of hits) {
+      if (!h.normal || isGroundLikeNormal(h.normal)) return h.point.y;
+    }
+    return null;
+  }
+
+  private readYawPitchFromCamera(): YawPitch {
+    const e = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
+    return { yaw: e.y, pitch: e.x };
+  }
+
+  private applyYawPitch(): void {
+    const e = new THREE.Euler(this.yawPitch.pitch, this.yawPitch.yaw, 0, 'YXZ');
+    this.camera.quaternion.setFromEuler(e);
+  }
+
+  private toNDC(e: PointerEvent): THREE.Vector2 {
+    const r = this.canvas.getBoundingClientRect();
+    return new THREE.Vector2(
+      ((e.clientX - r.left) / r.width) * 2 - 1,
+      -((e.clientY - r.top) / r.height) * 2 + 1,
+    );
+  }
+
+  private hitSplat(ndc: THREE.Vector2): SplatHit | null {
+    this.raycaster.setFromCamera(ndc, this.camera);
+    const hits: THREE.Intersection[] = [];
+    this.splatMesh.raycast(this.raycaster, hits);
+    return hits[0] ?? null;
+  }
+
+  private findSignAt(point: THREE.Vector3): { id: string; position: THREE.Vector3 } | null {
+    let nearest: { id: string; position: THREE.Vector3 } | null = null;
+    let nearestDist = SIGN_HIT_RADIUS_M;
+    for (const s of this.signs) {
+      const dx = s.position.x - point.x;
+      const dz = s.position.z - point.z;
+      const d = Math.hypot(dx, dz);
+      if (d < nearestDist) {
+        nearest = s;
+        nearestDist = d;
+      }
+    }
+    return nearest;
+  }
+
+  private handlePointerDown = (e: PointerEvent) => {
+    this.dragStart = {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      yaw: this.yawPitch.yaw,
+      pitch: this.yawPitch.pitch,
+      t: Date.now(),
+    };
+  };
+
+  private handlePointerMove = (e: PointerEvent) => {
+    const start = this.dragStart;
+    if (!start) return;
+    const dx = e.clientX - start.clientX;
+    const dy = e.clientY - start.clientY;
+    if (Math.hypot(dx, dy) < TAP_PIXEL_THRESHOLD) return;
+
+    // Drag — cancel any in-flight walk on first drag movement.
+    if (this.inFlightWalk) {
+      this.inFlightWalk.cancel();
+      this.inFlightWalk = null;
+    }
+    // Rotate. Pixel-to-radian sensitivity tuned to feel similar to OrbitControls.
+    const sensitivity = 0.005;
+    this.yawPitch.yaw = start.yaw - dx * sensitivity;
+    this.yawPitch.pitch = clampPitch(start.pitch - dy * sensitivity);
+    this.applyYawPitch();
+  };
+
+  private handlePointerUp = (e: PointerEvent) => {
+    const start = this.dragStart;
+    this.dragStart = null;
+    if (!start) return;
+    const dt = Date.now() - start.t;
+    const dist = Math.hypot(e.clientX - start.clientX, e.clientY - start.clientY);
+    if (dist > TAP_PIXEL_THRESHOLD || dt > TAP_TIME_THRESHOLD_MS) return;
+
+    // Tap — raycast against splat.
+    const ndc = this.toNDC(e);
+    const hit = this.hitSplat(ndc);
+    if (!hit) return;
+    if (hit.normal && !isGroundLikeNormal(hit.normal)) return;
+
+    // Sign-or-ground? Find nearest sign within radius.
+    const sign = this.findSignAt(hit.point);
+    let target: THREE.Vector3;
+    let arrivedSignId: string | null = null;
+    if (sign) {
+      target = computeSignApproachTarget(this.camera.position, sign.position);
+      arrivedSignId = sign.id;
+    } else {
+      target = hit.point.clone();
+    }
+
+    // Cancel any in-flight walk before starting a new one.
+    this.inFlightWalk?.cancel();
+
+    const dx = target.x - this.camera.position.x;
+    const dz = target.z - this.camera.position.z;
+    const dist2D = Math.hypot(dx, dz);
+    const handle = walkAnimateTo(
+      this.camera,
+      this.addFrameHook,
+      (x, z) => this.sampleGroundY(x, z),
+      { target, durationMs: computeWalkDuration(dist2D) },
+    );
+    this.inFlightWalk = handle;
+    handle.promise
+      .then(() => {
+        if (this.inFlightWalk === handle) this.inFlightWalk = null;
+        if (arrivedSignId) this.onTentReached?.(arrivedSignId);
+      })
+      .catch((err) => {
+        if (!(err instanceof WalkCancelledError)) throw err;
+        if (this.inFlightWalk === handle) this.inFlightWalk = null;
+      });
+  };
 }
