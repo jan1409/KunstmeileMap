@@ -28,6 +28,10 @@ export function computeWalkDuration(distanceM: number): number {
  * True if the given hit normal points "up enough" to be considered ground
  * rather than a wall, tent roof, or tree canopy. The threshold MIN_GROUND_NORMAL_Y
  * (≈0.6) corresponds to surfaces tilted ≤ ~53° from horizontal.
+ *
+ * Expects a unit-length normal — Three.js raycast intersections always provide
+ * one. The function does NOT normalize the input; callers passing a non-unit
+ * vector will get incorrect results.
  */
 export function isGroundLikeNormal(normal: THREE.Vector3): boolean {
   return normal.y >= MIN_GROUND_NORMAL_Y;

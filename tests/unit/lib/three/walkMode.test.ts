@@ -49,6 +49,12 @@ describe('isGroundLikeNormal', () => {
   it('rejects a normal just below the threshold', () => {
     expect(isGroundLikeNormal(new THREE.Vector3(0, MIN_GROUND_NORMAL_Y - 0.01, 0.99))).toBe(false);
   });
+
+  it('does not normalize the input — raw .y above the threshold passes even if the vector is far from unit length', () => {
+    // raw y = 0.65 (> 0.6), but magnitude ~10 so normalized y << 0.6.
+    // If the function ever started normalizing, this would flip to false.
+    expect(isGroundLikeNormal(new THREE.Vector3(0, 0.65, 10))).toBe(true);
+  });
 });
 
 describe('computeSignApproachTarget', () => {
@@ -75,6 +81,15 @@ describe('computeSignApproachTarget', () => {
     expect(stop.x).toBeCloseTo(10 - SIGN_APPROACH_OFFSET_M, 5);
     // y is preserved from the sign (caller decides what to do with it)
     expect(stop.y).toBe(5);
+  });
+
+  it('handles a diagonal approach (non-axis-aligned)', () => {
+    const cam = new THREE.Vector3(0, 0, 0);
+    const sign = new THREE.Vector3(6, 0, 8); // distXZ = 10
+    const stop = computeSignApproachTarget(cam, sign);
+    // stopFraction = (10 - 2) / 10 = 0.8
+    expect(stop.x).toBeCloseTo(6 * 0.8, 5);
+    expect(stop.z).toBeCloseTo(8 * 0.8, 5);
   });
 });
 
