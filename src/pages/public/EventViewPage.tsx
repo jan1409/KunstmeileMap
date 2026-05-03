@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from '../../hooks/useEvent';
@@ -12,7 +12,10 @@ import { SetCameraDefaultButton } from '../../components/SetCameraDefaultButton'
 import type { Category } from '../../lib/supabase';
 import type { MarkerData } from '../../lib/three/MarkerLayer';
 import type { SplatSceneHandle } from '../../lib/three/SplatScene';
-import { parseCameraDefault } from '../../lib/three/cameraDefault';
+import { parseCameraDefault, FALLBACK_CAMERA } from '../../lib/three/cameraDefault';
+import { flyTo, computeLandingPose, FlyCancelledError } from '../../lib/three/cameraFlyby';
+import type { FlyToHandle } from '../../lib/three/cameraFlyby';
+import { BackToOverviewButton } from '../../components/BackToOverviewButton';
 import { selectVisibleMarkers, isXyz } from '../../lib/markers';
 
 // Fallback splat used when an event has no splat_url assigned yet (pre-capture).
@@ -52,8 +55,30 @@ export default function EventViewPage() {
   );
 
   const sceneHandleRef = useRef<SplatSceneHandle | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const inFlightFlyRef = useRef<FlyToHandle | null>(null);
+  const didInitialFlybyRef = useRef(false);
+  const [cameraAwayFromDefault, setCameraAwayFromDefault] = useState(false);
+  // Flips true once the SplatScene is ready. Used as a dep in the cold-load
+  // deep-link effect so it re-runs when the scene finishes initialising.
+  const [sceneReady, setSceneReady] = useState(false);
+
+  const onCanvasReady = useCallback((canvas: HTMLCanvasElement) => {
+    canvasRef.current = canvas;
+  }, []);
+
   const onSceneReady = useCallback((handle: SplatSceneHandle) => {
     sceneHandleRef.current = handle;
+    setSceneReady(true);
+    // Register OrbitControls 'start' listener here (rather than in a useEffect)
+    // to guarantee the handle is non-null when the listener is attached.
+    const onStart = () => setCameraAwayFromDefault(true);
+    handle.controls.addEventListener('start', onStart);
+    // No explicit removeEventListener needed: when the scene tears down,
+    // SplatViewer disposes and nulls handleRef.current. The controls object
+    // becomes unreachable, taking its _listeners map (and this closure) with
+    // it. OrbitControls.dispose() only removes DOM listeners — it does NOT
+    // flush EventDispatcher listeners — so GC is the actual cleanup path.
   }, []);
 
   const markers: MarkerData[] = useMemo(
@@ -69,6 +94,74 @@ export default function EventViewPage() {
       navigate(`/${event.slug}`);
     }
   }
+
+  const flyToTent = useCallback(
+    (tentPosition: { x: number; y: number; z: number }) => {
+      const handle = sceneHandleRef.current;
+      if (!handle) return;
+      // Cancel any in-flight flyby first.
+      inFlightFlyRef.current?.cancel();
+      const pose = computeLandingPose(handle.camera, handle.controls.target, tentPosition);
+      const fly = flyTo(handle.camera, handle.controls, handle.addFrameHook, pose);
+      inFlightFlyRef.current = fly;
+      fly.promise
+        .then(() => {
+          if (inFlightFlyRef.current === fly) inFlightFlyRef.current = null;
+        })
+        .catch((err) => {
+          if (!(err instanceof FlyCancelledError)) throw err;
+          if (inFlightFlyRef.current === fly) inFlightFlyRef.current = null;
+        });
+      setCameraAwayFromDefault(true);
+
+      // Cancel on pointerdown — gives the user instant control during a flyby.
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const onDown = () => {
+          fly.cancel();
+        };
+        canvas.addEventListener('pointerdown', onDown, { once: true });
+        // Cleanup the listener if the flyby completes before pointerdown.
+        fly.promise.finally(() => canvas.removeEventListener('pointerdown', onDown));
+      }
+    },
+    [],
+  );
+
+  const flyHome = useCallback(() => {
+    const handle = sceneHandleRef.current;
+    if (!handle) return;
+    inFlightFlyRef.current?.cancel();
+    const target = cameraDefault ?? FALLBACK_CAMERA;
+    const fly = flyTo(handle.camera, handle.controls, handle.addFrameHook, target);
+    inFlightFlyRef.current = fly;
+    fly.promise
+      .then(() => {
+        if (inFlightFlyRef.current === fly) inFlightFlyRef.current = null;
+        setCameraAwayFromDefault(false);
+      })
+      .catch((err) => {
+        if (!(err instanceof FlyCancelledError)) throw err;
+        if (inFlightFlyRef.current === fly) inFlightFlyRef.current = null;
+      });
+  }, [cameraDefault]);
+
+  // Cold-load deep-link: if a tentSlug is already in the URL when the scene
+  // finishes loading, fly to that tent once. sceneReady in deps ensures this
+  // re-runs after the async scene init completes (selectedTent may already be
+  // set by then, but without sceneReady the effect would have bailed early).
+  useEffect(() => {
+    if (didInitialFlybyRef.current) return;
+    if (!sceneReady || !selectedTent) return;
+    const pos = selectedTent.position;
+    if (!isXyz(pos)) return;
+    // Defer past the current sync task to keep state writes (didInitialFlybyRef)
+    // out of the render commit phase.
+    queueMicrotask(() => {
+      flyToTent(pos);
+      didInitialFlybyRef.current = true;
+    });
+  }, [selectedTent, flyToTent, sceneReady]);
 
   // Loading + error states
   if (loadingEvent) {
@@ -111,16 +204,25 @@ export default function EventViewPage() {
         onMarkerClick={(id) => {
           const tnt = tents.find((x) => x.id === id);
           if (!tnt) return;
-          // Toggle: same tent selected → deselect.
-          selectTentBySlug(tnt.slug === tentSlug ? null : tnt.slug);
+          if (tnt.slug === tentSlug) {
+            // Toggle: same tent selected → deselect, no flyby.
+            selectTentBySlug(null);
+            return;
+          }
+          selectTentBySlug(tnt.slug);
+          if (isXyz(tnt.position)) flyToTent(tnt.position);
         }}
         onSceneReady={onSceneReady}
+        onCanvasReady={onCanvasReady}
       />
       <TopBar
         tents={tents}
         categories={categories}
         selectedCategoryIds={selectedCategoryIds}
-        onSelectTent={(tnt) => selectTentBySlug(tnt.slug)}
+        onSelectTent={(tnt) => {
+          selectTentBySlug(tnt.slug);
+          if (isXyz(tnt.position)) flyToTent(tnt.position);
+        }}
         onToggleCategory={(id) => {
           setSelectedCategoryIds((prev) => {
             const next = new Set(prev);
@@ -138,6 +240,10 @@ export default function EventViewPage() {
         onClose={() => selectTentBySlug(null)}
       />
       <SetCameraDefaultButton eventId={event.id} sceneHandleRef={sceneHandleRef} />
+      <BackToOverviewButton
+        visible={cameraAwayFromDefault && cameraDefault != null}
+        onClick={flyHome}
+      />
       <footer className="absolute bottom-0 left-0 right-0 z-10 flex justify-center gap-4 bg-gradient-to-t from-black/60 to-transparent p-2 text-xs text-white/70">
         <Link to="/impressum" className="hover:text-white">
           {t('footer.impressum')}

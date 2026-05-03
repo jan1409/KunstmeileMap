@@ -13,6 +13,7 @@ interface Props {
   selectedTentId?: string | null;
   onMarkerClick?: (id: string) => void;
   onSceneReady?: (handle: SplatSceneHandle) => void;
+  onCanvasReady?: (canvas: HTMLCanvasElement) => void;
   /**
    * Initial camera position + target. Applied on scene init AND when the
    * value changes after init (so admin "save as default" → next render
@@ -36,6 +37,7 @@ export function SplatViewer({
   selectedTentId,
   onMarkerClick,
   onSceneReady,
+  onCanvasReady,
   cameraDefault,
   placeMode,
   onPlaceHover,
@@ -72,6 +74,7 @@ export function SplatViewer({
         layerRef.current = layer;
         h.scene.add(layer.group);
         onSceneReady?.(h);
+        onCanvasReady?.(canvas);
         setLoading(false);
         setSceneReady(true);
       })
@@ -90,7 +93,7 @@ export function SplatViewer({
       handleRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- destructured origin coords avoid re-init when parent passes a fresh {x,y,z} object literal each render with unchanged values. cameraDefault is intentionally NOT a dep here — it would force a full scene re-init (re-downloads the splat) every time it changes; instead the next useEffect re-applies it cheaply on the existing handle.
-  }, [splatUrl, origin?.x, origin?.y, origin?.z, onSceneReady]);
+  }, [splatUrl, origin?.x, origin?.y, origin?.z, onSceneReady, onCanvasReady]);
 
   // Re-apply the camera default whenever the prop changes after the scene is
   // up. This is the admin-save-then-refetch path: after saving, the parent
