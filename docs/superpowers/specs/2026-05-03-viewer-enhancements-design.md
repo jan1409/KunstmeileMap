@@ -225,8 +225,8 @@ Implementation order:
 3. If `profileLoading` → `{ canEdit: false, loading: true, error: null }`.
 4. If `profile?.role === 'admin'` → `{ canEdit: true, loading: false, error: null }` (no further fetch).
 5. Else if `eventId && session.user.id`:
-   - `useEffect` queries `event_users` once: `.select('role_in_event').eq('event_id', eventId).eq('user_id', session.user.id).maybeSingle()`.
-   - State-tracking pattern (`fetchedFor: { eventId, userId }`) — same as `useProfile` to avoid stale-loading races.
+   - `useEffect` queries `event_admins` once: `.select('role_in_event').eq('event_id', eventId).eq('profile_id', session.user.id).maybeSingle()`.
+   - State-tracking pattern (`fetchedFor: { eventId, profileId }`) — same as `useProfile` to avoid stale-loading races.
    - Row exists → `canEdit: true`; row missing → `canEdit: false`; query error → `error` populated, `canEdit: false`.
 
 Mirrors the SQL `is_admin() OR has_event_role(eventId)` exactly.
@@ -308,10 +308,10 @@ const photoUrls = usePhotos(selectedTent?.id, photosReloadKey);
 `useCanEditEvent`:
 - No session → canEdit=false, no fetch.
 - Profile loading → loading=true, canEdit=false.
-- Admin profile → canEdit=true, no `event_users` fetch made.
-- Editor profile + event_users row exists → canEdit=true.
-- Editor profile + no event_users row → canEdit=false.
-- Editor profile + event_users query errors → error populated, canEdit=false.
+- Admin profile → canEdit=true, no `event_admins` fetch made.
+- Editor profile + event_admins row exists → canEdit=true.
+- Editor profile + no event_admins row → canEdit=false.
+- Editor profile + event_admins query errors → error populated, canEdit=false.
 
 `AddPhotosControl`:
 - File select → upload + insert + onUploaded called.
