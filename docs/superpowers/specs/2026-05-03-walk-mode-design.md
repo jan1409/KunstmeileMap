@@ -37,10 +37,11 @@ Let visitors enter a first-person mode that places the camera at human eye heigh
 
 ### Modified files
 
-- `src/lib/three/cameraFlyby.ts` — extend `flyTo` with an `eyeLevel?: boolean` option that suppresses polar clamping and aim-high shift and uses the ground-resampling tick. Reuses the existing animation loop, easing, and cancel infrastructure.
-- `src/components/SplatViewer.tsx` — accept a `walkMode: boolean` prop; switch the canvas cursor when active.
+- `src/components/SplatViewer.tsx` — accept a `walkMode: boolean` prop; hand off pointer events to the walkMode controller when active.
 - `src/pages/public/EventViewPage.tsx` — manage `walkMode` boolean state; render `WalkModeButton`; route ground-clicks to the walkMode controller; coordinate exit with the existing `flyHome` function.
-- `src/locales/{de,en}/common.json` — `viewer.walk_enter`, `viewer.walk_exit`, `viewer.walk_first_time_toast` strings.
+- `src/locales/{de,en}/common.json` — `viewer.walk_enter`, `viewer.walk_exit`, `viewer.walk_toast` strings.
+
+(`cameraFlyby.ts` is **not** modified. See *Boundary* below — walk mode uses its own translation animation function rather than extending `flyTo`.)
 
 ### Component diagram
 
@@ -109,37 +110,24 @@ All constants live at the top of `src/lib/three/walkMode.ts`. Per-event override
 | `PITCH_LIMIT_DEG` | 60 | Drag pitch clamped to ±60° from horizontal. Prevents over-the-top flip. |
 | `SIGN_APPROACH_OFFSET_M` | 2 | When tapping a sign, land 2 m short so the sign isn't right under the camera. |
 
-`flyTo` gets one new option:
-
-```ts
-export interface FlyToOptions {
-  durationMs?: number;
-  easing?: (t: number) => number;
-  /**
-   * When true, suppress polar clamping and the aimHigh shift; instead, on each
-   * tick, resample ground y and set camera position relative to that. Used by
-   * walk-mode entry and walk-mode auto-walk.
-   */
-  eyeLevel?: boolean;
-}
-```
+`flyTo` is **unchanged**. Walk mode adds its own translation helper `walkAnimateTo(camera, addFrameHook, sampleGround, opts)` in `walkMode.ts` — see *Boundary* below.
 
 ## State Machine
 
 ```
-[overview] ──Walk button──▶ [entering: flyTo eyeLevel=true]
-[entering] ──flyTo resolves─▶ [walking-idle]
-[walking-idle] ──tap────────▶ [walking-auto: flyTo eyeLevel=true]
-[walking-auto] ──flyTo resolves▶ [walking-idle]
-[walking-auto] ──tap────────▶ [walking-auto: cancel + new flyTo]
-[walking-auto] ──drag───────▶ [walking-rotate: cancel walk + rotate]
-[walking-idle] ──drag───────▶ [walking-rotate]
+[overview] ──Walk button──▶ [entering: walkAnimateTo to drop pose]
+[entering] ──walk resolves──▶ [walking-idle]
+[walking-idle] ──tap─────────▶ [walking-auto: walkAnimateTo]
+[walking-auto] ──walk resolves▶ [walking-idle]
+[walking-auto] ──tap─────────▶ [walking-auto: cancel + new walk]
+[walking-auto] ──drag────────▶ [walking-rotate: cancel walk + rotate]
+[walking-idle] ──drag────────▶ [walking-rotate]
 [walking-rotate] ──pointer-up▶ [walking-idle]
 [any walk state] ──Back to overview──▶ [exiting: existing flyHome]
-[exiting] ──flyHome done────▶ [overview]
+[exiting] ──flyHome done─────▶ [overview]
 ```
 
-Note on transitions: `flyTo` rejects with `FlyCancelledError` when cancelled (e.g., by a new tap). The walk-mode controller catches that as the trigger to start a new auto-walk; it is NOT an error. flyHome on exit follows the same convention.
+Note on transitions: `walkAnimateTo` rejects with `WalkCancelledError` when cancelled (e.g., by a new tap). The walk-mode controller catches that as the trigger to start a new auto-walk; it is NOT an error. `flyHome` on exit follows the same convention with `FlyCancelledError`.
 
 ## Tests
 
@@ -159,9 +147,11 @@ Pure-function tests for the math (no DOM, no renderer):
 - Click invokes the `onToggle` callback.
 - Active state changes the button's appearance (e.g., filled background when walk mode is on).
 
-### `cameraFlyby.test.ts` extension
+### `walkAnimateTo` tests (in `walkMode.test.ts`)
 
-- `flyTo` with `eyeLevel: true` calls `addFrameHook` (existing path) but doesn't require a polar clamp / aimHigh shift. Test the option is plumbed; the actual ground-resample tick is a walkMode concern, not a flyTo concern — see "Boundary" below.
+- Lerps xz linearly to target; resolves on completion.
+- Resamples ground y during the walk — camera y follows a sloped sampler.
+- Mid-walk cancel rejects with `WalkCancelledError` and removes the frame hook.
 
 ### Manual smoke (in PR descriptions)
 
@@ -174,12 +164,16 @@ Pure-function tests for the math (no DOM, no renderer):
 
 ## Boundary Between `walkMode.ts` and `cameraFlyby.ts`
 
-To keep `cameraFlyby.ts` framework-free and the `flyTo` API simple, the **ground-resampling tick lives inside `walkMode.ts`, not inside `flyTo`**. Concretely:
+`walkMode.ts` is self-contained. It does **not** extend `flyTo`. The reason: `flyTo`'s spherical lerp produces unwanted arcs between two eye-level poses (the camera bows up or down depending on the start and end target points). Walk mode wants a translation-only motion: linear xz lerp + ground-resampled y.
 
-- `flyTo({ eyeLevel: true })` does the same lerp(start → end) as the regular flyTo, except it **doesn't apply** the polar clamp or aimHigh shift to the input pose. It treats the input pose as "where to land" verbatim.
-- During the lerp, `walkMode.ts` registers its own frame hook on `SplatSceneHandle.addFrameHook` that runs every `GROUND_RESAMPLE_FRAMES` and writes `camera.position.y = surfaceY + EYE_HEIGHT_M`. This hook lives only while walk mode is active and is removed on exit.
+`walkMode.ts` exports a sibling animation helper `walkAnimateTo(camera, addFrameHook, sampleGround, opts)`:
 
-Consequence: during an auto-walk, two frame hooks are registered concurrently (the flyTo lerp + the walkMode ground-follower). They don't conflict — flyTo writes camera.position; ground-follower overrides camera.position.y. The ground-follower wins because it runs after.
+- Lerps `camera.position.x` and `camera.position.z` linearly from current to target over `opts.durationMs`.
+- Every `GROUND_RESAMPLE_FRAMES` ticks, calls `sampleGround(x, z)` and updates `camera.position.y = sample + EYE_HEIGHT_M`. Holds the previous y when the sample misses.
+- Does **not** touch `camera.quaternion` or `controls.target` — `WalkModeController` owns look direction independently.
+- Returns a `WalkAnimateHandle` with the same `{ promise, cancel }` shape as `FlyToHandle`. Cancel rejects with a `WalkCancelledError` (sibling of `FlyCancelledError`). The two systems share the `FrameHookRegistrar` type and the per-frame hook registry on `SplatSceneHandle`, but the animation logic is separate.
+
+Both systems share `FrameHookRegistrar` from `cameraFlyby.ts` — that's the only cross-module type dependency. `flyTo` and `walkAnimateTo` never run concurrently in practice (overview vs. walk mode are mutually exclusive states).
 
 ## Open Future Work (deferred — track in `docs/launch-readiness.md`)
 
