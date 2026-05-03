@@ -27,7 +27,11 @@
     "instagram": "Instagram",
     "facebook": "Facebook",
     "share": "Copy link",
-    "close": "Close"
+    "close": "Close",
+    "add_photo": "Add photo",
+    "manage_photos": "Manage photos",
+    "uploading": "Uploading…",
+    "upload_error": "Upload failed: {{message}}"
   },
   "footer": {
     "impressum": "Imprint",
