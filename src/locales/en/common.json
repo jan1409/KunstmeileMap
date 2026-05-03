@@ -21,7 +21,8 @@
     "back_to_overview": "Back to overview",
     "walk_enter": "Walk",
     "walk_exit": "Overview",
-    "walk_toast": "Tap the ground to walk. Drag to look around."
+    "walk_toast": "Tap the ground to walk. Drag to look around.",
+    "walk_no_ground": "No ground beneath the camera. Aim the view at the ground and try again."
   },
   "side_panel": {
     "category": "Category",

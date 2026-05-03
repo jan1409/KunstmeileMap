@@ -29,6 +29,7 @@ import {
   computeEyePose,
   type WalkAnimateHandle,
 } from '../../lib/three/walkMode';
+import { useToast } from '../../components/ToastProvider';
 
 // Fallback splat used when an event has no splat_url assigned yet (pre-capture).
 // Lives in public/ (gitignored — production splats go to Cloudflare R2 via the
@@ -37,6 +38,7 @@ const PLACEHOLDER_SPLAT = '/OldTrainStation.splat';
 
 export default function EventViewPage() {
   const { t } = useTranslation();
+  const { showError } = useToast();
   const { eventSlug, tentSlug } = useParams();
   const navigate = useNavigate();
 
@@ -197,16 +199,17 @@ export default function EventViewPage() {
     }
 
     // ENTER: drop camera to eye-level at current xz.
-    const downRay = new THREE.Raycaster(
-      new THREE.Vector3(handle.camera.position.x, handle.camera.position.y + 5, handle.camera.position.z),
-      new THREE.Vector3(0, -1, 0),
-      0,
-      200,
-    );
+    const downRay = new THREE.Raycaster();
+    downRay.setFromCamera(new THREE.Vector2(0, 0), handle.camera);
+    downRay.near = 0;
+    downRay.far = 200;
     const hits: THREE.Intersection[] = [];
     handle.splatMesh.raycast(downRay, hits);
     const groundHit = hits[0]?.point;
-    if (!groundHit) return; // no ground beneath — silently fail; toast TBD in W2
+    if (!groundHit) {
+      showError(t('viewer.walk_no_ground'));
+      return;
+    }
 
     const dropTarget = computeEyePose(groundHit);
     // Save originals so we can restore on exit. Both flags must be disabled
@@ -267,7 +270,7 @@ export default function EventViewPage() {
           walkPriorControlsRef.current = null;
         }
       });
-  }, [walkMode, flyHome, tents]);
+  }, [walkMode, flyHome, tents, showError, t]);
 
   // Cold-load deep-link: if a tentSlug is already in the URL when the scene
   // finishes loading, fly to that tent once. sceneReady in deps ensures this

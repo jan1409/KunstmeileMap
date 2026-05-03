@@ -21,7 +21,8 @@
     "back_to_overview": "Zurück zur Übersicht",
     "walk_enter": "Spaziergang starten",
     "walk_exit": "Übersicht",
-    "walk_toast": "Tippe auf den Boden, um zu laufen. Ziehe, um dich umzuschauen."
+    "walk_toast": "Tippe auf den Boden, um zu laufen. Ziehe, um dich umzuschauen.",
+    "walk_no_ground": "Kein Boden unter der Kamera. Drehe die Ansicht so, dass der Boden zu sehen ist, und versuche es erneut."
   },
   "side_panel": {
     "category": "Kategorie",
