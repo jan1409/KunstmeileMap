@@ -28,7 +28,8 @@ export function AddPhotosControl({ eventId, tentId, onUploaded }: Props) {
 
     setBusy(true);
     try {
-      const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
+      const dotIdx = file.name.lastIndexOf('.');
+      const ext = dotIdx > 0 ? file.name.slice(dotIdx + 1) || 'jpg' : 'jpg';
       const path = `${eventId}/${tentId}/${crypto.randomUUID()}.${ext}`;
 
       const { error: upErr } = await supabase.storage.from('tent-photos').upload(path, file);
