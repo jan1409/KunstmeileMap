@@ -169,7 +169,7 @@ Pure-function tests for the math (no DOM, no renderer):
 `walkMode.ts` exports a sibling animation helper `walkAnimateTo(camera, addFrameHook, sampleGround, opts)`:
 
 - Lerps `camera.position.x` and `camera.position.z` linearly from current to target over `opts.durationMs`.
-- Every `GROUND_RESAMPLE_FRAMES` ticks, calls `sampleGround(x, z)` and updates `camera.position.y = sample + EYE_HEIGHT_M`. Holds the previous y when the sample misses.
+- Every `GROUND_RESAMPLE_FRAMES` ticks, calls `sampleGround(x, z)` and updates `camera.position.y = sample + EYE_HEIGHT_M`. Holds the previous y when the sample misses. Between samples y is stepped (held flat); a 5-frame cadence at 60 fps is ~83 ms per step, sub-cm at walking speed on typical slopes — we accept the step for v1 and revisit if smoke shows jank.
 - Does **not** touch `camera.quaternion` or `controls.target` — `WalkModeController` owns look direction independently.
 - Returns a `WalkAnimateHandle` with the same `{ promise, cancel }` shape as `FlyToHandle`. Cancel rejects with a `WalkCancelledError` (sibling of `FlyCancelledError`). The two systems share the `FrameHookRegistrar` type and the per-frame hook registry on `SplatSceneHandle`, but the animation logic is separate.
 

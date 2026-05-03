@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from '../../hooks/useEvent';
@@ -14,11 +15,20 @@ import { SetCameraDefaultButton } from '../../components/SetCameraDefaultButton'
 import type { Category } from '../../lib/supabase';
 import type { MarkerData } from '../../lib/three/MarkerLayer';
 import type { SplatSceneHandle } from '../../lib/three/SplatScene';
+import * as THREE from 'three';
 import { parseCameraDefault, FALLBACK_CAMERA } from '../../lib/three/cameraDefault';
 import { flyTo, computeLandingPose, FlyCancelledError } from '../../lib/three/cameraFlyby';
 import type { FlyToHandle } from '../../lib/three/cameraFlyby';
 import { BackToOverviewButton } from '../../components/BackToOverviewButton';
+import { WalkModeButton } from '../../components/WalkModeButton';
 import { selectVisibleMarkers, isXyz } from '../../lib/markers';
+import {
+  WalkModeController,
+  walkAnimateTo,
+  computeWalkDuration,
+  computeEyePose,
+  type WalkAnimateHandle,
+} from '../../lib/three/walkMode';
 
 // Fallback splat used when an event has no splat_url assigned yet (pre-capture).
 // Lives in public/ (gitignored — production splats go to Cloudflare R2 via the
@@ -64,6 +74,9 @@ export default function EventViewPage() {
   const inFlightFlyRef = useRef<FlyToHandle | null>(null);
   const didInitialFlybyRef = useRef(false);
   const [cameraAwayFromDefault, setCameraAwayFromDefault] = useState(false);
+  const [walkMode, setWalkMode] = useState(false);
+  const walkModeRef = useRef<WalkModeController | null>(null);
+  const walkEntryRef = useRef<WalkAnimateHandle | null>(null);
   // Flips true once the SplatScene is ready. Used as a dep in the cold-load
   // deep-link effect so it re-runs when the scene finishes initialising.
   const [sceneReady, setSceneReady] = useState(false);
@@ -156,6 +169,82 @@ export default function EventViewPage() {
       });
   }, [cameraDefault]);
 
+  const toggleWalkMode = useCallback(() => {
+    const handle = sceneHandleRef.current;
+    if (!handle) return;
+
+    // Ignore the click if an entry transition is already in flight — prevents
+    // a double-click from kicking off two concurrent entry walks (or from
+    // entering exit branch while entry is still resolving).
+    if (walkEntryRef.current) return;
+
+    if (walkMode) {
+      // EXIT: dispose controller, fly back to overview.
+      walkModeRef.current?.dispose();
+      walkModeRef.current = null;
+      setWalkMode(false);
+      flyHome();
+      return;
+    }
+
+    // ENTER: drop camera to eye-level at current xz.
+    const downRay = new THREE.Raycaster(
+      new THREE.Vector3(handle.camera.position.x, handle.camera.position.y + 5, handle.camera.position.z),
+      new THREE.Vector3(0, -1, 0),
+      0,
+      200,
+    );
+    const hits: THREE.Intersection[] = [];
+    handle.splatMesh.raycast(downRay, hits);
+    const groundHit = hits[0]?.point;
+    if (!groundHit) return; // no ground beneath — silently fail; toast TBD in W2
+
+    const dropTarget = computeEyePose(groundHit);
+    handle.controls.enabled = false;
+    const dx = dropTarget.x - handle.camera.position.x;
+    const dz = dropTarget.z - handle.camera.position.z;
+    const distXZ = Math.hypot(dx, dz);
+    const fly = walkAnimateTo(
+      handle.camera,
+      handle.addFrameHook,
+      () => groundHit.y, // entry: hold the single ground sample
+      { target: dropTarget, durationMs: computeWalkDuration(Math.max(distXZ, 1)) },
+    );
+    walkEntryRef.current = fly;
+    fly.promise
+      .then(() => {
+        walkEntryRef.current = null;
+        if (!canvasRef.current) return;
+        const signs = tents
+          .filter((t) => isXyz(t.position))
+          .map((t) => ({
+            id: t.id,
+            position: new THREE.Vector3(
+              (t.position as { x: number; y: number; z: number }).x,
+              (t.position as { x: number; y: number; z: number }).y,
+              (t.position as { x: number; y: number; z: number }).z,
+            ),
+          }));
+        flushSync(() => {
+          setWalkMode(true);
+          setCameraAwayFromDefault(true);
+        });
+        walkModeRef.current = new WalkModeController({
+          canvas: canvasRef.current,
+          camera: handle.camera,
+          splatMesh: handle.splatMesh,
+          addFrameHook: handle.addFrameHook,
+          signs,
+          // onTentReached wired in PR-W2.
+        });
+      })
+      .catch(() => {
+        walkEntryRef.current = null;
+        // Cancelled (e.g. user toggled exit during drop) — restore controls.
+        handle.controls.enabled = true;
+      });
+  }, [walkMode, flyHome, tents]);
+
   // Cold-load deep-link: if a tentSlug is already in the URL when the scene
   // finishes loading, fly to that tent once. sceneReady in deps ensures this
   // re-runs after the async scene init completes (selectedTent may already be
@@ -172,6 +261,13 @@ export default function EventViewPage() {
       didInitialFlybyRef.current = true;
     });
   }, [selectedTent, flyToTent, sceneReady]);
+
+  useEffect(() => {
+    return () => {
+      walkModeRef.current?.dispose();
+      walkModeRef.current = null;
+    };
+  }, []);
 
   // Loading + error states
   if (loadingEvent) {
@@ -224,6 +320,7 @@ export default function EventViewPage() {
         }}
         onSceneReady={onSceneReady}
         onCanvasReady={onCanvasReady}
+        walkMode={walkMode}
       />
       <TopBar
         tents={tents}
@@ -253,6 +350,7 @@ export default function EventViewPage() {
         onPhotosChanged={() => setPhotosReloadKey((n) => n + 1)}
       />
       <SetCameraDefaultButton eventId={event.id} sceneHandleRef={sceneHandleRef} />
+      <WalkModeButton active={walkMode} onToggle={toggleWalkMode} />
       <BackToOverviewButton
         visible={cameraAwayFromDefault && cameraDefault != null}
         onClick={flyHome}

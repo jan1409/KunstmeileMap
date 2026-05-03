@@ -18,7 +18,10 @@
     "filter_label": "Kategorie"
   },
   "viewer": {
-    "back_to_overview": "Zurück zur Übersicht"
+    "back_to_overview": "Zurück zur Übersicht",
+    "walk_enter": "Spaziergang starten",
+    "walk_exit": "Übersicht",
+    "walk_toast": "Tippe auf den Boden, um zu laufen. Ziehe, um dich umzuschauen."
   },
   "side_panel": {
     "category": "Kategorie",

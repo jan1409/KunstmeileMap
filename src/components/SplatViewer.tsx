@@ -28,6 +28,12 @@ interface Props {
   placeMode?: boolean;
   onPlaceHover?: (point: { x: number; y: number; z: number } | null) => void;
   onPlaceClick?: (point: { x: number; y: number; z: number }) => void;
+  /**
+   * When true, the canvas uses a "walk" cursor and the SplatViewer's own
+   * tap-vs-drag click handling is disabled (the WalkModeController owns
+   * pointer events). Defaults to false.
+   */
+  walkMode?: boolean;
 }
 
 export function SplatViewer({
@@ -42,6 +48,7 @@ export function SplatViewer({
   placeMode,
   onPlaceHover,
   onPlaceClick,
+  walkMode = false,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<SplatSceneHandle | null>(null);
@@ -128,6 +135,7 @@ export function SplatViewer({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    if (walkMode) return; // WalkModeController owns pointer events.
     let start: { x: number; y: number; t: number } | null = null;
     function onDown(e: PointerEvent) {
       start = { x: e.clientX, y: e.clientY, t: Date.now() };
@@ -157,7 +165,7 @@ export function SplatViewer({
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointerup', onUp);
     };
-  }, [onMarkerClick]);
+  }, [onMarkerClick, walkMode]);
 
   // Place mode: raycast against the splat surface and report hits via the
   // hover/click callbacks. Depends on `sceneReady` so we don't try to install
