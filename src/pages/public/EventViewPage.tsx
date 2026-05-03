@@ -74,9 +74,11 @@ export default function EventViewPage() {
     // to guarantee the handle is non-null when the listener is attached.
     const onStart = () => setCameraAwayFromDefault(true);
     handle.controls.addEventListener('start', onStart);
-    // Cleanup happens in SplatViewer's scene teardown via dispose(), but we also
-    // store a remover on the handle's dispose — we can't hook that directly.
-    // The listener is automatically removed when controls are disposed; no leak.
+    // No explicit removeEventListener needed: when the scene tears down,
+    // SplatViewer disposes and nulls handleRef.current. The controls object
+    // becomes unreachable, taking its _listeners map (and this closure) with
+    // it. OrbitControls.dispose() only removes DOM listeners — it does NOT
+    // flush EventDispatcher listeners — so GC is the actual cleanup path.
   }, []);
 
   const markers: MarkerData[] = useMemo(
@@ -117,9 +119,8 @@ export default function EventViewPage() {
       if (canvas) {
         const onDown = () => {
           fly.cancel();
-          canvas.removeEventListener('pointerdown', onDown);
         };
-        canvas.addEventListener('pointerdown', onDown, { once: false });
+        canvas.addEventListener('pointerdown', onDown, { once: true });
         // Cleanup the listener if the flyby completes before pointerdown.
         fly.promise.finally(() => canvas.removeEventListener('pointerdown', onDown));
       }
@@ -153,13 +154,11 @@ export default function EventViewPage() {
     if (didInitialFlybyRef.current) return;
     if (!sceneReady || !selectedTent) return;
     const pos = selectedTent.position;
-    if (
-      typeof pos !== 'object' || pos === null ||
-      typeof (pos as { x?: unknown }).x !== 'number'
-    ) return;
-    // Wait one frame so the initial cameraDefault has been applied.
+    if (!isXyz(pos)) return;
+    // Defer past the current sync task to keep state writes (didInitialFlybyRef)
+    // out of the render commit phase.
     queueMicrotask(() => {
-      flyToTent(pos as { x: number; y: number; z: number });
+      flyToTent(pos);
       didInitialFlybyRef.current = true;
     });
   }, [selectedTent, flyToTent, sceneReady]);
@@ -211,15 +210,7 @@ export default function EventViewPage() {
             return;
           }
           selectTentBySlug(tnt.slug);
-          const pos = tnt.position as unknown;
-          if (
-            typeof pos === 'object' && pos !== null &&
-            typeof (pos as { x?: unknown }).x === 'number' &&
-            typeof (pos as { y?: unknown }).y === 'number' &&
-            typeof (pos as { z?: unknown }).z === 'number'
-          ) {
-            flyToTent(pos as { x: number; y: number; z: number });
-          }
+          if (isXyz(tnt.position)) flyToTent(tnt.position);
         }}
         onSceneReady={onSceneReady}
         onCanvasReady={onCanvasReady}
@@ -230,15 +221,7 @@ export default function EventViewPage() {
         selectedCategoryIds={selectedCategoryIds}
         onSelectTent={(tnt) => {
           selectTentBySlug(tnt.slug);
-          const pos = tnt.position as unknown;
-          if (
-            typeof pos === 'object' && pos !== null &&
-            typeof (pos as { x?: unknown }).x === 'number' &&
-            typeof (pos as { y?: unknown }).y === 'number' &&
-            typeof (pos as { z?: unknown }).z === 'number'
-          ) {
-            flyToTent(pos as { x: number; y: number; z: number });
-          }
+          if (isXyz(tnt.position)) flyToTent(tnt.position);
         }}
         onToggleCategory={(id) => {
           setSelectedCategoryIds((prev) => {
