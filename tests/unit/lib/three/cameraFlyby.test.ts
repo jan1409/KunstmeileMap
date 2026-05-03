@@ -1,10 +1,15 @@
 import { describe, it, expect } from 'vitest';
+import { vi } from 'vitest';
 import * as THREE from 'three';
 import {
   computeLandingPose,
   LANDING_DISTANCE_M,
   MIN_LANDING_POLAR,
   MAX_LANDING_POLAR,
+  flyTo,
+  FlyCancelledError,
+  type FrameHookRegistrar,
+  type OrbitControlsLike,
 } from '../../../../src/lib/three/cameraFlyby';
 
 function makeCamera(position: [number, number, number]): THREE.PerspectiveCamera {
@@ -91,5 +96,150 @@ describe('computeLandingPose', () => {
       ),
     );
     expect(after.phi).toBeCloseTo(polar, 5);
+  });
+});
+
+interface FakeRegistrar {
+  register: FrameHookRegistrar;
+  fire: (deltaMs: number) => void;
+  hookCount: () => number;
+}
+
+function makeRegistrar(): FakeRegistrar {
+  const hooks = new Set<(deltaMs: number) => void>();
+  return {
+    register: (cb) => {
+      hooks.add(cb);
+      return () => {
+        hooks.delete(cb);
+      };
+    },
+    fire: (deltaMs) => {
+      for (const cb of hooks) cb(deltaMs);
+    },
+    hookCount: () => hooks.size,
+  };
+}
+
+function makeControls(): OrbitControlsLike & {
+  _listeners: Map<string, Set<() => void>>;
+} {
+  const listeners = new Map<string, Set<() => void>>();
+  return {
+    target: new THREE.Vector3(),
+    enabled: true,
+    enableDamping: true,
+    update: vi.fn(),
+    addEventListener: (type, cb) => {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type)!.add(cb);
+    },
+    removeEventListener: (type, cb) => {
+      listeners.get(type)?.delete(cb);
+    },
+    _listeners: listeners,
+  };
+}
+
+describe('flyTo', () => {
+  it('reaches the end pose after running the animation to completion and re-enables controls', async () => {
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 0, 10);
+    const controls = makeControls();
+    controls.target.set(0, 0, 0);
+    const reg = makeRegistrar();
+    const endPose = {
+      position: { x: 5, y: 5, z: 5 },
+      target: { x: 1, y: 1, z: 1 },
+    };
+
+    const handle = flyTo(camera, controls, reg.register, endPose, { durationMs: 1000 });
+
+    // 5 ticks of 200 ms each → animation runs to completion.
+    for (let i = 0; i < 5; i++) reg.fire(200);
+
+    await handle.promise;
+
+    expect(camera.position.x).toBeCloseTo(5, 4);
+    expect(camera.position.y).toBeCloseTo(5, 4);
+    expect(camera.position.z).toBeCloseTo(5, 4);
+    expect(controls.target.x).toBeCloseTo(1, 4);
+    expect(controls.target.y).toBeCloseTo(1, 4);
+    expect(controls.target.z).toBeCloseTo(1, 4);
+    expect(controls.enabled).toBe(true);
+    expect(controls.enableDamping).toBe(true);
+    expect(reg.hookCount()).toBe(0); // disposer ran
+  });
+
+  it('cancels mid-flight, re-enables controls, and rejects the promise with FlyCancelledError', async () => {
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 0, 10);
+    const controls = makeControls();
+    const reg = makeRegistrar();
+
+    const handle = flyTo(
+      camera,
+      controls,
+      reg.register,
+      { position: { x: 5, y: 5, z: 5 }, target: { x: 1, y: 1, z: 1 } },
+      { durationMs: 1000 },
+    );
+
+    reg.fire(100); // 10 % through
+    handle.cancel();
+
+    await expect(handle.promise).rejects.toBeInstanceOf(FlyCancelledError);
+    expect(controls.enabled).toBe(true);
+    expect(controls.enableDamping).toBe(true);
+    expect(reg.hookCount()).toBe(0);
+  });
+
+  it('disables controls and damping while the animation is running', () => {
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 0, 10);
+    const controls = makeControls();
+    const reg = makeRegistrar();
+
+    flyTo(
+      camera,
+      controls,
+      reg.register,
+      { position: { x: 1, y: 1, z: 1 }, target: { x: 0, y: 0, z: 0 } },
+      { durationMs: 1000 },
+    );
+
+    expect(controls.enabled).toBe(false);
+    expect(controls.enableDamping).toBe(false);
+  });
+
+  it('starts a new flyby cancels an in-flight one only when the caller cancels — flyTo is single-shot per call', () => {
+    // Two calls to flyTo create two independent handles. (Cancellation of an
+    // in-flight flyby is the caller's responsibility.) This test documents
+    // that behavior to prevent regressions if someone tries to make flyTo
+    // globally exclusive.
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 0, 10);
+    const controls = makeControls();
+    const reg = makeRegistrar();
+
+    const a = flyTo(
+      camera,
+      controls,
+      reg.register,
+      { position: { x: 1, y: 1, z: 1 }, target: { x: 0, y: 0, z: 0 } },
+      { durationMs: 1000 },
+    );
+    const b = flyTo(
+      camera,
+      controls,
+      reg.register,
+      { position: { x: 2, y: 2, z: 2 }, target: { x: 0, y: 0, z: 0 } },
+      { durationMs: 1000 },
+    );
+
+    expect(reg.hookCount()).toBe(2);
+
+    a.cancel();
+    b.cancel();
   });
 });
