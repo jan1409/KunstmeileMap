@@ -59,6 +59,24 @@ describe('useCanEditEvent', () => {
     expect(eventAdminMaybeSingle).not.toHaveBeenCalled();
   });
 
+  it('reports loading=true while the profile fetch is still in flight', () => {
+    useAuthMock.mockReturnValue({
+      session: { user: { id: 'u-ed' } } as never,
+      user: null,
+      loading: false,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+    });
+    // Never-resolving profile fetch — simulates an in-flight request.
+    profileSingle.mockReturnValue(new Promise(() => {}));
+
+    const { result } = renderHook(() => useCanEditEvent('evt-1'));
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.canEdit).toBe(false);
+    expect(eventAdminMaybeSingle).not.toHaveBeenCalled();
+  });
+
   it('returns canEdit=true for a global admin without consulting event_admins', async () => {
     useAuthMock.mockReturnValue({
       session: { user: { id: 'u-admin' } } as never,
