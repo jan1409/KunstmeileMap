@@ -104,7 +104,10 @@ const cubicEaseInOut = (t: number): number =>
 /**
  * Linearly lerp camera xz from current position to `target.xz` over
  * `durationMs`. Camera y = ground sample at current xz + EYE_HEIGHT_M,
- * resampled every GROUND_RESAMPLE_FRAMES frames; lerped between samples.
+ * resampled every GROUND_RESAMPLE_FRAMES frames. Between samples y is
+ * held flat — a 5-frame stepped y at 60 fps (~83 ms/step) is sub-cm
+ * jank at walking speed 3 m/s on typical Kunstmeile slopes; we accept
+ * it for v1 and revisit if smoke shows visible jumps.
  *
  * Unlike flyTo, this does NOT touch controls.target or camera.quaternion —
  * the caller (WalkModeController) manages look direction independently.

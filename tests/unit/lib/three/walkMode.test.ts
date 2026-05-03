@@ -192,4 +192,49 @@ describe('walkAnimateTo', () => {
     await expect(handle.promise).rejects.toBeInstanceOf(WalkCancelledError);
     expect(reg.hookCount()).toBe(0);
   });
+
+  it('holds the previous y when the ground sampler returns null (sparse splat / off-edge)', async () => {
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 1.7, 0);
+    const reg = makeRegistrar();
+    let firstCall = true;
+    const sampleGround: GroundSampler = () => {
+      if (firstCall) {
+        firstCall = false;
+        return null; // first sample misses
+      }
+      return null; // subsequent samples also miss
+    };
+    const handle = walkAnimateTo(camera, reg.register, sampleGround, {
+      target: new THREE.Vector3(10, 0, 0),
+      durationMs: 1000,
+    });
+
+    for (let i = 0; i < 5; i++) reg.fire(200);
+    await handle.promise;
+
+    // No sample ever succeeded → lastSampledY stays at the initial value
+    // (camera.position.y - EYE_HEIGHT_M = 1.7 - 1.7 = 0). Camera lands at xz target,
+    // y = 0 + EYE_HEIGHT_M = 1.7.
+    expect(camera.position.x).toBeCloseTo(10, 4);
+    expect(camera.position.y).toBeCloseTo(1.7, 4);
+  });
+
+  it('cancel is idempotent — calling it twice does not re-reject', async () => {
+    const { WalkCancelledError } = await import('../../../../src/lib/three/walkMode');
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 1.7, 0);
+    const reg = makeRegistrar();
+    const sampleGround: GroundSampler = () => 0;
+    const handle = walkAnimateTo(camera, reg.register, sampleGround, {
+      target: new THREE.Vector3(10, 0, 0),
+      durationMs: 1000,
+    });
+
+    handle.cancel();
+    handle.cancel(); // second call must be a no-op
+
+    await expect(handle.promise).rejects.toBeInstanceOf(WalkCancelledError);
+    expect(reg.hookCount()).toBe(0);
+  });
 });
