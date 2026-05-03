@@ -17,9 +17,9 @@ export function BackToOverviewButton({ visible, onClick }: Props) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-12 right-4 z-30 rounded bg-white/10 px-3 py-2 text-xs text-white shadow-lg backdrop-blur hover:bg-white/20"
+      className="fixed bottom-12 right-4 z-40 rounded bg-white/10 px-3 py-2 text-xs text-white shadow-lg backdrop-blur hover:bg-white/20"
     >
-      ↩ {t('viewer.back_to_overview')}
+      <span aria-hidden="true">↩</span> {t('viewer.back_to_overview')}
     </button>
   );
 }
