@@ -17,6 +17,12 @@ export interface SplatSceneHandle {
   splatMesh: SplatMesh;
   spark: SparkRenderer;
   controls: OrbitControls;
+  /**
+   * Register a per-frame callback. The callback receives the milliseconds
+   * elapsed since the previous frame (0 on the first invocation). Returns a
+   * disposer that unregisters the hook.
+   */
+  addFrameHook: (cb: (deltaMs: number) => void) => () => void;
   dispose: () => void;
 }
 
@@ -79,10 +85,24 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
     await loadPromise;
   }
 
+  const frameHooks = new Set<(deltaMs: number) => void>();
+  let lastFrameMs: number | null = null;
+
   renderer.setAnimationLoop(() => {
+    const now = performance.now();
+    const deltaMs = lastFrameMs == null ? 0 : now - lastFrameMs;
+    lastFrameMs = now;
+    for (const hook of frameHooks) hook(deltaMs);
     controls.update(); // required when enableDamping = true
     renderer.render(scene, camera);
   });
+
+  const addFrameHook = (cb: (deltaMs: number) => void): (() => void) => {
+    frameHooks.add(cb);
+    return () => {
+      frameHooks.delete(cb);
+    };
+  };
 
   const onResize = () => {
     const w = canvas.clientWidth;
@@ -95,6 +115,7 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
 
   const dispose = () => {
     renderer.setAnimationLoop(null);
+    frameHooks.clear();
     window.removeEventListener('resize', onResize);
     controls.dispose();
     spark.dispose();
@@ -104,5 +125,5 @@ export async function createSplatScene(opts: SplatSceneOptions): Promise<SplatSc
     }
   };
 
-  return { scene, camera, renderer, splatMesh, spark, controls, dispose };
+  return { scene, camera, renderer, splatMesh, spark, controls, addFrameHook, dispose };
 }
