@@ -158,16 +158,34 @@ export const LANDING_DISTANCE_M = 10;
 export const MIN_LANDING_POLAR = THREE.MathUtils.degToRad(40);
 export const MAX_LANDING_POLAR = THREE.MathUtils.degToRad(65);
 
+// Module-private — same style as DEFAULT_DURATION_MS.
+const LANDING_AIM_HIGH_OFFSET_M = 2.5;
+
+export interface ComputeLandingPoseOptions {
+  /**
+   * When true, the look-at target is shifted downward in world Y so the
+   * tent appears in the upper portion of the rendered frame. Used on
+   * mobile where the side panel covers the bottom 33% of the viewport.
+   */
+  aimHigh?: boolean;
+}
+
 /**
  * Compute a "land here" pose for the camera given the current pose and a
  * tent position. Preserves the current azimuth, clamps polar to
  * [MIN_LANDING_POLAR, MAX_LANDING_POLAR], and sets distance to
  * LANDING_DISTANCE_M from the tent.
+ *
+ * When opts.aimHigh is true, the look-at target is shifted 2.5 m downward in
+ * world Y: camera at (targetVec + newOffset) looks at targetVec, so lowering
+ * targetVec.y tilts the camera down, making the tent appear in the upper
+ * portion of the frame — above the side panel boundary on mobile.
  */
 export function computeLandingPose(
   currentCamera: THREE.PerspectiveCamera,
   currentTarget: THREE.Vector3,
   tentPosition: { x: number; y: number; z: number },
+  opts: ComputeLandingPoseOptions = {},
 ): CameraDefault {
   const offset = new THREE.Vector3().subVectors(currentCamera.position, currentTarget);
   const sph = new THREE.Spherical().setFromVector3(offset);
@@ -177,7 +195,8 @@ export function computeLandingPose(
   const radius = LANDING_DISTANCE_M;
 
   const newOffset = new THREE.Vector3().setFromSpherical(new THREE.Spherical(radius, phi, theta));
-  const targetVec = new THREE.Vector3(tentPosition.x, tentPosition.y, tentPosition.z);
+  const aimY = opts.aimHigh ? tentPosition.y - LANDING_AIM_HIGH_OFFSET_M : tentPosition.y;
+  const targetVec = new THREE.Vector3(tentPosition.x, aimY, tentPosition.z);
   const positionVec = new THREE.Vector3().addVectors(targetVec, newOffset);
 
   return {

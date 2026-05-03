@@ -41,7 +41,7 @@ export function SidePanel({
       ref={trapRef}
       role="dialog"
       aria-label={tent.name}
-      className="fixed bottom-0 right-0 z-30 flex h-[60vh] w-full flex-col overflow-y-auto bg-neutral-900/95 p-6 text-white shadow-2xl backdrop-blur-md md:top-0 md:h-full md:w-[400px] md:rounded-l-lg"
+      className="fixed bottom-0 right-0 z-30 flex h-[33vh] w-full flex-col overflow-y-auto bg-neutral-900/95 p-6 text-white shadow-2xl backdrop-blur-md md:top-0 md:h-full md:w-[400px] md:rounded-l-lg"
     >
       {/* Mobile drag handle */}
       <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-white/30 md:hidden" />
@@ -72,36 +72,6 @@ export function SidePanel({
             </li>
           ))}
         </ul>
-      )}
-
-      {photoUrls.length > 0 && (
-        <div className="mt-4 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2">
-          {photoUrls.map((url, i) => (
-            <img
-              key={url}
-              src={url}
-              alt=""
-              loading={i === 0 ? 'eager' : 'lazy'}
-              className="h-40 snap-start rounded shadow-md"
-            />
-          ))}
-        </div>
-      )}
-
-      {canEdit && eventId && tent && onPhotosChanged && (
-        <div className="mt-2 flex flex-col gap-2 border-t border-white/10 pt-2">
-          <AddPhotosControl
-            eventId={eventId}
-            tentId={tent.id}
-            onUploaded={onPhotosChanged}
-          />
-          <Link
-            to={`/admin/tents/${tent.id}/edit`}
-            className="text-xs text-white/60 hover:text-white"
-          >
-            ✎ {t('side_panel.manage_photos')}
-          </Link>
-        </div>
       )}
 
       {description && (
@@ -146,6 +116,36 @@ export function SidePanel({
               👍 {t('side_panel.facebook')}
             </a>
           )}
+        </div>
+      )}
+
+      {canEdit && eventId && tent && onPhotosChanged && (
+        <div className="mt-2 flex flex-col gap-2 border-t border-white/10 pt-2">
+          <AddPhotosControl
+            eventId={eventId}
+            tentId={tent.id}
+            onUploaded={onPhotosChanged}
+          />
+          <Link
+            to={`/admin/tents/${tent.id}/edit`}
+            className="text-xs text-white/60 hover:text-white"
+          >
+            ✎ {t('side_panel.manage_photos')}
+          </Link>
+        </div>
+      )}
+
+      {photoUrls.length > 0 && (
+        <div className="mt-4 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2">
+          {photoUrls.map((url, i) => (
+            <img
+              key={url}
+              src={url}
+              alt=""
+              loading={i === 0 ? 'eager' : 'lazy'}
+              className="h-40 snap-start rounded shadow-md"
+            />
+          ))}
         </div>
       )}
 

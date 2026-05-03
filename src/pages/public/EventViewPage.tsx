@@ -6,6 +6,7 @@ import { useTents } from '../../hooks/useTents';
 import { useCategories } from '../../hooks/useCategories';
 import { usePhotos } from '../../hooks/usePhotos';
 import { useCanEditEvent } from '../../hooks/useCanEditEvent';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { SplatViewer } from '../../components/SplatViewer';
 import { SidePanel } from '../../components/SidePanel';
 import { TopBar } from '../../components/TopBar';
@@ -44,6 +45,7 @@ export default function EventViewPage() {
     [selectedTent],
   );
   const { canEdit } = useCanEditEvent(event?.id);
+  const isMobile = useIsMobile();
   const [photosReloadKey, setPhotosReloadKey] = useState(0);
   const photoUrls = usePhotos(selectedTent?.id, photosReloadKey);
 
@@ -104,7 +106,12 @@ export default function EventViewPage() {
       if (!handle) return;
       // Cancel any in-flight flyby first.
       inFlightFlyRef.current?.cancel();
-      const pose = computeLandingPose(handle.camera, handle.controls.target, tentPosition);
+      const pose = computeLandingPose(
+        handle.camera,
+        handle.controls.target,
+        tentPosition,
+        { aimHigh: isMobile },
+      );
       const fly = flyTo(handle.camera, handle.controls, handle.addFrameHook, pose);
       inFlightFlyRef.current = fly;
       fly.promise
@@ -128,7 +135,7 @@ export default function EventViewPage() {
         fly.promise.finally(() => canvas.removeEventListener('pointerdown', onDown));
       }
     },
-    [],
+    [isMobile],
   );
 
   const flyHome = useCallback(() => {
@@ -249,6 +256,7 @@ export default function EventViewPage() {
       <BackToOverviewButton
         visible={cameraAwayFromDefault && cameraDefault != null}
         onClick={flyHome}
+        panelOpen={selectedTent !== null}
       />
       <footer className="absolute bottom-0 left-0 right-0 z-10 flex justify-center gap-4 bg-gradient-to-t from-black/60 to-transparent p-2 text-xs text-white/70">
         <Link to="/impressum" className="hover:text-white">
