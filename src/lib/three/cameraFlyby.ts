@@ -49,6 +49,9 @@ const cubicEaseInOut = (t: number): number =>
  * around the *current* target and tweens (radius, phi, theta) plus the
  * target Vector3 — produces a more natural arc than lerping position
  * vectors directly.
+ * Phi uses a faster-completing easing (target reached at t≈0.5) so the
+ * camera descends first and then approaches horizontally, mirroring a
+ * drone fly-by feel.
  */
 export function flyTo(
   camera: THREE.PerspectiveCamera,
@@ -106,9 +109,13 @@ export function flyTo(
     elapsed += deltaMs;
     const t = Math.min(1, elapsed / durationMs);
     const e = easing(t);
+    // Phi (descent) finishes by t=0.5 so the second half is a horizontal
+    // approach with only radius shrinking — produces the "drop down, then
+    // glide in" cinematic feel preview-tested for PR #25.
+    const ePhi = easing(Math.min(1, t / 0.5));
 
     const radius = sph0.radius + (sph1.radius - sph0.radius) * e;
-    const phi = sph0.phi + (sph1.phi - sph0.phi) * e;
+    const phi = sph0.phi + (sph1.phi - sph0.phi) * ePhi;
     // Wrap-aware theta lerp: take the shortest path around the circle.
     let dTheta = sph1.theta - sph0.theta;
     if (dTheta > Math.PI) dTheta -= 2 * Math.PI;
@@ -149,7 +156,7 @@ export function flyTo(
 // once the admin UI grows the controls. Tracked in deferred-items.
 export const LANDING_DISTANCE_M = 10;
 export const MIN_LANDING_POLAR = THREE.MathUtils.degToRad(40);
-export const MAX_LANDING_POLAR = THREE.MathUtils.degToRad(75);
+export const MAX_LANDING_POLAR = THREE.MathUtils.degToRad(65);
 
 /**
  * Compute a "land here" pose for the camera given the current pose and a

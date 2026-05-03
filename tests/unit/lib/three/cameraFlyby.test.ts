@@ -231,4 +231,76 @@ describe('flyTo', () => {
     a.cancel();
     b.cancel();
   });
+
+  it('phi reaches the end value by the midpoint of the animation (split easing)', () => {
+    // Start with phi = 20° (close to overhead); end with phi = 60° (in range).
+    // Use a linear easing so the asserted intermediate values are simple.
+    const startPolar = THREE.MathUtils.degToRad(20);
+    const endPolar = THREE.MathUtils.degToRad(60);
+    const radius = 10;
+
+    const startOffset = new THREE.Vector3().setFromSpherical(
+      new THREE.Spherical(radius, startPolar, 0),
+    );
+    const endOffset = new THREE.Vector3().setFromSpherical(
+      new THREE.Spherical(radius, endPolar, 0),
+    );
+
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.copy(startOffset);
+    const controls = makeControls();
+    controls.target.set(0, 0, 0);
+    const reg = makeRegistrar();
+
+    const endPose = {
+      position: { x: endOffset.x, y: endOffset.y, z: endOffset.z },
+      target: { x: 0, y: 0, z: 0 },
+    };
+
+    flyTo(camera, controls, reg.register, endPose, {
+      durationMs: 1000,
+      easing: (t) => t, // linear so we can assert exact values
+    });
+
+    // At t = 0.5 (500 ms): phi should already be at endPolar; radius still mid-tween.
+    reg.fire(500);
+    const mid = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+    expect(mid.phi).toBeCloseTo(endPolar, 4);
+    // Radius is still mid-tween at t=0.5 — for this test it stays at 10, since start and end radius are both 10. So just confirm phi landed.
+  });
+
+  it('radius does not reach end value at the midpoint (only phi does)', () => {
+    // Start with radius = 30, end with radius = 10. Linear easing.
+    const startPolar = THREE.MathUtils.degToRad(50);
+    const endPolar = THREE.MathUtils.degToRad(50);
+
+    const startOffset = new THREE.Vector3().setFromSpherical(
+      new THREE.Spherical(30, startPolar, 0),
+    );
+    const endOffset = new THREE.Vector3().setFromSpherical(
+      new THREE.Spherical(10, endPolar, 0),
+    );
+
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.copy(startOffset);
+    const controls = makeControls();
+    controls.target.set(0, 0, 0);
+    const reg = makeRegistrar();
+
+    flyTo(
+      camera,
+      controls,
+      reg.register,
+      {
+        position: { x: endOffset.x, y: endOffset.y, z: endOffset.z },
+        target: { x: 0, y: 0, z: 0 },
+      },
+      { durationMs: 1000, easing: (t) => t },
+    );
+
+    reg.fire(500);
+    const mid = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+    // Linear easing at t=0.5 → radius = lerp(30, 10, 0.5) = 20.
+    expect(mid.radius).toBeCloseTo(20, 4);
+  });
 });
