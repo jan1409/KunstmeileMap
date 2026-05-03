@@ -66,4 +66,24 @@ describe('selectVisibleMarkers', () => {
     expect(out.find((m) => m.id === 'a')?.label).toBe('7');
     expect(out.find((m) => m.id === 'b')?.label).toBeNull();
   });
+
+  it('returns an empty array when given no tents (regardless of filter state)', () => {
+    expect(selectVisibleMarkers([], new Set(['c1']), null)).toEqual([]);
+    expect(selectVisibleMarkers([], new Set(), null)).toEqual([]);
+  });
+
+  it('returns an empty array when an active filter excludes every tent and none is selected', () => {
+    const tents = [tent('a', ['c2']), tent('b', ['c2'])];
+    const out = selectVisibleMarkers(tents, new Set(['c1']), null);
+    expect(out).toEqual([]);
+  });
+
+  it('still drops the selected tent when its position is invalid (position guard runs first)', () => {
+    // Documents an ordering invariant: position validity is checked before the
+    // selected-tent anchor exemption — a tent we cannot place can't survive
+    // the filter just because it is selected.
+    const tents = [tent('a', ['c1']), tent('b', ['c2'], null)];
+    const out = selectVisibleMarkers(tents, new Set(['c1']), 'b');
+    expect(out.map((m) => m.id)).toEqual(['a']);
+  });
 });

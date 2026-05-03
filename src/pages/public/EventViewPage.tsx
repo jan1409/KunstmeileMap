@@ -13,7 +13,7 @@ import type { Category } from '../../lib/supabase';
 import type { MarkerData } from '../../lib/three/MarkerLayer';
 import type { SplatSceneHandle } from '../../lib/three/SplatScene';
 import { parseCameraDefault } from '../../lib/three/cameraDefault';
-import { selectVisibleMarkers } from '../../lib/markers';
+import { selectVisibleMarkers, isXyz } from '../../lib/markers';
 
 // Fallback splat used when an event has no splat_url assigned yet (pre-capture).
 // Lives in public/ (gitignored — production splats go to Cloudflare R2 via the
@@ -44,15 +44,7 @@ export default function EventViewPage() {
   const splatUrl = event?.splat_url ?? PLACEHOLDER_SPLAT;
   const splatOrigin = useMemo(() => {
     const o = event?.splat_origin;
-    if (
-      typeof o === 'object' && o !== null &&
-      typeof (o as { x?: unknown }).x === 'number' &&
-      typeof (o as { y?: unknown }).y === 'number' &&
-      typeof (o as { z?: unknown }).z === 'number'
-    ) {
-      return o as { x: number; y: number; z: number };
-    }
-    return undefined;
+    return isXyz(o) ? o : undefined;
   }, [event?.splat_origin]);
   const cameraDefault = useMemo(
     () => parseCameraDefault(event?.splat_camera_default),

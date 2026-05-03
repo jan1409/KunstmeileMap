@@ -1,7 +1,7 @@
 import type { MarkerData } from './three/MarkerLayer';
 import type { TentWithCategories } from './supabase';
 
-function isXyz(v: unknown): v is { x: number; y: number; z: number } {
+export function isXyz(v: unknown): v is { x: number; y: number; z: number } {
   return (
     typeof v === 'object' && v !== null &&
     typeof (v as { x?: unknown }).x === 'number' &&
