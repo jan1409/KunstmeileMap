@@ -105,3 +105,91 @@ describe('clampPitch', () => {
     expect(clampPitch(-PITCH_LIMIT_RAD - 0.5)).toBeCloseTo(-PITCH_LIMIT_RAD, 5);
   });
 });
+
+import {
+  walkAnimateTo,
+  type GroundSampler,
+} from '../../../../src/lib/three/walkMode';
+import type { FrameHookRegistrar } from '../../../../src/lib/three/cameraFlyby';
+
+interface FakeRegistrar {
+  register: FrameHookRegistrar;
+  fire: (deltaMs: number) => void;
+  hookCount: () => number;
+}
+
+function makeRegistrar(): FakeRegistrar {
+  const hooks = new Set<(deltaMs: number) => void>();
+  return {
+    register: (cb) => {
+      hooks.add(cb);
+      return () => {
+        hooks.delete(cb);
+      };
+    },
+    fire: (deltaMs) => {
+      for (const cb of hooks) cb(deltaMs);
+    },
+    hookCount: () => hooks.size,
+  };
+}
+
+describe('walkAnimateTo', () => {
+  it('lerps xz from start to target and resolves the promise on completion', async () => {
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 1.7, 0);
+    const reg = makeRegistrar();
+    const sampleGround: GroundSampler = () => 0; // flat ground at y=0
+    const handle = walkAnimateTo(camera, reg.register, sampleGround, {
+      target: new THREE.Vector3(10, 0, 0), // ground point at (10, 0, 0)
+      durationMs: 1000,
+    });
+
+    // 5 ticks of 200 ms each.
+    for (let i = 0; i < 5; i++) reg.fire(200);
+
+    await handle.promise;
+
+    expect(camera.position.x).toBeCloseTo(10, 4);
+    expect(camera.position.z).toBeCloseTo(0, 4);
+    expect(camera.position.y).toBeCloseTo(0 + EYE_HEIGHT_M, 4);
+    expect(reg.hookCount()).toBe(0);
+  });
+
+  it('resamples ground y during the walk (camera.y follows the surface)', async () => {
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 1.7, 0);
+    const reg = makeRegistrar();
+    // Sloped ground: y = x / 10
+    const sampleGround: GroundSampler = (x: number) => x / 10;
+    const handle = walkAnimateTo(camera, reg.register, sampleGround, {
+      target: new THREE.Vector3(10, 1, 0),
+      durationMs: 1000,
+    });
+
+    for (let i = 0; i < 5; i++) reg.fire(200);
+    await handle.promise;
+
+    expect(camera.position.x).toBeCloseTo(10, 4);
+    // Final ground at x=10 is y=1; eye is +EYE_HEIGHT_M.
+    expect(camera.position.y).toBeCloseTo(1 + EYE_HEIGHT_M, 4);
+  });
+
+  it('cancels mid-walk and rejects with WalkCancelledError', async () => {
+    const { WalkCancelledError } = await import('../../../../src/lib/three/walkMode');
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 1.7, 0);
+    const reg = makeRegistrar();
+    const sampleGround: GroundSampler = () => 0;
+    const handle = walkAnimateTo(camera, reg.register, sampleGround, {
+      target: new THREE.Vector3(10, 0, 0),
+      durationMs: 1000,
+    });
+
+    reg.fire(100);
+    handle.cancel();
+
+    await expect(handle.promise).rejects.toBeInstanceOf(WalkCancelledError);
+    expect(reg.hookCount()).toBe(0);
+  });
+});

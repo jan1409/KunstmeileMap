@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { FrameHookRegistrar } from './cameraFlyby';
 
 // Per-event override deferred. Same pattern as the flyby's polar clamp.
 export const EYE_HEIGHT_M = 1.7;
@@ -67,4 +68,106 @@ export function computeSignApproachTarget(
  */
 export function clampPitch(pitchRad: number): number {
   return THREE.MathUtils.clamp(pitchRad, -PITCH_LIMIT_RAD, PITCH_LIMIT_RAD);
+}
+
+export class WalkCancelledError extends Error {
+  constructor() {
+    super('walk cancelled');
+    this.name = 'WalkCancelledError';
+  }
+}
+
+/**
+ * Returns the ground y for a given world (x, z). Walk-mode callers raycast
+ * downward against the splat surface; tests pass a pure function. Returning
+ * `null` means "no hit" — keep the previous y.
+ */
+export type GroundSampler = (x: number, z: number) => number | null;
+
+export interface WalkAnimateOptions {
+  /** Final xz position; y is sampled at every resample tick. */
+  target: THREE.Vector3;
+  /** Total duration in ms. Caller should derive from computeWalkDuration. */
+  durationMs: number;
+  /** Optional easing on [0,1]. Default: cubic ease-in-out. */
+  easing?: (t: number) => number;
+}
+
+export interface WalkAnimateHandle {
+  promise: Promise<void>;
+  cancel: () => void;
+}
+
+const cubicEaseInOut = (t: number): number =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+/**
+ * Linearly lerp camera xz from current position to `target.xz` over
+ * `durationMs`. Camera y = ground sample at current xz + EYE_HEIGHT_M,
+ * resampled every GROUND_RESAMPLE_FRAMES frames; lerped between samples.
+ *
+ * Unlike flyTo, this does NOT touch controls.target or camera.quaternion —
+ * the caller (WalkModeController) manages look direction independently.
+ */
+export function walkAnimateTo(
+  camera: THREE.PerspectiveCamera,
+  addFrameHook: FrameHookRegistrar,
+  sampleGround: GroundSampler,
+  opts: WalkAnimateOptions,
+): WalkAnimateHandle {
+  const easing = opts.easing ?? cubicEaseInOut;
+  const startX = camera.position.x;
+  const startZ = camera.position.z;
+  const targetX = opts.target.x;
+  const targetZ = opts.target.z;
+
+  let elapsed = 0;
+  let frameCount = 0;
+  let lastSampledY = camera.position.y - EYE_HEIGHT_M;
+  let resolved = false;
+  let cancelled = false;
+  let resolveFn!: () => void;
+  let rejectFn!: (err: Error) => void;
+  const promise = new Promise<void>((res, rej) => {
+    resolveFn = res;
+    rejectFn = rej;
+  });
+  promise.catch(() => {}); // see flyTo: cancellation is normal control flow
+
+  let removeHook: () => void = () => {};
+
+  const tick = (deltaMs: number) => {
+    if (resolved || cancelled) return;
+    elapsed += deltaMs;
+    frameCount += 1;
+    const t = opts.durationMs <= 0 ? 1 : Math.min(1, elapsed / opts.durationMs);
+    const e = easing(t);
+
+    const x = startX + (targetX - startX) * e;
+    const z = startZ + (targetZ - startZ) * e;
+
+    if (frameCount % GROUND_RESAMPLE_FRAMES === 0 || t >= 1) {
+      const y = sampleGround(x, z);
+      if (y != null) lastSampledY = y;
+    }
+
+    camera.position.set(x, lastSampledY + EYE_HEIGHT_M, z);
+
+    if (t >= 1) {
+      resolved = true;
+      removeHook();
+      resolveFn();
+    }
+  };
+
+  removeHook = addFrameHook(tick);
+
+  const cancel = () => {
+    if (resolved || cancelled) return;
+    cancelled = true;
+    removeHook();
+    rejectFn(new WalkCancelledError());
+  };
+
+  return { promise, cancel };
 }
