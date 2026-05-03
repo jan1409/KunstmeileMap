@@ -56,7 +56,9 @@ describe('computeLandingPose', () => {
     const cam = makeCamera([0, 10, 0]);
     const pose = computeLandingPose(cam, new THREE.Vector3(0, 0, 0), { x: 0, y: 0, z: 0 });
     const after = new THREE.Spherical().setFromVector3(
-      new THREE.Vector3(pose.position.x, pose.position.y, pose.position.z),
+      new THREE.Vector3(pose.position.x, pose.position.y, pose.position.z).sub(
+        new THREE.Vector3(pose.target.x, pose.target.y, pose.target.z),
+      ),
     );
     expect(after.phi).toBeCloseTo(MIN_LANDING_POLAR, 5);
   });
@@ -66,7 +68,9 @@ describe('computeLandingPose', () => {
     const cam = makeCamera([10, 0.001, 0]);
     const pose = computeLandingPose(cam, new THREE.Vector3(0, 0, 0), { x: 0, y: 0, z: 0 });
     const after = new THREE.Spherical().setFromVector3(
-      new THREE.Vector3(pose.position.x, pose.position.y, pose.position.z),
+      new THREE.Vector3(pose.position.x, pose.position.y, pose.position.z).sub(
+        new THREE.Vector3(pose.target.x, pose.target.y, pose.target.z),
+      ),
     );
     expect(after.phi).toBeCloseTo(MAX_LANDING_POLAR, 5);
   });
@@ -82,7 +86,9 @@ describe('computeLandingPose', () => {
 
     const pose = computeLandingPose(cam, new THREE.Vector3(0, 0, 0), { x: 0, y: 0, z: 0 });
     const after = new THREE.Spherical().setFromVector3(
-      new THREE.Vector3(pose.position.x, pose.position.y, pose.position.z),
+      new THREE.Vector3(pose.position.x, pose.position.y, pose.position.z).sub(
+        new THREE.Vector3(pose.target.x, pose.target.y, pose.target.z),
+      ),
     );
     expect(after.phi).toBeCloseTo(polar, 5);
   });
