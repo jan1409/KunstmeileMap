@@ -197,6 +197,7 @@ interface YawPitch {
 const SIGN_HIT_RADIUS_M = 1.5; // a tap within this xz of a sign counts as a sign tap
 const TAP_PIXEL_THRESHOLD = 6;
 const TAP_TIME_THRESHOLD_MS = 500;
+const DRAG_RAD_PER_PX = 0.005; // tuned to feel similar to OrbitControls drag-rotate
 
 /**
  * Walk-mode pointer + camera owner. Consumes pointer events on the canvas,
@@ -238,6 +239,8 @@ export class WalkModeController {
     this.canvas.addEventListener('pointerdown', this.handlePointerDown);
     this.canvas.addEventListener('pointermove', this.handlePointerMove);
     this.canvas.addEventListener('pointerup', this.handlePointerUp);
+    this.canvas.addEventListener('pointercancel', this.handlePointerCancel);
+    this.canvas.addEventListener('pointerleave', this.handlePointerCancel);
     this.canvas.style.cursor = 'pointer';
   }
 
@@ -246,6 +249,8 @@ export class WalkModeController {
     this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
     this.canvas.removeEventListener('pointermove', this.handlePointerMove);
     this.canvas.removeEventListener('pointerup', this.handlePointerUp);
+    this.canvas.removeEventListener('pointercancel', this.handlePointerCancel);
+    this.canvas.removeEventListener('pointerleave', this.handlePointerCancel);
     this.canvas.style.cursor = '';
   }
 
@@ -326,11 +331,14 @@ export class WalkModeController {
       this.inFlightWalk.cancel();
       this.inFlightWalk = null;
     }
-    // Rotate. Pixel-to-radian sensitivity tuned to feel similar to OrbitControls.
-    const sensitivity = 0.005;
-    this.yawPitch.yaw = start.yaw - dx * sensitivity;
-    this.yawPitch.pitch = clampPitch(start.pitch - dy * sensitivity);
+    // Rotate.
+    this.yawPitch.yaw = start.yaw - dx * DRAG_RAD_PER_PX;
+    this.yawPitch.pitch = clampPitch(start.pitch - dy * DRAG_RAD_PER_PX);
     this.applyYawPitch();
+  };
+
+  private handlePointerCancel = () => {
+    this.dragStart = null;
   };
 
   private handlePointerUp = (e: PointerEvent) => {
