@@ -39,4 +39,24 @@ describe('usePhotos', () => {
     const { result } = renderHook(() => usePhotos(undefined));
     expect(result.current).toEqual([]);
   });
+
+  it('refetches when the optional reloadKey arg changes', async () => {
+    const { supabase } = await import('../../../src/lib/supabase');
+    const fromMock = vi.mocked(supabase.from);
+
+    const { rerender } = renderHook(
+      ({ key }: { key: number }) => usePhotos('t1', key),
+      { initialProps: { key: 0 } },
+    );
+    await waitFor(() =>
+      expect(fromMock.mock.calls.filter((c) => c[0] === 'tent_photos').length).toBeGreaterThanOrEqual(1),
+    );
+    const callsBefore = fromMock.mock.calls.filter((c) => c[0] === 'tent_photos').length;
+
+    rerender({ key: 1 });
+
+    await waitFor(() =>
+      expect(fromMock.mock.calls.filter((c) => c[0] === 'tent_photos').length).toBe(callsBefore + 1),
+    );
+  });
 });
