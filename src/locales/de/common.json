@@ -27,7 +27,11 @@
     "instagram": "Instagram",
     "facebook": "Facebook",
     "share": "Link kopieren",
-    "close": "Schließen"
+    "close": "Schließen",
+    "add_photo": "Foto hinzufügen",
+    "manage_photos": "Fotos verwalten",
+    "uploading": "Wird hochgeladen…",
+    "upload_error": "Upload fehlgeschlagen: {{message}}"
   },
   "footer": {
     "impressum": "Impressum",

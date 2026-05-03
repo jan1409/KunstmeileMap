@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-export function usePhotos(tentId: string | undefined): string[] {
+export function usePhotos(tentId: string | undefined, reloadKey: number = 0): string[] {
   const [urls, setUrls] = useState<string[]>([]);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export function usePhotos(tentId: string | undefined): string[] {
     return () => {
       cancelled = true;
     };
-  }, [tentId]);
+  }, [tentId, reloadKey]);
 
   return urls;
 }

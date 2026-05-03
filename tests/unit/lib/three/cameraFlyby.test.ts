@@ -97,6 +97,30 @@ describe('computeLandingPose', () => {
     );
     expect(after.phi).toBeCloseTo(polar, 5);
   });
+
+  it('does not shift the target when aimHigh is unset (default behavior)', () => {
+    const cam = makeCamera([0, 5, 10]);
+    const pose = computeLandingPose(cam, new THREE.Vector3(0, 0, 0), { x: 3, y: 7, z: 4 });
+    expect(pose.target.y).toBeCloseTo(7, 5);
+  });
+
+  it('shifts the target downward in world Y when aimHigh is true (tent appears higher in frame)', () => {
+    const cam = makeCamera([0, 5, 10]);
+    const pose = computeLandingPose(
+      cam,
+      new THREE.Vector3(0, 0, 0),
+      { x: 3, y: 7, z: 4 },
+      { aimHigh: true },
+    );
+    // Target Y should be 2.5 m below the tent's Y.
+    expect(pose.target.y).toBeCloseTo(7 - 2.5, 5);
+    // Camera position should still be 10 m from the (shifted) target — the existing distance
+    // invariant is preserved relative to the orbit center, not the actual tent.
+    const dx = pose.position.x - pose.target.x;
+    const dy = pose.position.y - pose.target.y;
+    const dz = pose.position.z - pose.target.z;
+    expect(Math.sqrt(dx * dx + dy * dy + dz * dz)).toBeCloseTo(10, 5);
+  });
 });
 
 interface FakeRegistrar {
