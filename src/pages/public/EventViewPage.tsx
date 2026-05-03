@@ -13,20 +13,12 @@ import type { Category } from '../../lib/supabase';
 import type { MarkerData } from '../../lib/three/MarkerLayer';
 import type { SplatSceneHandle } from '../../lib/three/SplatScene';
 import { parseCameraDefault } from '../../lib/three/cameraDefault';
+import { selectVisibleMarkers } from '../../lib/markers';
 
 // Fallback splat used when an event has no splat_url assigned yet (pre-capture).
 // Lives in public/ (gitignored — production splats go to Cloudflare R2 via the
 // admin Settings page in A3-T12).
 const PLACEHOLDER_SPLAT = '/OldTrainStation.splat';
-
-function isXyz(v: unknown): v is { x: number; y: number; z: number } {
-  return (
-    typeof v === 'object' && v !== null &&
-    typeof (v as { x?: unknown }).x === 'number' &&
-    typeof (v as { y?: unknown }).y === 'number' &&
-    typeof (v as { z?: unknown }).z === 'number'
-  );
-}
 
 export default function EventViewPage() {
   const { t } = useTranslation();
@@ -52,7 +44,15 @@ export default function EventViewPage() {
   const splatUrl = event?.splat_url ?? PLACEHOLDER_SPLAT;
   const splatOrigin = useMemo(() => {
     const o = event?.splat_origin;
-    return isXyz(o) ? o : undefined;
+    if (
+      typeof o === 'object' && o !== null &&
+      typeof (o as { x?: unknown }).x === 'number' &&
+      typeof (o as { y?: unknown }).y === 'number' &&
+      typeof (o as { z?: unknown }).z === 'number'
+    ) {
+      return o as { x: number; y: number; z: number };
+    }
+    return undefined;
   }, [event?.splat_origin]);
   const cameraDefault = useMemo(
     () => parseCameraDefault(event?.splat_camera_default),
@@ -64,26 +64,10 @@ export default function EventViewPage() {
     sceneHandleRef.current = handle;
   }, []);
 
-  // Build markers from real tents. Skip rows whose `position` JSON isn't a
-  // valid {x,y,z} (defensive — admin Place Mode in A3-T05 will only emit valid).
-  // Filter is OR-semantics: a tent matches if ANY of its categories is selected.
-  const markers: MarkerData[] = useMemo(() => {
-    const filterActive = selectedCategoryIds.size > 0;
-    return tents
-      .filter((tnt): tnt is typeof tnt & { position: { x: number; y: number; z: number } } =>
-        isXyz(tnt.position),
-      )
-      .map((tnt) => {
-        const matchesFilter =
-          !filterActive || tnt.categories.some((c) => selectedCategoryIds.has(c.id));
-        return {
-          id: tnt.id,
-          position: tnt.position,
-          label: tnt.display_number != null ? String(tnt.display_number) : null,
-          dimmed: !matchesFilter,
-        };
-      });
-  }, [tents, selectedCategoryIds]);
+  const markers: MarkerData[] = useMemo(
+    () => selectVisibleMarkers(tents, selectedCategoryIds, selectedTent?.id ?? null),
+    [tents, selectedCategoryIds, selectedTent?.id],
+  );
 
   function selectTentBySlug(slug: string | null) {
     if (!event) return;
