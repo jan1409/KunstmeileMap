@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from '../../hooks/useEvent';
@@ -26,6 +27,7 @@ import {
   walkAnimateTo,
   computeWalkDuration,
   computeEyePose,
+  type WalkAnimateHandle,
 } from '../../lib/three/walkMode';
 
 // Fallback splat used when an event has no splat_url assigned yet (pre-capture).
@@ -74,6 +76,7 @@ export default function EventViewPage() {
   const [cameraAwayFromDefault, setCameraAwayFromDefault] = useState(false);
   const [walkMode, setWalkMode] = useState(false);
   const walkModeRef = useRef<WalkModeController | null>(null);
+  const walkEntryRef = useRef<WalkAnimateHandle | null>(null);
   // Flips true once the SplatScene is ready. Used as a dep in the cold-load
   // deep-link effect so it re-runs when the scene finishes initialising.
   const [sceneReady, setSceneReady] = useState(false);
@@ -170,6 +173,11 @@ export default function EventViewPage() {
     const handle = sceneHandleRef.current;
     if (!handle) return;
 
+    // Ignore the click if an entry transition is already in flight — prevents
+    // a double-click from kicking off two concurrent entry walks (or from
+    // entering exit branch while entry is still resolving).
+    if (walkEntryRef.current) return;
+
     if (walkMode) {
       // EXIT: dispose controller, fly back to overview.
       walkModeRef.current?.dispose();
@@ -202,8 +210,10 @@ export default function EventViewPage() {
       () => groundHit.y, // entry: hold the single ground sample
       { target: dropTarget, durationMs: computeWalkDuration(Math.max(distXZ, 1)) },
     );
+    walkEntryRef.current = fly;
     fly.promise
       .then(() => {
+        walkEntryRef.current = null;
         if (!canvasRef.current) return;
         const signs = tents
           .filter((t) => isXyz(t.position))
@@ -215,6 +225,10 @@ export default function EventViewPage() {
               (t.position as { x: number; y: number; z: number }).z,
             ),
           }));
+        flushSync(() => {
+          setWalkMode(true);
+          setCameraAwayFromDefault(true);
+        });
         walkModeRef.current = new WalkModeController({
           canvas: canvasRef.current,
           camera: handle.camera,
@@ -223,10 +237,9 @@ export default function EventViewPage() {
           signs,
           // onTentReached wired in PR-W2.
         });
-        setWalkMode(true);
-        setCameraAwayFromDefault(true);
       })
       .catch(() => {
+        walkEntryRef.current = null;
         // Cancelled (e.g. user toggled exit during drop) — restore controls.
         handle.controls.enabled = true;
       });
