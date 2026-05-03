@@ -17,6 +17,9 @@
     "all": "Alle anzeigen",
     "filter_label": "Kategorie"
   },
+  "viewer": {
+    "back_to_overview": "Zurück zur Übersicht"
+  },
   "side_panel": {
     "category": "Kategorie",
     "address": "Adresse",
