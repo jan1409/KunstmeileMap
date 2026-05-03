@@ -121,23 +121,12 @@ function makeRegistrar(): FakeRegistrar {
   };
 }
 
-function makeControls(): OrbitControlsLike & {
-  _listeners: Map<string, Set<() => void>>;
-} {
-  const listeners = new Map<string, Set<() => void>>();
+function makeControls(): OrbitControlsLike {
   return {
     target: new THREE.Vector3(),
     enabled: true,
     enableDamping: true,
     update: vi.fn(),
-    addEventListener: (type, cb) => {
-      if (!listeners.has(type)) listeners.set(type, new Set());
-      listeners.get(type)!.add(cb);
-    },
-    removeEventListener: (type, cb) => {
-      listeners.get(type)?.delete(cb);
-    },
-    _listeners: listeners,
   };
 }
 
@@ -212,7 +201,7 @@ describe('flyTo', () => {
     expect(controls.enableDamping).toBe(false);
   });
 
-  it('starts a new flyby cancels an in-flight one only when the caller cancels — flyTo is single-shot per call', () => {
+  it('two concurrent flyTo calls are independent — neither auto-cancels the other', () => {
     // Two calls to flyTo create two independent handles. (Cancellation of an
     // in-flight flyby is the caller's responsibility.) This test documents
     // that behavior to prevent regressions if someone tries to make flyTo

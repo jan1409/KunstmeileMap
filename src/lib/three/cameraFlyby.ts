@@ -13,8 +13,6 @@ export interface OrbitControlsLike {
   enabled: boolean;
   enableDamping: boolean;
   update: () => void;
-  addEventListener: (type: 'start', cb: () => void) => void;
-  removeEventListener: (type: 'start', cb: () => void) => void;
 }
 
 export type FrameHookRegistrar = (cb: (deltaMs: number) => void) => () => void;
@@ -90,13 +88,18 @@ export function flyTo(
     resolveFn = res;
     rejectFn = rej;
   });
-  // Avoid Vitest "unhandled rejection" noise when the caller doesn't await.
+  // Cancellation is a normal control-flow outcome, not an error from the
+  // caller's perspective. Attach a no-op rejection handler so callers that
+  // don't await or .catch still get a clean shutdown — and Vitest doesn't
+  // complain about an unhandled rejection in tests that intentionally cancel.
   promise.catch(() => {});
 
   const restore = () => {
     controls.enabled = wasEnabled;
     controls.enableDamping = wasDamping;
   };
+
+  let removeHook: () => void = () => {};
 
   const tick = (deltaMs: number) => {
     if (resolved || cancelled) return;
@@ -129,7 +132,7 @@ export function flyTo(
     }
   };
 
-  const removeHook = addFrameHook(tick);
+  removeHook = addFrameHook(tick);
 
   const cancel = () => {
     if (resolved || cancelled) return;
