@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import type { Category, TentWithCategories } from '../lib/supabase';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { AddPhotosControl } from './AddPhotosControl';
 
 interface Props {
   tent: TentWithCategories | null;
@@ -8,9 +10,22 @@ interface Props {
   photoUrls: string[];
   onClose: () => void;
   onShare?: () => void;
+  /** Required when canEdit is true. */
+  eventId?: string;
+  canEdit?: boolean;
+  onPhotosChanged?: () => void;
 }
 
-export function SidePanel({ tent, categories, photoUrls, onClose, onShare }: Props) {
+export function SidePanel({
+  tent,
+  categories,
+  photoUrls,
+  onClose,
+  onShare,
+  eventId,
+  canEdit = false,
+  onPhotosChanged,
+}: Props) {
   const { t, i18n } = useTranslation();
   const trapRef = useFocusTrap<HTMLElement>(tent !== null);
   if (!tent) return null;
@@ -70,6 +85,22 @@ export function SidePanel({ tent, categories, photoUrls, onClose, onShare }: Pro
               className="h-40 snap-start rounded shadow-md"
             />
           ))}
+        </div>
+      )}
+
+      {canEdit && eventId && tent && onPhotosChanged && (
+        <div className="mt-2 flex flex-col gap-2 border-t border-white/10 pt-2">
+          <AddPhotosControl
+            eventId={eventId}
+            tentId={tent.id}
+            onUploaded={onPhotosChanged}
+          />
+          <Link
+            to={`/admin/tents/${tent.id}/edit`}
+            className="text-xs text-white/60 hover:text-white"
+          >
+            ✎ {t('side_panel.manage_photos')}
+          </Link>
         </div>
       )}
 

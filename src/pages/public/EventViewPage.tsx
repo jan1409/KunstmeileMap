@@ -5,6 +5,7 @@ import { useEvent } from '../../hooks/useEvent';
 import { useTents } from '../../hooks/useTents';
 import { useCategories } from '../../hooks/useCategories';
 import { usePhotos } from '../../hooks/usePhotos';
+import { useCanEditEvent } from '../../hooks/useCanEditEvent';
 import { SplatViewer } from '../../components/SplatViewer';
 import { SidePanel } from '../../components/SidePanel';
 import { TopBar } from '../../components/TopBar';
@@ -42,7 +43,9 @@ export default function EventViewPage() {
     () => selectedTent?.categories ?? [],
     [selectedTent],
   );
-  const photoUrls = usePhotos(selectedTent?.id);
+  const { canEdit } = useCanEditEvent(event?.id);
+  const [photosReloadKey, setPhotosReloadKey] = useState(0);
+  const photoUrls = usePhotos(selectedTent?.id, photosReloadKey);
 
   const splatUrl = event?.splat_url ?? PLACEHOLDER_SPLAT;
   const splatOrigin = useMemo(() => {
@@ -238,6 +241,9 @@ export default function EventViewPage() {
         categories={selectedCategories}
         photoUrls={photoUrls}
         onClose={() => selectTentBySlug(null)}
+        eventId={event.id}
+        canEdit={canEdit}
+        onPhotosChanged={() => setPhotosReloadKey((n) => n + 1)}
       />
       <SetCameraDefaultButton eventId={event.id} sceneHandleRef={sceneHandleRef} />
       <BackToOverviewButton
