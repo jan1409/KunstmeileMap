@@ -136,7 +136,7 @@ export function SidePanel({
       )}
 
       {photoUrls.length > 0 && (
-        <div className="mt-4 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2">
+        <div className="mt-4 -mx-1 flex shrink-0 snap-x snap-mandatory gap-2 overflow-x-auto pb-2">
           {photoUrls.map((url, i) => (
             <img
               key={url}
@@ -151,7 +151,7 @@ export function SidePanel({
 
       <button
         onClick={onShare ?? (() => navigator.clipboard.writeText(window.location.href))}
-        className="mt-auto rounded bg-white/10 px-3 py-2 text-sm hover:bg-white/20"
+        className="rounded bg-white/10 px-3 py-2 text-sm hover:bg-white/20 md:mt-auto"
       >
         🔗 {t('side_panel.share')}
       </button>
