@@ -110,7 +110,11 @@ export default function EventSettingsPage() {
           type="number"
           step="any"
           value={defaultLat}
-          onChange={(e) => setDefaultLat(Number(e.target.value))}
+          onChange={(e) => {
+            const v = e.target.value === '' ? null : Number(e.target.value);
+            if (v === null || Number.isNaN(v)) return;
+            setDefaultLat(v);
+          }}
           className="input mt-1"
         />
       </label>
@@ -121,7 +125,11 @@ export default function EventSettingsPage() {
           type="number"
           step="any"
           value={defaultLng}
-          onChange={(e) => setDefaultLng(Number(e.target.value))}
+          onChange={(e) => {
+            const v = e.target.value === '' ? null : Number(e.target.value);
+            if (v === null || Number.isNaN(v)) return;
+            setDefaultLng(v);
+          }}
           className="input mt-1"
         />
       </label>
@@ -133,7 +141,11 @@ export default function EventSettingsPage() {
           min={1}
           max={19}
           value={defaultZoom}
-          onChange={(e) => setDefaultZoom(Number(e.target.value))}
+          onChange={(e) => {
+            const v = e.target.value === '' ? null : Number(e.target.value);
+            if (v === null || Number.isNaN(v)) return;
+            setDefaultZoom(v);
+          }}
           className="input mt-1"
         />
       </label>
