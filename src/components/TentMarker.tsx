@@ -14,7 +14,7 @@ export function TentMarker({ displayNumber, color, ariaLabel }: Props) {
     <div
       aria-label={ariaLabel}
       style={{ backgroundColor: color }}
-      className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white shadow"
+      className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-zinc-900 shadow"
     >
       {displayNumber ?? '·'}
     </div>
