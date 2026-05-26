@@ -1,13 +1,16 @@
 {
   "app": {
     "title": "Kunstmeile",
-    "loading": "Lädt 3D-Szene...",
-    "error_load": "Die 3D-Ansicht konnte nicht geladen werden",
+    "loading": "Lade Karte...",
+    "error_load": "Die Kartenansicht konnte nicht geladen werden",
     "retry": "Erneut versuchen",
     "menu_open": "Menü öffnen",
     "menu_close": "Menü schließen",
     "auth_loading": "Authentifizierung lädt …",
     "auth_profile_error": "Profilabruf fehlgeschlagen. Bitte abmelden und erneut versuchen."
+  },
+  "event": {
+    "not_found": "Event nicht gefunden"
   },
   "search": {
     "placeholder": "Stand suchen...",
