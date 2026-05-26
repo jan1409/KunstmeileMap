@@ -42,6 +42,9 @@
     "impressum": "Imprint",
     "datenschutz": "Privacy Policy"
   },
+  "common": {
+    "back": "Back"
+  },
   "cookie_banner": {
     "text": "This site uses only strictly necessary cookies and local storage for language preferences and (in the admin area) login sessions.",
     "privacy_link": "More in the Privacy Policy",
@@ -60,6 +63,16 @@
       "default_lat_label": "Default lat",
       "default_lng_label": "Default lng",
       "default_zoom_label": "Default zoom (1-19)"
+    },
+    "import": {
+      "heading": "Import stands",
+      "preview_heading": "Preview",
+      "done_heading": "Import complete",
+      "help": "Upload a .csv or .xlsx with stand data. Required columns: name, display_number.",
+      "download_template": "Download template (.xlsx)",
+      "commit_button_one": "Import {{count}} row",
+      "commit_button_other": "Import {{count}} rows",
+      "error_unsupported_file": "Only .csv and .xlsx are supported."
     }
   }
 }

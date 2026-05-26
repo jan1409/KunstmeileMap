@@ -42,6 +42,9 @@
     "impressum": "Impressum",
     "datenschutz": "Datenschutz"
   },
+  "common": {
+    "back": "Zurück"
+  },
   "cookie_banner": {
     "text": "Diese Seite verwendet ausschließlich technisch notwendige Cookies und lokale Speicherung für Spracheinstellungen und (im Admin-Bereich) Login-Sitzungen.",
     "privacy_link": "Mehr in der Datenschutzerklärung",
@@ -60,6 +63,16 @@
       "default_lat_label": "Standard-Lat",
       "default_lng_label": "Standard-Lng",
       "default_zoom_label": "Standard-Zoom (1-19)"
+    },
+    "import": {
+      "heading": "Stände importieren",
+      "preview_heading": "Vorschau",
+      "done_heading": "Import abgeschlossen",
+      "help": "Lade eine .csv oder .xlsx mit den Stand-Daten hoch. Pflichtspalten: name, display_number.",
+      "download_template": "Vorlage herunterladen (.xlsx)",
+      "commit_button_one": "{{count}} Zeile importieren",
+      "commit_button_other": "{{count}} Zeilen importieren",
+      "error_unsupported_file": "Nur .csv und .xlsx werden unterstützt."
     }
   }
 }
