@@ -1,7 +1,7 @@
 # Map Pivot — Design Spec
 
 **Date:** 2026-05-26
-**Status:** Approved, ready for implementation plan
+**Status:** Implemented in feat/map-pivot — see docs/superpowers/plans/2026-05-26-map-pivot.md
 **Author:** Brainstorm session with Jan
 **Target branch:** `feat/map-pivot`
 **Hard deadline:** 2026-05-31 (Phase 1 launch)
