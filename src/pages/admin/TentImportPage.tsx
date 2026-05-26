@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -66,14 +66,21 @@ export default function TentImportPage() {
   const { eventSlug } = useParams();
   const { t } = useTranslation();
   const { event } = useEvent(eventSlug);
-  const { categories } = useCategories(event?.id);
-  const { tents } = useTents(event?.id);
+  const { categories, loading: categoriesLoading } = useCategories(event?.id);
+  const { tents, loading: tentsLoading } = useTents(event?.id);
 
   const [step, setStep] = useState<WizardStep>('upload');
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Block the file picker until the validation context (existing tents +
+  // categories) has finished loading from Supabase. Otherwise buildPreview
+  // would seed validateRow with empty sets, silently passing DB-existing
+  // duplicates and flagging all categories as unknown.
+  const isReady = !tentsLoading && !categoriesLoading && event != null;
 
   function buildPreview(rawRows: Record<string, unknown>[]) {
     const knownCategorySlugs = new Set(categories.map((c) => c.slug));
@@ -154,6 +161,10 @@ export default function TentImportPage() {
     setLog([]);
     setParseError(null);
     setStep('upload');
+    // Clear the <input type="file"> value so re-picking the same file after
+    // going back from preview/done actually fires onChange again (browsers
+    // dedupe on identical value).
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function commit() {
@@ -245,11 +256,16 @@ export default function TentImportPage() {
           <label className="block text-xs">
             <span className="block text-white/60">CSV / XLSX</span>
             <input
+              ref={fileInputRef}
               type="file"
               accept=".csv,.xlsx"
               onChange={onFile}
-              className="mt-1"
+              disabled={!isReady}
+              className="mt-1 disabled:opacity-50"
             />
+            {!isReady && (
+              <span className="ml-2 text-white/50">{t('app.loading')}</span>
+            )}
           </label>
           {parseError && (
             <p className="mt-2 text-sm text-red-300">{parseError}</p>
