@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -119,13 +114,13 @@ export type Database = {
       events: {
         Row: {
           created_at: string
+          default_lat: number
+          default_lng: number
+          default_zoom: number
           ends_at: string | null
           id: string
           is_featured: boolean
           slug: string
-          splat_camera_default: Json | null
-          splat_origin: Json | null
-          splat_url: string | null
           starts_at: string | null
           status: Database["public"]["Enums"]["event_status"]
           title_de: string
@@ -137,13 +132,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_lat?: number
+          default_lng?: number
+          default_zoom?: number
           ends_at?: string | null
           id?: string
           is_featured?: boolean
           slug: string
-          splat_camera_default?: Json | null
-          splat_origin?: Json | null
-          splat_url?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title_de: string
@@ -155,13 +150,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_lat?: number
+          default_lng?: number
+          default_zoom?: number
           ends_at?: string | null
           id?: string
           is_featured?: boolean
           slug?: string
-          splat_camera_default?: Json | null
-          splat_origin?: Json | null
-          splat_url?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title_de?: string
@@ -281,8 +276,9 @@ export type Database = {
           facebook_url: string | null
           id: string
           instagram_url: string | null
+          lat: number | null
+          lng: number | null
           name: string
-          position: Json
           slug: string
           updated_at: string
           updated_by: string | null
@@ -300,8 +296,9 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          lat?: number | null
+          lng?: number | null
           name: string
-          position: Json
           slug: string
           updated_at?: string
           updated_by?: string | null
@@ -319,8 +316,9 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          lat?: number | null
+          lng?: number | null
           name?: string
-          position?: Json
           slug?: string
           updated_at?: string
           updated_by?: string | null
@@ -344,7 +342,6 @@ export type Database = {
       duplicate_event: {
         Args: {
           clone_categories?: boolean
-          clone_splat_url?: boolean
           clone_tent_positions?: boolean
           clone_tents?: boolean
           new_slug: string
@@ -503,3 +500,4 @@ export const Constants = {
     },
   },
 } as const
+

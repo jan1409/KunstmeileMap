@@ -19,7 +19,13 @@ function tent(
     website_url: null,
     instagram_url: null,
     facebook_url: null,
-    position: position as unknown as TentWithCategories['position'],
+    // T1: this file (and src/lib/markers.ts) is deleted in T2 (map pivot).
+    // We carry the legacy {x,y,z} payload as an untyped field so the runtime
+    // logic still exercises selectVisibleMarkers' position validity check
+    // until T2 deletes both this file and the marker module.
+    lat: null,
+    lng: null,
+    position,
     display_number,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
