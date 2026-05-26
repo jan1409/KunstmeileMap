@@ -51,5 +51,15 @@
     "title": "Kein Zugriff",
     "body": "Dieses Konto hat keine Admin-Berechtigung. Bitte wende dich an den Veranstalter, falls du Zugriff benötigst.",
     "sign_out": "Abmelden"
+  },
+  "admin": {
+    "tent": {
+      "clear_coords": "Koordinaten löschen"
+    },
+    "event": {
+      "default_lat_label": "Standard-Lat",
+      "default_lng_label": "Standard-Lng",
+      "default_zoom_label": "Standard-Zoom (1-19)"
+    }
   }
 }

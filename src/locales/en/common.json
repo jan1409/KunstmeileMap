@@ -51,5 +51,15 @@
     "title": "No access",
     "body": "This account does not have admin permission. Please contact the event organizer if you need access.",
     "sign_out": "Sign out"
+  },
+  "admin": {
+    "tent": {
+      "clear_coords": "Clear coordinates"
+    },
+    "event": {
+      "default_lat_label": "Default lat",
+      "default_lng_label": "Default lng",
+      "default_zoom_label": "Default zoom (1-19)"
+    }
   }
 }
