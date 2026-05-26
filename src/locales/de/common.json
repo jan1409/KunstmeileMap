@@ -12,6 +12,11 @@
   "event": {
     "not_found": "Event nicht gefunden"
   },
+  "map": {
+    "no_coords_banner_one": "{{count}} Stand ist noch nicht auf der Karte verortet.",
+    "no_coords_banner_other": "{{count}} Stände sind noch nicht auf der Karte verortet.",
+    "back_to_overview": "Zurück zur Übersicht"
+  },
   "search": {
     "placeholder": "Stand suchen...",
     "no_results": "Keine Treffer"
@@ -19,9 +24,6 @@
   "category": {
     "all": "Alle anzeigen",
     "filter_label": "Kategorie"
-  },
-  "viewer": {
-    "back_to_overview": "Zurück zur Übersicht"
   },
   "side_panel": {
     "category": "Kategorie",
