@@ -72,7 +72,13 @@
       "download_template": "Download template (.xlsx)",
       "commit_button_one": "Import {{count}} row",
       "commit_button_other": "Import {{count}} rows",
-      "error_unsupported_file": "Only .csv and .xlsx are supported."
+      "error_unsupported_file": "Only .csv and .xlsx are supported.",
+      "col_status": "Status",
+      "status_ok": "OK",
+      "status_warning": "Warning",
+      "status_error": "Error",
+      "back_to_list": "Back to tent list",
+      "loading_data": "Loading data…"
     }
   }
 }

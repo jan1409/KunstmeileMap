@@ -62,6 +62,12 @@ function statusIcon(status: RowResult['status']): string {
   return '❌';
 }
 
+function statusLabelKey(status: RowResult['status']): string {
+  if (status === 'ok') return 'admin.import.status_ok';
+  if (status === 'warning') return 'admin.import.status_warning';
+  return 'admin.import.status_error';
+}
+
 export default function TentImportPage() {
   const { eventSlug } = useParams();
   const { t } = useTranslation();
@@ -264,7 +270,9 @@ export default function TentImportPage() {
               className="mt-1 disabled:opacity-50"
             />
             {!isReady && (
-              <span className="ml-2 text-white/50">{t('app.loading')}</span>
+              <span className="ml-2 text-white/50">
+                {t('admin.import.loading_data')}
+              </span>
             )}
           </label>
           {parseError && (
@@ -283,7 +291,7 @@ export default function TentImportPage() {
               <thead className="bg-white/5 text-white/70">
                 <tr>
                   <th className="px-2 py-1">#</th>
-                  <th className="px-2 py-1">{/* status icon */}</th>
+                  <th className="px-2 py-1">{t('admin.import.col_status')}</th>
                   <th className="px-2 py-1">name</th>
                   <th className="px-2 py-1">display_number</th>
                   <th className="px-2 py-1">notes</th>
@@ -299,7 +307,12 @@ export default function TentImportPage() {
                     <tr key={row.index} className="border-t border-white/5">
                       <td className="px-2 py-1 text-white/50">{row.index}</td>
                       <td className="px-2 py-1">
-                        {statusIcon(row.result.status)}
+                        <span
+                          role="img"
+                          aria-label={t(statusLabelKey(row.result.status))}
+                        >
+                          {statusIcon(row.result.status)}
+                        </span>
                       </td>
                       <td className="px-2 py-1">{row.raw.name}</td>
                       <td className="px-2 py-1">{row.raw.display_number}</td>
@@ -358,7 +371,7 @@ export default function TentImportPage() {
         to={`/admin/events/${eventSlug}/tents`}
         className="mt-4 block text-sm underline"
       >
-        Back to tent list
+        {t('admin.import.back_to_list')}
       </Link>
     </div>
   );

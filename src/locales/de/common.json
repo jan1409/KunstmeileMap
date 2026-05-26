@@ -72,7 +72,13 @@
       "download_template": "Vorlage herunterladen (.xlsx)",
       "commit_button_one": "{{count}} Zeile importieren",
       "commit_button_other": "{{count}} Zeilen importieren",
-      "error_unsupported_file": "Nur .csv und .xlsx werden unterstützt."
+      "error_unsupported_file": "Nur .csv und .xlsx werden unterstützt.",
+      "col_status": "Status",
+      "status_ok": "OK",
+      "status_warning": "Warnung",
+      "status_error": "Fehler",
+      "back_to_list": "Zurück zur Stand-Liste",
+      "loading_data": "Lade Daten…"
     }
   }
 }
