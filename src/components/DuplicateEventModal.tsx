@@ -15,7 +15,6 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
   const [cloneCats, setCloneCats] = useState(true);
   const [cloneTents, setCloneTents] = useState(true);
   const [clonePos, setClonePos] = useState(true);
-  const [cloneSplat, setCloneSplat] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const trapRef = useFocusTrap<HTMLDivElement>(true);
@@ -31,7 +30,6 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
       clone_categories: cloneCats,
       clone_tents: cloneTents,
       clone_tent_positions: cloneTents && clonePos,
-      clone_splat_url: cloneSplat,
     });
     setBusy(false);
     if (err) {
@@ -102,14 +100,6 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
             disabled={!cloneTents}
           />
           Clone tent positions
-        </label>
-        <label className="mt-1 flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={cloneSplat}
-            onChange={(e) => setCloneSplat(e.target.checked)}
-          />
-          Clone splat URL
         </label>
         {error && (
           <p role="alert" className="mt-2 text-sm text-red-400">

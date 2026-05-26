@@ -121,7 +121,6 @@ describe('DuplicateEventModal', () => {
       clone_categories: true,
       clone_tents: true,
       clone_tent_positions: false,
-      clone_splat_url: true,
     });
     expect(onCreated).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
