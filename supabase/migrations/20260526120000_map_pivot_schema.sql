@@ -53,6 +53,9 @@ alter table events add constraint events_default_latlng_range_chk
   );
 
 -- Leaflet's max OSM zoom is 19; min usable for an event-level overview is ~3.
+-- default_zoom is constrained to 1-22 (defensive headroom). The user-facing
+-- input clamps to 1-19 matching standard OSM tile zoom levels; the extra
+-- headroom permits future tile sources without a migration.
 alter table events add constraint events_default_zoom_range_chk
   check (default_zoom between 1 and 22);
 
