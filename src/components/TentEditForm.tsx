@@ -1,50 +1,69 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Category, Tent } from '../lib/supabase';
+import { TentMapEditor } from './TentMapEditor';
 
-const TentSchema = z.object({
-  slug: z
-    .string()
-    .min(1, 'Slug is required')
-    .regex(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, digits, and dashes'),
-  name: z.string().min(1, 'Name is required'),
-  description_de: z.string().optional(),
-  description_en: z.string().optional(),
-  address: z.string().optional(),
-  // Accept empty string (map to undefined) or a positive integer.
-  // The blank case lets the DB trigger auto-assign the number.
-  display_number: z.preprocess(
-    (v) => (v === '' || v == null ? undefined : Number(v)),
-    z.number().int().positive().optional(),
-  ),
-  category_ids: z.array(z.string().uuid()).default([]),
-  website_url: z.url().optional().or(z.literal('')),
-  instagram_url: z.url().optional().or(z.literal('')),
-  facebook_url: z.url().optional().or(z.literal('')),
-  email_public: z.email().optional().or(z.literal('')),
-});
+const TentSchema = z
+  .object({
+    slug: z
+      .string()
+      .min(1, 'Slug is required')
+      .regex(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, digits, and dashes'),
+    name: z.string().min(1, 'Name is required'),
+    description_de: z.string().optional(),
+    description_en: z.string().optional(),
+    address: z.string().optional(),
+    // Accept empty string (map to undefined) or a positive integer.
+    // The blank case lets the DB trigger auto-assign the number.
+    display_number: z.preprocess(
+      (v) => (v === '' || v == null ? undefined : Number(v)),
+      z.number().int().positive().optional(),
+    ),
+    category_ids: z.array(z.string().uuid()).default([]),
+    website_url: z.url().optional().or(z.literal('')),
+    instagram_url: z.url().optional().or(z.literal('')),
+    facebook_url: z.url().optional().or(z.literal('')),
+    email_public: z.email().optional().or(z.literal('')),
+    lat: z.number().gte(-90).lte(90).nullable().optional(),
+    lng: z.number().gte(-180).lte(180).nullable().optional(),
+  })
+  .refine(
+    (v) => {
+      const hasLat = v.lat != null;
+      const hasLng = v.lng != null;
+      return hasLat === hasLng;
+    },
+    { message: 'Lat and Lng must both be set or both be empty', path: ['lat'] },
+  );
 
 export type TentFormValues = z.infer<typeof TentSchema>;
 
 interface Props {
-  initial?: Partial<Tent> & { display_number?: number | null; category_ids?: string[] };
+  initial?: Partial<Tent> & {
+    display_number?: number | null;
+    category_ids?: string[];
+    lat?: number | null;
+    lng?: number | null;
+  };
   categories: Category[];
-  position: { x: number; y: number; z: number } | null;
-  onRequestPlace: () => void;
+  defaultCenter: [number, number];
+  defaultZoom: number;
   onSubmit: (values: TentFormValues) => Promise<void>;
 }
 
 export function TentEditForm({
   initial,
   categories,
-  position,
-  onRequestPlace,
+  defaultCenter,
+  defaultZoom,
   onSubmit,
 }: Props) {
   const {
     register,
     handleSubmit,
+    setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<z.input<typeof TentSchema>, unknown, z.output<typeof TentSchema>>({
     resolver: zodResolver(TentSchema),
@@ -60,8 +79,19 @@ export function TentEditForm({
       instagram_url: initial?.instagram_url ?? '',
       facebook_url: initial?.facebook_url ?? '',
       email_public: initial?.email_public ?? '',
+      lat: initial?.lat ?? null,
+      lng: initial?.lng ?? null,
     },
   });
+
+  // Watch lat/lng so TentMapEditor reflects the latest form state. We use
+  // setValue (not Controller-per-field) so the map editor stays a controlled,
+  // stateless view of two RHF fields. The 3-type-param useForm signature means
+  // the watched values inherit the *input* shape (number | null | undefined).
+  const [watchedLat, watchedLng] = useWatch({ control, name: ['lat', 'lng'] }) as [
+    number | null | undefined,
+    number | null | undefined,
+  ];
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-3">
@@ -123,25 +153,28 @@ export function TentEditForm({
         <input {...register('email_public')} className="input" />
       </Field>
 
-      <div className="rounded border border-white/10 p-3">
-        <div className="text-xs text-white/60">Position</div>
-        <div className="font-mono text-sm">
-          {position
-            ? `(${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)})`
-            : '— not placed —'}
-        </div>
-        <button
-          type="button"
-          onClick={onRequestPlace}
-          className="mt-2 rounded bg-white/10 px-3 py-1 text-sm"
-        >
-          {position ? 'Reposition' : 'Place on scene'}
-        </button>
+      <div>
+        <span className="mb-2 block text-xs text-white/60">Position</span>
+        <TentMapEditor
+          lat={watchedLat ?? null}
+          lng={watchedLng ?? null}
+          defaultCenter={defaultCenter}
+          defaultZoom={defaultZoom}
+          onChange={({ lat, lng }) => {
+            setValue('lat', lat ?? null, { shouldDirty: true, shouldValidate: true });
+            setValue('lng', lng ?? null, { shouldDirty: true, shouldValidate: true });
+          }}
+        />
+        {errors.lat && (
+          <span role="alert" className="mt-1 block text-xs text-red-400">
+            {errors.lat.message}
+          </span>
+        )}
       </div>
 
       <button
         type="submit"
-        disabled={isSubmitting || !position}
+        disabled={isSubmitting}
         className="rounded bg-white/20 px-4 py-2 disabled:opacity-50"
       >
         {isSubmitting ? '…' : 'Save'}

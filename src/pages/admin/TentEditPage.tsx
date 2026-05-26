@@ -54,7 +54,6 @@ export default function TentEditPage() {
     // and a constraint violation if we ever lock the column down later. The
     // trigger fills display_number when omitted (we still send null on update
     // for explicit-null-clears the admin makes via the form).
-    // TODO(T4): wire lat/lng from TentMapEditor; until then tents can't be saved.
     const sharedFields = {
       slug: values.slug,
       name: values.name,
@@ -66,6 +65,8 @@ export default function TentEditPage() {
       instagram_url: values.instagram_url || null,
       facebook_url: values.facebook_url || null,
       email_public: values.email_public || null,
+      lat: values.lat ?? null,
+      lng: values.lng ?? null,
     };
 
     try {
@@ -119,30 +120,22 @@ export default function TentEditPage() {
   if (isEditing && !tent) return <p>…</p>;
 
   return (
-    <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-2">
-      <div>
-        <h1 className="mb-3 text-xl font-semibold">
-          {tent ? `Edit: ${tent.name}` : 'New Tent'}
-        </h1>
-        <TentEditForm
-          initial={tent ? { ...tent, category_ids: categoryIds } : undefined}
-          categories={categories}
-          position={null}
-          onRequestPlace={() => {}}
-          onSubmit={onSubmit}
-        />
-        {tent && (
-          <div className="mt-6">
-            <PhotoUploadZone eventId={event.id} tentId={tent.id} />
-          </div>
-        )}
-      </div>
-      <div className="relative h-[60vh] overflow-hidden rounded lg:h-[80vh]">
-        {/* TODO(T4): replace with TentMapEditor (Leaflet draggable marker). */}
-        <div className="flex h-full w-full items-center justify-center rounded bg-white/5 text-sm text-white/50">
-          Map editor — coming in T4
+    <div>
+      <h1 className="mb-3 text-xl font-semibold">
+        {tent ? `Edit: ${tent.name}` : 'New Tent'}
+      </h1>
+      <TentEditForm
+        initial={tent ? { ...tent, category_ids: categoryIds } : undefined}
+        categories={categories}
+        defaultCenter={[event.default_lat, event.default_lng]}
+        defaultZoom={event.default_zoom}
+        onSubmit={onSubmit}
+      />
+      {tent && (
+        <div className="mt-6 max-w-2xl">
+          <PhotoUploadZone eventId={event.id} tentId={tent.id} />
         </div>
-      </div>
+      )}
     </div>
   );
 }

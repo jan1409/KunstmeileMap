@@ -2,7 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import '../../../src/lib/i18n';
+
 import { TentEditForm, type TentFormValues } from '../../../src/components/TentEditForm';
+
+// Mock react-leaflet so the embedded TentMapEditor renders inert primitives.
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children }: { children?: React.ReactNode }) => (
+    <div data-testid="map">{children}</div>
+  ),
+  TileLayer: () => null,
+  Marker: () => <div data-testid="marker" />,
+  useMapEvents: () => null,
+}));
+
+vi.mock('leaflet', () => ({ default: {} }));
 
 const sampleCategories = [
   {
@@ -27,24 +41,23 @@ const sampleCategories = [
   },
 ];
 
-const samplePosition = { x: 1.5, y: 0, z: -2.3 };
+const defaultCenter: [number, number] = [49.0, 8.4];
+const defaultZoom = 17;
 
 describe('TentEditForm', () => {
   const onSubmit = vi.fn<(v: TentFormValues) => Promise<void>>();
-  const onRequestPlace = vi.fn<() => void>();
 
   beforeEach(() => {
     onSubmit.mockReset();
     onSubmit.mockResolvedValue(undefined);
-    onRequestPlace.mockReset();
   });
 
   it('renders all expected fields including display_number and a category multi-select', () => {
     render(
       <TentEditForm
         categories={sampleCategories}
-        position={null}
-        onRequestPlace={onRequestPlace}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         onSubmit={onSubmit}
       />,
     );
@@ -62,69 +75,22 @@ describe('TentEditForm', () => {
     // Categories now appear as checkboxes.
     expect(screen.getByRole('checkbox', { name: /Galerie/i })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /Atelier/i })).toBeInTheDocument();
+    // Map editor: lat/lng inputs.
+    expect(screen.getByLabelText(/^lat$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^lng$/i)).toBeInTheDocument();
   });
 
-  it('shows the placeholder when no position is set and a coordinate readout otherwise', () => {
-    const { rerender } = render(
-      <TentEditForm
-        categories={sampleCategories}
-        position={null}
-        onRequestPlace={onRequestPlace}
-        onSubmit={onSubmit}
-      />,
-    );
-    expect(screen.getByText(/not placed/i)).toBeInTheDocument();
-
-    rerender(
-      <TentEditForm
-        categories={sampleCategories}
-        position={samplePosition}
-        onRequestPlace={onRequestPlace}
-        onSubmit={onSubmit}
-      />,
-    );
-    expect(screen.getByText('(1.50, 0.00, -2.30)')).toBeInTheDocument();
-  });
-
-  it('disables the Save button when no position is set', () => {
+  it('keeps the Save button enabled regardless of coordinates (T4: save no longer gated on position)', () => {
     render(
       <TentEditForm
         categories={sampleCategories}
-        position={null}
-        onRequestPlace={onRequestPlace}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         onSubmit={onSubmit}
       />,
     );
 
-    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
-  });
-
-  it('triggers onRequestPlace when the place button is clicked', async () => {
-    const user = userEvent.setup();
-    render(
-      <TentEditForm
-        categories={sampleCategories}
-        position={null}
-        onRequestPlace={onRequestPlace}
-        onSubmit={onSubmit}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: /place on scene/i }));
-    expect(onRequestPlace).toHaveBeenCalledTimes(1);
-  });
-
-  it('relabels the place button to "Reposition" once a position is set', () => {
-    render(
-      <TentEditForm
-        categories={sampleCategories}
-        position={samplePosition}
-        onRequestPlace={onRequestPlace}
-        onSubmit={onSubmit}
-      />,
-    );
-
-    expect(screen.getByRole('button', { name: /reposition/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save/i })).not.toBeDisabled();
   });
 
   it('validates required slug + name and rejects bad slugs', async () => {
@@ -132,8 +98,8 @@ describe('TentEditForm', () => {
     render(
       <TentEditForm
         categories={sampleCategories}
-        position={samplePosition}
-        onRequestPlace={onRequestPlace}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         onSubmit={onSubmit}
       />,
     );
@@ -154,8 +120,8 @@ describe('TentEditForm', () => {
     render(
       <TentEditForm
         categories={sampleCategories}
-        position={samplePosition}
-        onRequestPlace={onRequestPlace}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         onSubmit={onSubmit}
       />,
     );
@@ -172,13 +138,13 @@ describe('TentEditForm', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('submits the parsed values when fields are valid and a position is set', async () => {
+  it('submits the parsed values when fields are valid', async () => {
     const user = userEvent.setup();
     render(
       <TentEditForm
         categories={sampleCategories}
-        position={samplePosition}
-        onRequestPlace={onRequestPlace}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         onSubmit={onSubmit}
       />,
     );
@@ -195,21 +161,26 @@ describe('TentEditForm', () => {
     expect(submitted.name).toBe('Galerie Nord');
     expect(submitted.description_de).toBe('Eine Galerie');
     expect(submitted.website_url).toBe('https://example.com');
+    // Lat/lng default to null when the admin doesn't place a marker.
+    expect(submitted.lat).toBeNull();
+    expect(submitted.lng).toBeNull();
   });
 
   it('populates fields from the initial value when editing an existing tent', () => {
     render(
       <TentEditForm
         categories={sampleCategories}
-        position={samplePosition}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         initial={{
           slug: 'existing-tent',
           name: 'Existing Tent',
           description_de: 'Bestehend',
           website_url: 'https://existing.example',
           category_ids: [sampleCategories[1]!.id],
+          lat: 49.5,
+          lng: 8.5,
         }}
-        onRequestPlace={onRequestPlace}
         onSubmit={onSubmit}
       />,
     );
@@ -219,6 +190,8 @@ describe('TentEditForm', () => {
     expect(screen.getByLabelText(/Beschreibung \(DE\)/i)).toHaveValue('Bestehend');
     expect(screen.getByLabelText(/website/i)).toHaveValue('https://existing.example');
     expect(screen.getByRole('checkbox', { name: /Atelier/i })).toBeChecked();
+    expect(screen.getByLabelText(/^lat$/i)).toHaveValue(49.5);
+    expect(screen.getByLabelText(/^lng$/i)).toHaveValue(8.5);
   });
 
   it('emits selected category_ids and a numeric display_number on submit', async () => {
@@ -226,8 +199,8 @@ describe('TentEditForm', () => {
     render(
       <TentEditForm
         categories={sampleCategories}
-        position={{ x: 0, y: 0, z: 0 }}
-        onRequestPlace={onRequestPlace}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         onSubmit={onSubmit}
       />,
     );
@@ -257,8 +230,8 @@ describe('TentEditForm', () => {
     render(
       <TentEditForm
         categories={sampleCategories}
-        position={{ x: 0, y: 0, z: 0 }}
-        onRequestPlace={onRequestPlace}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
         onSubmit={onSubmit}
       />,
     );
@@ -268,5 +241,46 @@ describe('TentEditForm', () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0]![0].display_number).toBeUndefined();
+  });
+
+  it('rejects a tent that has lat but no lng (and vice versa) via zod refinement', async () => {
+    const user = userEvent.setup();
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/slug/i), 'orphan');
+    await user.type(screen.getByLabelText(/^name$/i), 'Orphan');
+    // Only fill lat — leaves lng null, refinement should reject.
+    await user.type(screen.getByLabelText(/^lat$/i), '49.5');
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('submits lat/lng pair when both are set via the inputs', async () => {
+    const user = userEvent.setup();
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/slug/i), 'paired');
+    await user.type(screen.getByLabelText(/^name$/i), 'Paired');
+    await user.type(screen.getByLabelText(/^lat$/i), '49.5');
+    await user.type(screen.getByLabelText(/^lng$/i), '8.5');
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]![0]).toMatchObject({ lat: 49.5, lng: 8.5 });
   });
 });
