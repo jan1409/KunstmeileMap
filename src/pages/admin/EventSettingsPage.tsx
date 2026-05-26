@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 
@@ -8,10 +9,14 @@ type Status = 'draft' | 'published' | 'archived';
 export default function EventSettingsPage() {
   const { eventSlug } = useParams();
   const { event } = useEvent(eventSlug);
+  const { t } = useTranslation();
   const [titleDe, setTitleDe] = useState('');
   const [titleEn, setTitleEn] = useState('');
   const [status, setStatus] = useState<Status>('draft');
   const [isFeatured, setIsFeatured] = useState(false);
+  const [defaultLat, setDefaultLat] = useState<number>(49.0);
+  const [defaultLng, setDefaultLng] = useState<number>(8.4);
+  const [defaultZoom, setDefaultZoom] = useState<number>(17);
   const [busy, setBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +28,9 @@ export default function EventSettingsPage() {
     setTitleEn(event.title_en ?? '');
     setStatus(event.status as Status);
     setIsFeatured(event.is_featured);
+    setDefaultLat(event.default_lat);
+    setDefaultLng(event.default_lng);
+    setDefaultZoom(event.default_zoom);
   }, [event]);
 
   async function save() {
@@ -37,6 +45,9 @@ export default function EventSettingsPage() {
         title_en: titleEn || null,
         status,
         is_featured: isFeatured,
+        default_lat: defaultLat,
+        default_lng: defaultLng,
+        default_zoom: defaultZoom,
       })
       .eq('id', event.id);
     setBusy(false);
@@ -91,6 +102,40 @@ export default function EventSettingsPage() {
           onChange={(e) => setIsFeatured(e.target.checked)}
         />
         Featured (homepage default)
+      </label>
+
+      <label className="block text-xs">
+        <span className="block text-white/60">{t('admin.event.default_lat_label')}</span>
+        <input
+          type="number"
+          step="any"
+          value={defaultLat}
+          onChange={(e) => setDefaultLat(Number(e.target.value))}
+          className="input mt-1"
+        />
+      </label>
+
+      <label className="block text-xs">
+        <span className="block text-white/60">{t('admin.event.default_lng_label')}</span>
+        <input
+          type="number"
+          step="any"
+          value={defaultLng}
+          onChange={(e) => setDefaultLng(Number(e.target.value))}
+          className="input mt-1"
+        />
+      </label>
+
+      <label className="block text-xs">
+        <span className="block text-white/60">{t('admin.event.default_zoom_label')}</span>
+        <input
+          type="number"
+          min={1}
+          max={19}
+          value={defaultZoom}
+          onChange={(e) => setDefaultZoom(Number(e.target.value))}
+          className="input mt-1"
+        />
       </label>
 
       <div className="flex items-center gap-3">
