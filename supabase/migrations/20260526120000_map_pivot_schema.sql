@@ -18,8 +18,9 @@ alter table tents add column lng double precision;
 -- but if one is set the other must be set and both must be in WGS84 range.
 alter table tents add constraint tents_latlng_range_chk
   check (
-    (lat is null and lng is null)
-    or (lat between -90 and 90 and lng between -180 and 180)
+    (lat is null) = (lng is null)
+    and (lat is null or lat between -90 and 90)
+    and (lng is null or lng between -180 and 180)
   );
 
 -- Spatial-ish index for the public viewer which loads all tents per event.
