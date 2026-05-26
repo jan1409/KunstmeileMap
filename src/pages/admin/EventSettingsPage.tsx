@@ -10,7 +10,6 @@ export default function EventSettingsPage() {
   const { event } = useEvent(eventSlug);
   const [titleDe, setTitleDe] = useState('');
   const [titleEn, setTitleEn] = useState('');
-  const [splatUrl, setSplatUrl] = useState('');
   const [status, setStatus] = useState<Status>('draft');
   const [isFeatured, setIsFeatured] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -22,7 +21,6 @@ export default function EventSettingsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- seeds form state once when the loaded event arrives; subsequent edits are local. React 19's preferred alternative (re-mount via key) would also force-discard in-flight edits on re-fetch, so it's a worse fit here.
     setTitleDe(event.title_de);
     setTitleEn(event.title_en ?? '');
-    setSplatUrl(event.splat_url ?? '');
     setStatus(event.status as Status);
     setIsFeatured(event.is_featured);
   }, [event]);
@@ -37,7 +35,6 @@ export default function EventSettingsPage() {
       .update({
         title_de: titleDe,
         title_en: titleEn || null,
-        splat_url: splatUrl || null,
         status,
         is_featured: isFeatured,
       })
@@ -70,15 +67,6 @@ export default function EventSettingsPage() {
         <input
           value={titleEn}
           onChange={(e) => setTitleEn(e.target.value)}
-          className="input mt-1"
-        />
-      </label>
-
-      <label className="block text-xs">
-        <span className="block text-white/60">Splat URL</span>
-        <input
-          value={splatUrl}
-          onChange={(e) => setSplatUrl(e.target.value)}
           className="input mt-1"
         />
       </label>

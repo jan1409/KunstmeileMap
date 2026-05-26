@@ -16,9 +16,8 @@ interface CsvRow {
   website_url?: string;
   instagram_url?: string;
   facebook_url?: string;
-  x: string;
-  y: string;
-  z: string;
+  lat?: string;
+  lng?: string;
 }
 
 export default function TentImportPage() {
@@ -76,7 +75,9 @@ export default function TentImportPage() {
           instagram_url: r.instagram_url || null,
           facebook_url: r.facebook_url || null,
           display_number: displayNumber,
-          position: { x: Number(r.x), y: Number(r.y), z: Number(r.z) },
+          // TODO(T5): replace with proper lat/lng import in the multi-step wizard
+          lat: null,
+          lng: null,
         })
         .select('id')
         .single();
@@ -111,7 +112,7 @@ export default function TentImportPage() {
       <p className="mb-2 text-sm text-white/60">
         Expected columns:{' '}
         <code className="font-mono text-xs">
-          slug, name, display_number, category_slugs, description_de, description_en, address, website_url, instagram_url, facebook_url, x, y, z
+          slug, name, display_number, category_slugs, description_de, description_en, address, website_url, instagram_url, facebook_url, lat, lng
         </code>
       </p>
       <label className="block text-xs">

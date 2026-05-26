@@ -42,7 +42,8 @@ const sampleTents = [
     slug: 'atelier-sued',
     name: 'Atelier Süd',
     display_number: 1,
-    position: { x: -3, y: 0, z: 5 },
+    lat: null,
+    lng: null,
   },
   {
     id: 'tent-a',
@@ -50,7 +51,8 @@ const sampleTents = [
     slug: 'galerie-nord',
     name: 'Galerie Nord',
     display_number: 2,
-    position: { x: 1, y: 0, z: 2 },
+    lat: null,
+    lng: null,
   },
 ];
 
@@ -173,14 +175,14 @@ describe('TentListPage', () => {
     });
   });
 
-  it('links each row to the public 3D view in a new tab via the event/tent permalink', async () => {
+  it('links each row to the public view in a new tab via the event/tent permalink', async () => {
     useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
     order.mockResolvedValue({ data: sampleTents, error: null });
 
     renderApp();
     await screen.findByText('Galerie Nord');
 
-    const viewLinks = screen.getAllByRole('link', { name: /view 3d/i });
+    const viewLinks = screen.getAllByRole('link', { name: /^view$/i });
     const hrefs = viewLinks.map((a) => a.getAttribute('href'));
     expect(hrefs).toContain('/kunstmeile-2026/tent/galerie-nord');
     expect(hrefs).toContain('/kunstmeile-2026/tent/atelier-sued');

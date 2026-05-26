@@ -62,7 +62,11 @@ export default function TentListPage() {
               <td className="py-2 font-mono text-xs">{t.display_number ?? '—'}</td>
               <td>{t.name}</td>
               <td className="font-mono text-xs">{t.slug}</td>
-              <td className="font-mono text-xs">{JSON.stringify(t.position)}</td>
+              <td className="font-mono text-xs">
+                {t.lat != null && t.lng != null
+                  ? `${t.lat.toFixed(5)}, ${t.lng.toFixed(5)}`
+                  : '—'}
+              </td>
               <td className="space-x-3">
                 <Link
                   to={`/admin/events/${event.slug}/tents/${t.id}`}
@@ -76,7 +80,7 @@ export default function TentListPage() {
                   rel="noopener noreferrer"
                   className="underline"
                 >
-                  View 3D
+                  View
                 </Link>
               </td>
             </tr>

@@ -3,15 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase, type Tent } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 import { useCategories } from '../../hooks/useCategories';
-import { SplatViewer } from '../../components/SplatViewer';
 import { PhotoUploadZone } from '../../components/PhotoUploadZone';
 import { useToast } from '../../components/ToastProvider';
 import {
   TentEditForm,
   type TentFormValues,
 } from '../../components/TentEditForm';
-
-type Position = { x: number; y: number; z: number };
 
 export default function TentEditPage() {
   const { eventSlug, tentId } = useParams();
@@ -21,9 +18,6 @@ export default function TentEditPage() {
   const { showError } = useToast();
   const [tent, setTent] = useState<Tent | null>(null);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
-  const [position, setPosition] = useState<Position | null>(null);
-  const [placeMode, setPlaceMode] = useState(false);
-  const [hoverPoint, setHoverPoint] = useState<Position | null>(null);
 
   // Load existing tent if editing (path is .../tents/<uuid> rather than /new).
   useEffect(() => {
@@ -46,31 +40,21 @@ export default function TentEditPage() {
         };
         setTent(rest as Tent);
         setCategoryIds(loadedCategoryIds);
-        setPosition((rest as { position?: unknown }).position as Position);
       });
     return () => {
       cancelled = true;
     };
   }, [tentId]);
 
-  // ESC cancels in-progress placement.
-  useEffect(() => {
-    if (!placeMode) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPlaceMode(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [placeMode]);
-
   async function onSubmit(values: TentFormValues) {
-    if (!event || !position) return;
+    if (!event) return;
 
     // Fields written on both insert and update. event_id is the partition key
     // and must NOT appear in the update payload — it would be a no-op at best
     // and a constraint violation if we ever lock the column down later. The
     // trigger fills display_number when omitted (we still send null on update
     // for explicit-null-clears the admin makes via the form).
+    // TODO(T4): wire lat/lng from TentMapEditor; until then tents can't be saved.
     const sharedFields = {
       slug: values.slug,
       name: values.name,
@@ -82,7 +66,6 @@ export default function TentEditPage() {
       instagram_url: values.instagram_url || null,
       facebook_url: values.facebook_url || null,
       email_public: values.email_public || null,
-      position,
     };
 
     try {
@@ -144,8 +127,8 @@ export default function TentEditPage() {
         <TentEditForm
           initial={tent ? { ...tent, category_ids: categoryIds } : undefined}
           categories={categories}
-          position={position}
-          onRequestPlace={() => setPlaceMode(true)}
+          position={null}
+          onRequestPlace={() => {}}
           onSubmit={onSubmit}
         />
         {tent && (
@@ -155,27 +138,10 @@ export default function TentEditPage() {
         )}
       </div>
       <div className="relative h-[60vh] overflow-hidden rounded lg:h-[80vh]">
-        <SplatViewer
-          splatUrl={event.splat_url ?? 'https://sparkjs.dev/sample/garden.splat'}
-          markers={[]}
-          placeMode={placeMode}
-          onPlaceHover={setHoverPoint}
-          onPlaceClick={(p) => {
-            setPosition(p);
-            setPlaceMode(false);
-          }}
-        />
-        {placeMode && (
-          <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center">
-            <span className="rounded bg-black/70 px-3 py-1 text-xs">
-              Click to place{' '}
-              {hoverPoint
-                ? `(${hoverPoint.x.toFixed(1)}, ${hoverPoint.y.toFixed(1)}, ${hoverPoint.z.toFixed(1)})`
-                : '…'}{' '}
-              — ESC to cancel
-            </span>
-          </div>
-        )}
+        {/* TODO(T4): replace with TentMapEditor (Leaflet draggable marker). */}
+        <div className="flex h-full w-full items-center justify-center rounded bg-white/5 text-sm text-white/50">
+          Map editor — coming in T4
+        </div>
       </div>
     </div>
   );
