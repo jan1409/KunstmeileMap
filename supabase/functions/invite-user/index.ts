@@ -138,14 +138,35 @@ Deno.serve(async (req: Request) => {
     if (memErr) {
       return jsonResponse({ error: 'membership_check_failed', message: memErr.message }, 500);
     }
+
     if (membership) {
+      // User is already in event_admins. If they're pending (email not confirmed)
+      // AND resend was requested, re-generate the magic link. Otherwise, this is
+      // an attempt to re-add an existing confirmed member: 400 already_member.
+      //
+      // Why this matters: inviteUserByEmail creates the auth.users row
+      // immediately, and the handle_new_user trigger writes the event_admins
+      // row on insert. So a freshly-invited user is BOTH existing AND already
+      // a member. The pre-fix short-circuit on already_member made the resend
+      // branch (further down) dead for the common case.
+      if (resend && existingUser.email_confirmed_at == null) {
+        const { error: linkErr } = await serviceClient.auth.admin.generateLink({
+          type: 'invite',
+          email: normalizedEmail,
+        });
+        if (linkErr) {
+          return jsonResponse({ error: 'resend_failed', message: linkErr.message }, 500);
+        }
+        return jsonResponse({ ok: true, user_id: existingUser.id, status: 'resent' });
+      }
       return jsonResponse({
         error: 'already_member',
         existing_role: membership.role_in_event,
         message: `User ${normalizedEmail} already has role '${membership.role_in_event}' in this event.`,
       }, 400);
     }
-    // Add the missing event_admins row. No new auth invite, no email.
+
+    // Existing user, NOT yet in this event. Add directly. (No resend semantics here.)
     const { error: insErr } = await serviceClient
       .from('event_admins')
       .insert({ event_id, profile_id: existingUser.id, role_in_event });
