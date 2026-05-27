@@ -9,12 +9,22 @@ export interface EventPermissions {
   canOwn: boolean;
 }
 
-const ALL_FALSE: Omit<EventPermissions, 'loading'> = {
+const ALL_FALSE = {
   canAccess: false,
   canContribute: false,
   canEdit: false,
   canOwn: false,
 };
+
+interface State {
+  fetchedFor: string | undefined;
+  canAccess: boolean;
+  canContribute: boolean;
+  canEdit: boolean;
+  canOwn: boolean;
+}
+
+const INITIAL: State = { fetchedFor: undefined, ...ALL_FALSE };
 
 /**
  * Resolves the four event-scoped permission booleans for the current caller.
@@ -22,23 +32,22 @@ const ALL_FALSE: Omit<EventPermissions, 'loading'> = {
  * eventId is undefined or the RPC errors (defensive — RLS is the real gate).
  */
 export function useEventPermissions(eventId: string | undefined): EventPermissions {
-  const [state, setState] = useState<EventPermissions>({ ...ALL_FALSE, loading: true });
+  const [state, setState] = useState<State>(INITIAL);
 
   useEffect(() => {
     if (!eventId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs state when input becomes falsy. Long-term: TanStack Query.
-      setState({ ...ALL_FALSE, loading: false });
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs hook state when input becomes falsy. Long-term: migrate to TanStack Query.
+      setState(INITIAL);
       return;
     }
     let cancelled = false;
-    setState((prev) => ({ ...prev, loading: true }));
     supabase
       .rpc('get_event_permissions', { eid: eventId })
       .single()
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error || !data) {
-          setState({ ...ALL_FALSE, loading: false });
+          setState({ fetchedFor: eventId, ...ALL_FALSE });
           return;
         }
         const row = data as {
@@ -48,7 +57,7 @@ export function useEventPermissions(eventId: string | undefined): EventPermissio
           can_own: boolean;
         };
         setState({
-          loading: false,
+          fetchedFor: eventId,
           canAccess: row.can_access,
           canContribute: row.can_contribute,
           canEdit: row.can_edit,
@@ -60,5 +69,18 @@ export function useEventPermissions(eventId: string | undefined): EventPermissio
     };
   }, [eventId]);
 
-  return state;
+  // Loading is derived synchronously: when the eventId we were asked about
+  // doesn't match the eventId we last fetched for, we're in flight. This
+  // avoids the classic race where a setLoading(true) inside useEffect arrives
+  // *after* the first render with the new eventId, leaving consumers with a
+  // stale loading=false on a render where state is actually unresolved.
+  const loading = eventId !== undefined && state.fetchedFor !== eventId;
+
+  return {
+    loading,
+    canAccess: state.canAccess,
+    canContribute: state.canContribute,
+    canEdit: state.canEdit,
+    canOwn: state.canOwn,
+  };
 }

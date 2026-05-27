@@ -78,4 +78,32 @@ describe('useEventPermissions', () => {
     expect(result.current.canAccess).toBe(false);
     expect(rpc).not.toHaveBeenCalled();
   });
+
+  it('falls back to all-false when the RPC returns an error', async () => {
+    rpcSingle.mockResolvedValue({ data: null, error: { message: 'rpc failed' } });
+    const { result } = renderHook(() => useEventPermissions('event-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.canAccess).toBe(false);
+    expect(result.current.canContribute).toBe(false);
+    expect(result.current.canEdit).toBe(false);
+    expect(result.current.canOwn).toBe(false);
+  });
+
+  it('shows loading=true again immediately after eventId changes', async () => {
+    rpcSingle.mockResolvedValueOnce({
+      data: { can_access: true, can_contribute: true, can_edit: true, can_own: true },
+      error: null,
+    });
+    const { result, rerender } = renderHook(({ id }) => useEventPermissions(id), {
+      initialProps: { id: 'event-1' as string | undefined },
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.canOwn).toBe(true);
+
+    // Switch to a different event — second resolve never fires, so loading must stay true
+    rpcSingle.mockReturnValueOnce(new Promise(() => {}));
+    rerender({ id: 'event-2' });
+    // Synchronously on the next render, loading must be true again — no flash of stale booleans.
+    expect(result.current.loading).toBe(true);
+  });
 });
