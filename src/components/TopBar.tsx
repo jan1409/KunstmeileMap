@@ -29,7 +29,7 @@ export function TopBar({
   const showControls = !isMobile || open;
 
   return (
-    <header className="absolute left-0 right-0 top-0 z-20 flex flex-col gap-2 bg-gradient-to-b from-black/70 to-transparent p-3 text-white md:flex-row md:flex-wrap md:items-center md:gap-4 md:p-4">
+    <header className="absolute left-0 right-0 top-0 z-[1000] flex flex-col gap-2 bg-gradient-to-b from-black/70 to-transparent p-3 text-white md:flex-row md:flex-wrap md:items-center md:gap-4 md:p-4">
       <div className="flex items-center justify-between gap-3 md:contents">
         <h1 className="text-base font-semibold md:text-lg">Kunstmeile</h1>
         {isMobile && (

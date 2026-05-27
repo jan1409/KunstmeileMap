@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 interface Props {
@@ -33,6 +35,20 @@ export function TentMapEditor({
   const { t } = useTranslation();
   const hasCoord = lat != null && lng != null;
   const markerPos: [number, number] = hasCoord ? [lat, lng] : defaultCenter;
+
+  // Tailwind-styled pin so we don't depend on Leaflet's default marker PNG
+  // (which Vite doesn't resolve out of the box — would render as a broken image).
+  const pinIcon = useMemo(
+    () =>
+      L.divIcon({
+        html:
+          '<div style="height:24px;width:24px;border-radius:9999px;background:#ef4444;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',
+        className: '',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      }),
+    [],
+  );
 
   return (
     <div className="space-y-2">
@@ -71,16 +87,20 @@ export function TentMapEditor({
         <MapContainer
           center={hasCoord ? markerPos : defaultCenter}
           zoom={defaultZoom}
+          maxZoom={22}
           className="h-full w-full"
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxNativeZoom={19}
+            maxZoom={22}
           />
           <MapClickHandler onClick={(lt, ln) => onChange({ lat: lt, lng: ln })} />
           {hasCoord && (
             <Marker
               position={markerPos}
+              icon={pinIcon}
               draggable
               eventHandlers={{
                 dragend: (e: {

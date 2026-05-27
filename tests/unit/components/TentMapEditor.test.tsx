@@ -5,6 +5,12 @@ import '../../../src/lib/i18n';
 
 import { TentMapEditor } from '../../../src/components/TentMapEditor';
 
+vi.mock('leaflet', () => ({
+  default: {
+    divIcon: vi.fn(() => ({})),
+  },
+}));
+
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="map">{children}</div>
@@ -47,7 +53,6 @@ vi.mock('react-leaflet', () => ({
   },
 }));
 
-vi.mock('leaflet', () => ({ default: {} }));
 
 describe('TentMapEditor', () => {
   it('renders inputs reflecting the current lat/lng', () => {

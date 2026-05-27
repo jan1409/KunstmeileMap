@@ -41,7 +41,7 @@ export function SidePanel({
       ref={trapRef}
       role="dialog"
       aria-label={tent.name}
-      className="fixed bottom-0 right-0 z-30 flex h-[33vh] w-full flex-col overflow-y-auto bg-neutral-900/95 p-6 text-white shadow-2xl backdrop-blur-md md:top-0 md:h-full md:w-[400px] md:rounded-l-lg"
+      className="fixed bottom-0 right-0 z-[1100] flex h-[33vh] w-full flex-col overflow-y-auto bg-neutral-900/95 p-6 text-white shadow-2xl backdrop-blur-md md:top-0 md:h-full md:w-[400px] md:rounded-l-lg"
     >
       {/* Mobile drag handle */}
       <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-white/30 md:hidden" />

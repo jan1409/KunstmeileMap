@@ -26,10 +26,12 @@ export function MapView({ tents, center, zoom, onMarkerClick }: Props) {
   );
 
   return (
-    <MapContainer center={center} zoom={zoom} className="h-full w-full">
+    <MapContainer center={center} zoom={zoom} maxZoom={22} className="h-full w-full">
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxNativeZoom={19}
+        maxZoom={22}
       />
       {placed.map((t) => {
         const color = markerColorForCategories(t.categories ?? []);

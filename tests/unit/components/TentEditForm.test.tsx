@@ -16,7 +16,11 @@ vi.mock('react-leaflet', () => ({
   useMapEvents: () => null,
 }));
 
-vi.mock('leaflet', () => ({ default: {} }));
+vi.mock('leaflet', () => ({
+  default: {
+    divIcon: vi.fn(() => ({})),
+  },
+}));
 
 const sampleCategories = [
   {
