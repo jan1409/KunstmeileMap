@@ -1,23 +1,46 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase, type Tent } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 import { useCategories } from '../../hooks/useCategories';
+import { useTents } from '../../hooks/useTents';
 import { PhotoUploadZone } from '../../components/PhotoUploadZone';
 import { useToast } from '../../components/ToastProvider';
 import {
   TentEditForm,
   type TentFormValues,
 } from '../../components/TentEditForm';
+import type { OtherTent } from '../../components/TentMapEditor';
 
 export default function TentEditPage() {
   const { eventSlug, tentId } = useParams();
   const navigate = useNavigate();
   const { event } = useEvent(eventSlug);
   const { categories } = useCategories(event?.id);
+  const { tents: allEventTents } = useTents(event?.id);
   const { showError } = useToast();
   const [tent, setTent] = useState<Tent | null>(null);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+
+  // Other already-placed tents in this event (excluding the one being edited).
+  // Rendered as green context markers in the map editor so admins can avoid
+  // placing a new pin on top of an existing one.
+  const otherTents: OtherTent[] = useMemo(
+    () =>
+      allEventTents
+        .filter(
+          (t): t is typeof t & { lat: number; lng: number } =>
+            t.lat != null && t.lng != null && t.id !== tent?.id,
+        )
+        .map((t) => ({
+          id: t.id,
+          name: t.name,
+          display_number: t.display_number,
+          lat: t.lat,
+          lng: t.lng,
+        })),
+    [allEventTents, tent?.id],
+  );
 
   // Load existing tent if editing (path is .../tents/<uuid> rather than /new).
   useEffect(() => {
@@ -129,6 +152,7 @@ export default function TentEditPage() {
         categories={categories}
         defaultCenter={[event.default_lat, event.default_lng]}
         defaultZoom={event.default_zoom}
+        otherTents={otherTents}
         onSubmit={onSubmit}
       />
       {tent && (

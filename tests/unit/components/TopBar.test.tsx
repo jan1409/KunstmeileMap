@@ -59,7 +59,7 @@ describe('TopBar', () => {
     vi.mocked(useIsMobile).mockReturnValue(true);
     renderTopBar();
 
-    expect(screen.getByRole('heading', { name: /kunstmeile/i })).toBeInTheDocument();
+    expect(screen.getByAltText(/kunstmeile/i)).toBeInTheDocument();
     const toggle = screen.getByRole('button', { name: /menü öffnen/i });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
 

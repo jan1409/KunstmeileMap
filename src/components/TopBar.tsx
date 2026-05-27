@@ -7,6 +7,7 @@ import { CategoryFilter } from './CategoryFilter';
 import { LanguageToggle } from './LanguageToggle';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useAuth } from './AuthProvider';
+import logoUrl from '../assets/Logo_Kunstmeile_plain.png';
 
 interface Props {
   tents: Tent[];
@@ -32,9 +33,13 @@ export function TopBar({
   const showControls = !isMobile || open;
 
   return (
-    <header className="absolute left-0 right-0 top-0 z-[1000] flex flex-col gap-2 bg-gradient-to-b from-black/70 to-transparent p-3 text-white md:flex-row md:flex-wrap md:items-center md:gap-4 md:p-4">
+    <header className="absolute left-0 right-0 top-0 z-[1000] flex flex-col gap-2 bg-neutral-900/85 p-3 text-white shadow-lg backdrop-blur-sm md:flex-row md:flex-wrap md:items-center md:gap-4 md:p-4">
       <div className="flex items-center justify-between gap-3 md:contents">
-        <h1 className="text-base font-semibold md:text-lg">Kunstmeile</h1>
+        <img
+          src={logoUrl}
+          alt="Kunstmeile"
+          className="h-8 w-auto md:h-10"
+        />
         {isMobile && (
           <button
             type="button"

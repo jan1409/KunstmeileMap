@@ -4,12 +4,22 @@ import { MapContainer, Marker, TileLayer, ZoomControl, useMapEvents } from 'reac
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+export interface OtherTent {
+  id: string;
+  name: string;
+  display_number: number | null;
+  lat: number;
+  lng: number;
+}
+
 interface Props {
   lat: number | null;
   lng: number | null;
   defaultCenter: [number, number];
   defaultZoom: number;
   onChange: (next: { lat: number | null; lng: number | null }) => void;
+  /** Other already-placed tents from the same event, shown in green for spatial context. */
+  otherTents?: OtherTent[];
 }
 
 function MapClickHandler({
@@ -31,6 +41,7 @@ export function TentMapEditor({
   defaultCenter,
   defaultZoom,
   onChange,
+  otherTents = [],
 }: Props) {
   const { t } = useTranslation();
   const hasCoord = lat != null && lng != null;
@@ -49,6 +60,19 @@ export function TentMapEditor({
       }),
     [],
   );
+
+  // Smaller green markers for OTHER tents — spatial context so the admin
+  // can avoid placing the new pin on top of an existing one.
+  function neighborIcon(displayNumber: number | null) {
+    const label = displayNumber != null ? String(displayNumber) : '';
+    return L.divIcon({
+      html:
+        `<div style="height:20px;width:20px;border-radius:9999px;background:#22c55e;border:2px solid white;box-shadow:0 1px 2px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:#052e16;font-size:10px;font-weight:600;">${label}</div>`,
+      className: '',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+  }
 
   return (
     <div className="space-y-2">
@@ -99,6 +123,16 @@ export function TentMapEditor({
             maxZoom={22}
           />
           <MapClickHandler onClick={(lt, ln) => onChange({ lat: lt, lng: ln })} />
+          {otherTents.map((o) => (
+            <Marker
+              key={o.id}
+              position={[o.lat, o.lng]}
+              icon={neighborIcon(o.display_number)}
+              interactive={false}
+              keyboard={false}
+              title={o.name}
+            />
+          ))}
           {hasCoord && (
             <Marker
               position={markerPos}

@@ -2,7 +2,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Category, Tent } from '../lib/supabase';
-import { TentMapEditor } from './TentMapEditor';
+import { TentMapEditor, type OtherTent } from './TentMapEditor';
 
 const TentSchema = z
   .object({
@@ -49,6 +49,8 @@ interface Props {
   categories: Category[];
   defaultCenter: [number, number];
   defaultZoom: number;
+  /** Other already-placed tents from the same event (green context markers). */
+  otherTents?: OtherTent[];
   onSubmit: (values: TentFormValues) => Promise<void>;
 }
 
@@ -57,6 +59,7 @@ export function TentEditForm({
   categories,
   defaultCenter,
   defaultZoom,
+  otherTents,
   onSubmit,
 }: Props) {
   const {
@@ -160,6 +163,7 @@ export function TentEditForm({
           lng={watchedLng ?? null}
           defaultCenter={defaultCenter}
           defaultZoom={defaultZoom}
+          otherTents={otherTents}
           onChange={({ lat, lng }) => {
             setValue('lat', lat ?? null, { shouldDirty: true, shouldValidate: true });
             setValue('lng', lng ?? null, { shouldDirty: true, shouldValidate: true });
