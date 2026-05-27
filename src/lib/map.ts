@@ -66,3 +66,11 @@ export function markerColorForCategories(
   if (cats.length === 0) return '#888';
   return colorForSlug(cats[0]!.slug);
 }
+
+/**
+ * Zoom threshold at which markers switch from compact dots (below) to full
+ * numbered badges (at/above). Calibrated for the Kunstmeile site at Lat 53°:
+ * 28px markers are ~2.5m wide at z=20, fitting the 3–4m stand spacing.
+ * See docs/superpowers/specs/2026-05-27-zoom-based-markers-design.md.
+ */
+export const MARKER_DETAIL_ZOOM = 20;

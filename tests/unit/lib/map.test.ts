@@ -5,6 +5,7 @@ import {
   computeBounds,
   colorForSlug,
   markerColorForCategories,
+  MARKER_DETAIL_ZOOM,
 } from '../../../src/lib/map';
 
 describe('isValidCoord', () => {
@@ -83,5 +84,14 @@ describe('markerColorForCategories', () => {
   it('returns the color of the first category slug', () => {
     const first = markerColorForCategories([{ slug: 'painting' }]);
     expect(first).toBe(colorForSlug('painting'));
+  });
+});
+
+describe('MARKER_DETAIL_ZOOM', () => {
+  it('is the integer zoom level at and above which markers show their display number', () => {
+    expect(MARKER_DETAIL_ZOOM).toBe(20);
+  });
+  it('is an integer', () => {
+    expect(Number.isInteger(MARKER_DETAIL_ZOOM)).toBe(true);
   });
 });
