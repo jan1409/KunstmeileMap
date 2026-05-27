@@ -17,7 +17,12 @@ i18n
     ns: ['common'],
     interpolation: { escapeValue: false },
     detection: {
-      order: ['localStorage', 'querystring', 'navigator'],
+      // Order is deliberate: explicit user choices first, then fall through to
+      // `fallbackLng: 'de'` rather than the browser's navigator language. The
+      // Kunstmeile audience is German-speaking by default; English browsers
+      // can switch via the LanguageToggle (public TopBar + AdminLayout
+      // header) or via the `?lang=en` querystring.
+      order: ['localStorage', 'querystring'],
       lookupQuerystring: 'lang',
       lookupLocalStorage: 'kunstmeile_lang',
       caches: ['localStorage'],

@@ -46,7 +46,9 @@
     "datenschutz": "Datenschutz"
   },
   "common": {
-    "back": "Zurück"
+    "back": "Zurück",
+    "loading": "Lädt …",
+    "dash": "—"
   },
   "cookie_banner": {
     "text": "Diese Seite verwendet ausschließlich technisch notwendige Cookies und lokale Speicherung für Spracheinstellungen und (im Admin-Bereich) Login-Sitzungen.",
@@ -60,10 +62,123 @@
   },
   "admin": {
     "nav": {
-      "view_site": "Zur Karte"
+      "view_site": "Zur Karte",
+      "dashboard": "Dashboard",
+      "events": "Events",
+      "sign_out": "Abmelden",
+      "sign_out_failed": "Abmelden fehlgeschlagen: {{message}}",
+      "skip_to_main": "Zum Hauptinhalt springen"
+    },
+    "dashboard": {
+      "heading": "Willkommen",
+      "quick_actions": "Schnellaktionen:",
+      "manage_events": "Events verwalten"
+    },
+    "login": {
+      "heading": "Admin-Login",
+      "email_label": "E-Mail",
+      "password_label": "Passwort",
+      "email_placeholder": "E-Mail",
+      "password_placeholder": "Passwort",
+      "submit": "Anmelden",
+      "submitting": "…"
+    },
+    "event_list": {
+      "heading": "Events",
+      "new_event": "+ Neues Event",
+      "col_slug": "Slug",
+      "col_title": "Titel",
+      "col_year": "Jahr",
+      "col_status": "Status",
+      "col_featured": "Hervorgehoben",
+      "action_manage": "Verwalten",
+      "action_categories": "Kategorien",
+      "action_settings": "Einstellungen",
+      "action_duplicate": "Duplizieren"
+    },
+    "event_settings": {
+      "heading": "Einstellungen — {{title}}",
+      "title_de_label": "Titel (DE)",
+      "title_en_label": "Titel (EN)",
+      "status_label": "Status",
+      "status_draft": "Entwurf",
+      "status_published": "Veröffentlicht",
+      "status_archived": "Archiviert",
+      "is_featured_label": "Hervorgehoben (Standard auf Startseite)",
+      "save_button": "Speichern",
+      "saving": "…",
+      "saved_flash": "Gespeichert."
     },
     "tent": {
-      "clear_coords": "Koordinaten löschen"
+      "clear_coords": "Koordinaten löschen",
+      "heading_new": "Neuer Stand",
+      "heading_edit": "Bearbeiten: {{name}}",
+      "save_failed": "Speichern fehlgeschlagen: {{message}}",
+      "form": {
+        "slug_label": "Slug",
+        "name_label": "Name",
+        "description_de_label": "Beschreibung (DE)",
+        "description_en_label": "Description (EN)",
+        "address_label": "Adresse",
+        "display_number_label": "#",
+        "display_number_placeholder": "auto",
+        "categories_label": "Kategorien",
+        "website_label": "Webseite",
+        "instagram_label": "Instagram",
+        "facebook_label": "Facebook",
+        "email_public_label": "Öffentliche E-Mail",
+        "position_label": "Position",
+        "save_button": "Speichern",
+        "saving": "…"
+      }
+    },
+    "tent_list": {
+      "heading": "{{title}} — Stände",
+      "csv_import": "CSV-Import",
+      "new_tent": "+ Neuer Stand",
+      "col_number": "#",
+      "col_name": "Name",
+      "col_slug": "Slug",
+      "col_position": "Position",
+      "action_edit": "Bearbeiten",
+      "action_view": "Ansehen",
+      "empty": "Noch keine Stände."
+    },
+    "category": {
+      "heading": "Kategorien — {{title}}",
+      "new": "+ Neue Kategorie",
+      "slug_label": "Slug",
+      "name_de_label": "Name (DE)",
+      "name_en_label": "Name (EN)",
+      "icon_label": "Icon",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "confirm_delete": "Löschen bestätigen",
+      "col_order": "Reihenfolge",
+      "col_icon": "Icon",
+      "col_slug": "Slug",
+      "col_de": "DE",
+      "col_en": "EN",
+      "empty": "Noch keine Kategorien."
+    },
+    "duplicate_event": {
+      "heading": "\"{{title}}\" duplizieren",
+      "slug_label": "Slug",
+      "title_de_label": "Titel (DE)",
+      "year_label": "Jahr",
+      "clone_categories": "Kategorien klonen",
+      "clone_tents": "Stände klonen",
+      "clone_tent_positions": "Stand-Positionen klonen",
+      "cancel": "Abbrechen",
+      "submit": "Duplizieren",
+      "submitting": "…"
+    },
+    "photo_upload": {
+      "heading": "Fotos",
+      "add_photos": "Fotos hinzufügen",
+      "remove": "Foto entfernen",
+      "alt": "Stand-Foto"
     },
     "event": {
       "default_lat_label": "Standard-Lat",
