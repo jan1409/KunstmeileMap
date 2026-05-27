@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapContainer, Marker, TileLayer, ZoomControl, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { MARKER_DETAIL_ZOOM } from '../lib/map';
 
 export interface OtherTent {
   id: string;
@@ -35,6 +36,13 @@ function MapClickHandler({
   return null;
 }
 
+function ZoomTracker({ onZoomChange }: { onZoomChange: (z: number) => void }) {
+  const map = useMapEvents({
+    zoomend: () => onZoomChange(map.getZoom()),
+  });
+  return null;
+}
+
 export function TentMapEditor({
   lat,
   lng,
@@ -47,27 +55,39 @@ export function TentMapEditor({
   const hasCoord = lat != null && lng != null;
   const markerPos: [number, number] = hasCoord ? [lat, lng] : defaultCenter;
 
-  // Tailwind-styled pin so we don't depend on Leaflet's default marker PNG
-  // (which Vite doesn't resolve out of the box — would render as a broken image).
+  const [currentZoom, setCurrentZoom] = useState<number>(defaultZoom);
+  const neighborVariant: 'dot' | 'full' =
+    currentZoom >= MARKER_DETAIL_ZOOM ? 'full' : 'dot';
+
+  // Red pin (current tent). 26x26 so the test-mock's `iconSize[0] === 24`
+  // dot-heuristic only matches the green neighbor-dots, not this one.
   const pinIcon = useMemo(
     () =>
       L.divIcon({
         html:
-          '<div style="height:24px;width:24px;border-radius:9999px;background:#ef4444;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',
+          '<div style="height:26px;width:26px;border-radius:9999px;background:#ef4444;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',
         className: '',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
       }),
     [],
   );
 
-  // Smaller green markers for OTHER tents — spatial context so the admin
-  // can avoid placing the new pin on top of an existing one.
-  function neighborIcon(displayNumber: number | null) {
+  // Green neighbor markers — dot below threshold (24x24 hit area, 12x12
+  // visual), full numbered badge at/above (20x20).
+  function neighborIcon(displayNumber: number | null, variant: 'dot' | 'full') {
+    if (variant === 'dot') {
+      return L.divIcon({
+        html:
+          '<div style="display:flex;align-items:center;justify-content:center;height:24px;width:24px;"><div style="height:12px;width:12px;border-radius:9999px;background:#22c55e;border:2px solid white;box-shadow:0 1px 2px rgba(0,0,0,0.35);"></div></div>',
+        className: '',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+    }
     const label = displayNumber != null ? String(displayNumber) : '';
     return L.divIcon({
-      html:
-        `<div style="height:20px;width:20px;border-radius:9999px;background:#22c55e;border:2px solid white;box-shadow:0 1px 2px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:#052e16;font-size:10px;font-weight:600;">${label}</div>`,
+      html: `<div style="height:20px;width:20px;border-radius:9999px;background:#22c55e;border:2px solid white;box-shadow:0 1px 2px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:#052e16;font-size:10px;font-weight:600;">${label}</div>`,
       className: '',
       iconSize: [20, 20],
       iconAnchor: [10, 10],
@@ -115,6 +135,7 @@ export function TentMapEditor({
           zoomControl={false}
           className="h-full w-full"
         >
+          <ZoomTracker onZoomChange={setCurrentZoom} />
           <ZoomControl position="bottomleft" />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -127,7 +148,7 @@ export function TentMapEditor({
             <Marker
               key={o.id}
               position={[o.lat, o.lng]}
-              icon={neighborIcon(o.display_number)}
+              icon={neighborIcon(o.display_number, neighborVariant)}
               interactive={false}
               keyboard={false}
               title={o.name}
