@@ -12,7 +12,8 @@ Run against the Vercel preview for `feat/excel-export` (URL pattern: `kunstmeile
   - [ ] One row per stand of the current event.
   - [ ] `category_slugs` is comma-separated (`painting,sculpture`) when a stand has multiple categories; empty when none.
   - [ ] Empty fields show as empty cells (not `null`).
-- [ ] Round-trip: edit a description in the .xlsx (e.g., add "EXPORT-TEST" to one row's `description_de`), save, then re-upload via `/admin/events/<slug>/tents/import`. The preview step should show all rows OK (or warnings for unknown categories, which is also expected if you renamed something). After commit, check `/admin/events/<slug>/tents/<id>` for that stand and verify the description was updated.
+- [ ] Column-shape sanity: open the exported file alongside `public/import-template.xlsx`. The header row of the export must match the template's column order and names exactly — same 13 columns, same names. This is the contract that lets the file be re-imported into a **new/empty event** without manual reformatting.
+- [ ] (Optional) Bulk-import into a fresh event: create a new event in the admin, then upload the exported file via that event's `/admin/events/<new-slug>/tents/import`. Preview should show all rows ✅ (or ⚠️ for unknown categories if the new event has different category slugs). After commit, the new event has the same stands. **Re-importing into the SAME event will fail with "slug duplicated" + "display_number duplicated" — that is expected; the wizard is insert-only by design.**
 
 ## Kategorien-Export
 

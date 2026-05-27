@@ -103,17 +103,17 @@ This pattern is browser-portable and doesn't require any extra library. Lives as
 
 ## Round-trip guarantee
 
-The whole-feature acceptance test is: **export a populated event's tents, change one row in Excel, re-import via the existing wizard, the modified row arrives in the DB with the change applied.**
+The export FILE FORMAT is round-trip-shaped — its column set and order exactly match what the import wizard's `RawRow` expects, so the exported file can be re-imported into a new/empty event without any manual reformatting. This is the property that gets verified by the helper unit tests (the 13-column header order in `tests/unit/lib/excel.test.ts`).
 
-To make this work in practice:
+**Caveat:** The import wizard is insert-only — `src/pages/admin/TentImportPage.tsx` calls `.insert(...)` and `src/lib/excel.ts:validateRow` rejects rows with duplicate `display_number` or `slug` against existing tents. So you cannot export an event and re-import into the SAME event without first deleting or renaming the existing rows. Use-cases that DO work:
 
-- Exported `display_number` is the actual stored integer, not the original "blank for auto-assign" placeholder.
-- Exported `slug` is the actual stored slug (the import wizard auto-generates from `name` when blank — round-trip preserves stable slugs by always including them).
-- `lat` / `lng` round-trip as numbers; the wizard accepts numeric cells via the existing SheetJS coercion.
-- `category_slugs` round-trips through the comma-separated form — admin can edit the string in Excel, re-import maps slugs back to category IDs (the wizard logic for unknown-slug warnings is unchanged).
-- Empty optional fields round-trip as empty strings (the wizard already tolerates empty for the optional URL/email/coord columns).
+- **Backup snapshot:** export periodically; keep the files. The file faithfully captures the event state.
+- **Offline editing then bulk-load into a NEW event:** create a new event, upload the file via its import wizard. All rows land.
+- **Sharing with the organizer team:** export, email the file, recipient can open in Excel/Numbers without any custom tooling.
 
-Round-trip is not enforced by tests beyond manual smoke (the export tests verify produced shape; the import tests verify consumption). A combined integration test is YAGNI for this feature.
+In all three cases the column-shape contract (verified by helper tests + the column-shape sanity smoke step) is what makes the round-trip work.
+
+To make round-trip-into-same-event work in the future would require either an upsert path in the import wizard (matching on slug or display_number to update in place rather than insert), or a separate "Update existing tents" admin tool. Neither is in this feature's scope.
 
 ## Test strategy
 
