@@ -1,6 +1,7 @@
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import type { Category, Tent } from '../lib/supabase';
 import { TentMapEditor, type OtherTent } from './TentMapEditor';
 
@@ -62,6 +63,7 @@ export function TentEditForm({
   otherTents,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -98,26 +100,26 @@ export function TentEditForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-3">
-      <Field label="Slug" error={errors.slug?.message}>
+      <Field label={t('admin.tent.form.slug_label')} error={errors.slug?.message}>
         <input {...register('slug')} className="input" />
       </Field>
-      <Field label="Name" error={errors.name?.message}>
+      <Field label={t('admin.tent.form.name_label')} error={errors.name?.message}>
         <input {...register('name')} className="input" />
       </Field>
-      <Field label="Beschreibung (DE)">
+      <Field label={t('admin.tent.form.description_de_label')}>
         <textarea {...register('description_de')} rows={4} className="input" />
       </Field>
-      <Field label="Description (EN)">
+      <Field label={t('admin.tent.form.description_en_label')}>
         <textarea {...register('description_en')} rows={4} className="input" />
       </Field>
-      <Field label="Adresse">
+      <Field label={t('admin.tent.form.address_label')}>
         <input {...register('address')} className="input" />
       </Field>
-      <Field label="#" error={errors.display_number?.message}>
+      <Field label={t('admin.tent.form.display_number_label')} error={errors.display_number?.message}>
         <input
           type="number"
           inputMode="numeric"
-          placeholder="auto"
+          placeholder={t('admin.tent.form.display_number_placeholder')}
           {...register('display_number')}
           className="input"
         />
@@ -126,7 +128,7 @@ export function TentEditForm({
           in a <label>; nested <label> elements are invalid HTML. We replicate
           Field's label-span styling on a <div> wrapper instead. */}
       <div>
-        <span className="block text-xs text-white/60">Kategorien</span>
+        <span className="block text-xs text-white/60">{t('admin.tent.form.categories_label')}</span>
         <div className="flex flex-wrap gap-2">
           {categories.map((c) => (
             <label key={c.id} className="flex items-center gap-1 text-sm">
@@ -143,21 +145,21 @@ export function TentEditForm({
           ))}
         </div>
       </div>
-      <Field label="Website" error={errors.website_url?.message}>
+      <Field label={t('admin.tent.form.website_label')} error={errors.website_url?.message}>
         <input {...register('website_url')} className="input" />
       </Field>
-      <Field label="Instagram" error={errors.instagram_url?.message}>
+      <Field label={t('admin.tent.form.instagram_label')} error={errors.instagram_url?.message}>
         <input {...register('instagram_url')} className="input" />
       </Field>
-      <Field label="Facebook" error={errors.facebook_url?.message}>
+      <Field label={t('admin.tent.form.facebook_label')} error={errors.facebook_url?.message}>
         <input {...register('facebook_url')} className="input" />
       </Field>
-      <Field label="Public email" error={errors.email_public?.message}>
+      <Field label={t('admin.tent.form.email_public_label')} error={errors.email_public?.message}>
         <input {...register('email_public')} className="input" />
       </Field>
 
       <div>
-        <span className="mb-2 block text-xs text-white/60">Position</span>
+        <span className="mb-2 block text-xs text-white/60">{t('admin.tent.form.position_label')}</span>
         <TentMapEditor
           lat={watchedLat ?? null}
           lng={watchedLng ?? null}
@@ -181,7 +183,7 @@ export function TentEditForm({
         disabled={isSubmitting}
         className="rounded bg-white/20 px-4 py-2 disabled:opacity-50"
       >
-        {isSubmitting ? '…' : 'Save'}
+        {isSubmitting ? t('admin.tent.form.saving') : t('admin.tent.form.save_button')}
       </button>
     </form>
   );

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase, type Event } from '../lib/supabase';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
+  const { t } = useTranslation();
   const [slug, setSlug] = useState(`${source.slug}-copy`);
   const [titleDe, setTitleDe] = useState(`${source.title_de} (Kopie)`);
   const [year, setYear] = useState(source.year + 1);
@@ -49,10 +51,10 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
     >
       <div ref={trapRef} className="w-full max-w-md rounded bg-neutral-900 p-6">
         <h2 id="duplicate-event-title" className="mb-4 text-lg font-semibold">
-          Duplicate "{source.title_de}"
+          {t('admin.duplicate_event.heading', { title: source.title_de })}
         </h2>
         <label className="block text-xs">
-          <span className="block text-white/60">Slug</span>
+          <span className="block text-white/60">{t('admin.duplicate_event.slug_label')}</span>
           <input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
@@ -60,7 +62,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
           />
         </label>
         <label className="mt-2 block text-xs">
-          <span className="block text-white/60">Title (DE)</span>
+          <span className="block text-white/60">{t('admin.duplicate_event.title_de_label')}</span>
           <input
             value={titleDe}
             onChange={(e) => setTitleDe(e.target.value)}
@@ -68,7 +70,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
           />
         </label>
         <label className="mt-2 block text-xs">
-          <span className="block text-white/60">Year</span>
+          <span className="block text-white/60">{t('admin.duplicate_event.year_label')}</span>
           <input
             type="number"
             value={year}
@@ -82,7 +84,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
             checked={cloneCats}
             onChange={(e) => setCloneCats(e.target.checked)}
           />
-          Clone categories
+          {t('admin.duplicate_event.clone_categories')}
         </label>
         <label className="mt-1 flex items-center gap-2 text-sm">
           <input
@@ -90,7 +92,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
             checked={cloneTents}
             onChange={(e) => setCloneTents(e.target.checked)}
           />
-          Clone tents
+          {t('admin.duplicate_event.clone_tents')}
         </label>
         <label className="mt-1 flex items-center gap-2 text-sm">
           <input
@@ -99,7 +101,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
             onChange={(e) => setClonePos(e.target.checked)}
             disabled={!cloneTents}
           />
-          Clone tent positions
+          {t('admin.duplicate_event.clone_tent_positions')}
         </label>
         {error && (
           <p role="alert" className="mt-2 text-sm text-red-400">
@@ -112,7 +114,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
             onClick={onClose}
             className="rounded bg-white/10 px-3 py-1"
           >
-            Cancel
+            {t('admin.duplicate_event.cancel')}
           </button>
           <button
             type="button"
@@ -120,7 +122,7 @@ export function DuplicateEventModal({ source, onClose, onCreated }: Props) {
             disabled={busy}
             className="rounded bg-white/20 px-3 py-1 disabled:opacity-50"
           >
-            {busy ? '…' : 'Duplicate'}
+            {busy ? t('admin.duplicate_event.submitting') : t('admin.duplicate_event.submit')}
           </button>
         </div>
       </div>

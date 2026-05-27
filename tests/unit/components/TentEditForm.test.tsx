@@ -73,10 +73,10 @@ describe('TentEditForm', () => {
     expect(screen.getByLabelText(/Description \(EN\)/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/adresse/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^#$|^Nummer$|display number/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/website/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/website|Webseite/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/instagram/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/facebook/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/public email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/public email|Öffentliche E-Mail/i)).toBeInTheDocument();
     // Categories now appear as checkboxes.
     expect(screen.getByRole('checkbox', { name: /Galerie/i })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /Atelier/i })).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe('TentEditForm', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /save/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /save|Speichern/i })).not.toBeDisabled();
   });
 
   it('validates required slug + name and rejects bad slugs', async () => {
@@ -110,13 +110,13 @@ describe('TentEditForm', () => {
     );
 
     // Empty submit: required errors surface, onSubmit is NOT called.
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
     expect(onSubmit).not.toHaveBeenCalled();
 
     // Bad slug (uppercase): rejected by regex.
     await user.type(screen.getByLabelText(/slug/i), 'BadSlug');
     await user.type(screen.getByLabelText(/^name$/i), 'A name');
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -133,13 +133,13 @@ describe('TentEditForm', () => {
 
     await user.type(screen.getByLabelText(/slug/i), 'galerie-nord');
     await user.type(screen.getByLabelText(/^name$/i), 'Galerie Nord');
-    await user.type(screen.getByLabelText(/website/i), 'not-a-url');
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.type(screen.getByLabelText(/website|Webseite/i), 'not-a-url');
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
     expect(onSubmit).not.toHaveBeenCalled();
 
-    await user.clear(screen.getByLabelText(/website/i));
-    await user.type(screen.getByLabelText(/public email/i), 'not-an-email');
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.clear(screen.getByLabelText(/website|Webseite/i));
+    await user.type(screen.getByLabelText(/public email|Öffentliche E-Mail/i), 'not-an-email');
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -157,8 +157,8 @@ describe('TentEditForm', () => {
     await user.type(screen.getByLabelText(/slug/i), 'galerie-nord');
     await user.type(screen.getByLabelText(/^name$/i), 'Galerie Nord');
     await user.type(screen.getByLabelText(/Beschreibung \(DE\)/i), 'Eine Galerie');
-    await user.type(screen.getByLabelText(/website/i), 'https://example.com');
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.type(screen.getByLabelText(/website|Webseite/i), 'https://example.com');
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const submitted = onSubmit.mock.calls[0]![0];
@@ -193,7 +193,7 @@ describe('TentEditForm', () => {
     expect(screen.getByLabelText(/slug/i)).toHaveValue('existing-tent');
     expect(screen.getByLabelText(/^name$/i)).toHaveValue('Existing Tent');
     expect(screen.getByLabelText(/Beschreibung \(DE\)/i)).toHaveValue('Bestehend');
-    expect(screen.getByLabelText(/website/i)).toHaveValue('https://existing.example');
+    expect(screen.getByLabelText(/website|Webseite/i)).toHaveValue('https://existing.example');
     expect(screen.getByRole('checkbox', { name: /Atelier/i })).toBeChecked();
     expect(screen.getByLabelText(/^lat$/i)).toHaveValue(49.5);
     expect(screen.getByLabelText(/^lng$/i)).toHaveValue(8.5);
@@ -216,7 +216,7 @@ describe('TentEditForm', () => {
     await user.click(screen.getByRole('checkbox', { name: /Galerie/i }));
     await user.click(screen.getByRole('checkbox', { name: /Atelier/i }));
 
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0]![0]).toMatchObject({
@@ -242,7 +242,7 @@ describe('TentEditForm', () => {
     );
     await user.type(screen.getByLabelText(/slug/i), 'bar');
     await user.type(screen.getByLabelText(/^name$/i), 'Bar');
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0]![0].display_number).toBeUndefined();
@@ -263,7 +263,7 @@ describe('TentEditForm', () => {
     await user.type(screen.getByLabelText(/^name$/i), 'Orphan');
     // Only fill lat — leaves lng null, refinement should reject.
     await user.type(screen.getByLabelText(/^lat$/i), '49.5');
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
@@ -283,7 +283,7 @@ describe('TentEditForm', () => {
     await user.type(screen.getByLabelText(/^name$/i), 'Paired');
     await user.type(screen.getByLabelText(/^lat$/i), '49.5');
     await user.type(screen.getByLabelText(/^lng$/i), '8.5');
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0]![0]).toMatchObject({ lat: 49.5, lng: 8.5 });
