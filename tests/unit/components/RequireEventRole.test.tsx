@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+
+import '../../../src/lib/i18n';
 import { RequireEventRole } from '../../../src/components/RequireEventRole';
 
 const permissionsState = vi.fn();
@@ -62,6 +64,54 @@ describe('RequireEventRole', () => {
 
   it('redirects to /admin/no-access when the caller has no access to the event at all', () => {
     eventState.mockReturnValue({ event: { id: 'ev1', slug: 'foo' }, loading: false, error: null });
+    permissionsState.mockReturnValue({ loading: false, canAccess: false, canContribute: false, canEdit: false, canOwn: false });
+    renderAt('/admin/events/foo/protected');
+    expect(screen.queryByText('protected content')).not.toBeInTheDocument();
+    expect(screen.getByText('no-access page')).toBeInTheDocument();
+  });
+
+  it('renders children when minRole=contributor and canContribute is true', () => {
+    eventState.mockReturnValue({ event: { id: 'ev1', slug: 'foo' }, loading: false, error: null });
+    permissionsState.mockReturnValue({ loading: false, canAccess: true, canContribute: true, canEdit: false, canOwn: false });
+    render(
+      <MemoryRouter initialEntries={['/admin/events/foo/protected']}>
+        <Routes>
+          <Route
+            path="/admin/events/:eventSlug/protected"
+            element={
+              <RequireEventRole minRole="contributor">
+                <div>contributor content</div>
+              </RequireEventRole>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('contributor content')).toBeInTheDocument();
+  });
+
+  it('renders children when minRole=owner and canOwn is true', () => {
+    eventState.mockReturnValue({ event: { id: 'ev1', slug: 'foo' }, loading: false, error: null });
+    permissionsState.mockReturnValue({ loading: false, canAccess: true, canContribute: true, canEdit: true, canOwn: true });
+    render(
+      <MemoryRouter initialEntries={['/admin/events/foo/protected']}>
+        <Routes>
+          <Route
+            path="/admin/events/:eventSlug/protected"
+            element={
+              <RequireEventRole minRole="owner">
+                <div>owner content</div>
+              </RequireEventRole>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('owner content')).toBeInTheDocument();
+  });
+
+  it('redirects to /admin/no-access when the event is not found (event=null, loading=false)', () => {
+    eventState.mockReturnValue({ event: null, loading: false, error: null });
     permissionsState.mockReturnValue({ loading: false, canAccess: false, canContribute: false, canEdit: false, canOwn: false });
     renderAt('/admin/events/foo/protected');
     expect(screen.queryByText('protected content')).not.toBeInTheDocument();

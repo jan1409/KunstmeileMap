@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useEvent } from '../hooks/useEvent';
 import { useEventPermissions, type EventPermissions } from '../hooks/useEventPermissions';
 
@@ -16,6 +17,18 @@ function meets(perms: EventPermissions, minRole: MinRole): boolean {
   return perms.canOwn;
 }
 
+function LoadingPlaceholder({ label }: { label: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex min-h-screen items-center justify-center bg-neutral-900 p-6 text-white"
+    >
+      {label}
+    </div>
+  );
+}
+
 /**
  * Route-guard wrapper. Reads :eventSlug from the URL, resolves to an event id
  * via useEvent, then calls useEventPermissions and checks the requested
@@ -29,12 +42,13 @@ export function RequireEventRole({ minRole, children }: Props) {
   const { eventSlug } = useParams<{ eventSlug?: string }>();
   const { event, loading: eventLoading } = useEvent(eventSlug);
   const perms = useEventPermissions(event?.id);
+  const { t } = useTranslation();
 
   if (eventLoading || perms.loading) {
-    return <p className="p-6">…</p>;
+    return <LoadingPlaceholder label={t('app.auth_loading')} />;
   }
 
-  if (!perms.canAccess) {
+  if (!eventSlug || !perms.canAccess) {
     return <Navigate to="/admin/no-access" replace />;
   }
   if (!meets(perms, minRole)) {
