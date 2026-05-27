@@ -7,7 +7,9 @@
     "menu_open": "Menü öffnen",
     "menu_close": "Menü schließen",
     "auth_loading": "Authentifizierung lädt …",
-    "auth_profile_error": "Profilabruf fehlgeschlagen. Bitte abmelden und erneut versuchen."
+    "auth_profile_error": "Profilabruf fehlgeschlagen. Bitte abmelden und erneut versuchen.",
+    "login_link": "Anmelden",
+    "admin_link": "Admin"
   },
   "event": {
     "not_found": "Event nicht gefunden"
@@ -34,6 +36,7 @@
     "share": "Link kopieren",
     "close": "Schließen",
     "add_photo": "Foto hinzufügen",
+    "take_photo": "Foto aufnehmen",
     "manage_photos": "Fotos verwalten",
     "uploading": "Wird hochgeladen…",
     "upload_error": "Upload fehlgeschlagen: {{message}}"
@@ -56,6 +59,9 @@
     "sign_out": "Abmelden"
   },
   "admin": {
+    "nav": {
+      "view_site": "Zur Karte"
+    },
     "tent": {
       "clear_coords": "Koordinaten löschen"
     },

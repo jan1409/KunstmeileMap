@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import type { Tent, Category } from '../lib/supabase';
 import { SearchBar } from './SearchBar';
 import { CategoryFilter } from './CategoryFilter';
 import { LanguageToggle } from './LanguageToggle';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useAuth } from './AuthProvider';
 
 interface Props {
   tents: Tent[];
@@ -25,6 +27,7 @@ export function TopBar({
 }: Props) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { session } = useAuth();
   const [open, setOpen] = useState(false);
   const showControls = !isMobile || open;
 
@@ -55,8 +58,14 @@ export function TopBar({
               onClear={onClearCategories}
             />
           </div>
-          <div className="md:order-3">
+          <div className="flex items-center gap-2 md:order-3">
             <LanguageToggle />
+            <Link
+              to="/admin"
+              className="rounded bg-white/10 px-2 py-1 text-xs hover:bg-white/20"
+            >
+              {session ? t('app.admin_link') : t('app.login_link')}
+            </Link>
           </div>
         </>
       )}

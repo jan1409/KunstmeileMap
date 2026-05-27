@@ -36,6 +36,7 @@ vi.mock('react-leaflet', () => ({
       onClick={() => eventHandlers?.click?.()}
     />
   ),
+  ZoomControl: () => <div data-testid="zoom-control" />,
 }));
 
 vi.mock('leaflet', () => ({

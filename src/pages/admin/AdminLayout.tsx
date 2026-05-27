@@ -1,8 +1,10 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../components/AuthProvider';
 import { useToast } from '../../components/ToastProvider';
 
 export default function AdminLayout() {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { showError } = useToast();
@@ -29,6 +31,9 @@ export default function AdminLayout() {
         <nav className="flex gap-4 text-sm">
           <Link to="/admin">Dashboard</Link>
           <Link to="/admin/events">Events</Link>
+          <Link to="/" className="text-white/70 hover:text-white">
+            ↗ {t('admin.nav.view_site')}
+          </Link>
         </nav>
         <div className="flex items-center gap-3 text-sm">
           <span className="text-white/60">{user?.email}</span>

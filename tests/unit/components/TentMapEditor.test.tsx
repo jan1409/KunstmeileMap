@@ -51,6 +51,7 @@ vi.mock('react-leaflet', () => ({
       handlers.click;
     return null;
   },
+  ZoomControl: () => null,
 }));
 
 

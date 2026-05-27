@@ -18,6 +18,7 @@ interface Props {
 export function AddPhotosControl({ eventId, tentId, onUploaded }: Props) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const { showError } = useToast();
 
@@ -66,7 +67,15 @@ export function AddPhotosControl({ eventId, tentId, onUploaded }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => cameraRef.current?.click()}
+        disabled={busy}
+        className="rounded bg-white/10 px-3 py-1 text-xs hover:bg-white/20 disabled:opacity-50"
+      >
+        📷 {t('side_panel.take_photo')}
+      </button>
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -75,6 +84,15 @@ export function AddPhotosControl({ eventId, tentId, onUploaded }: Props) {
       >
         {busy ? t('side_panel.uploading') : `+ ${t('side_panel.add_photo')}`}
       </button>
+      <input
+        ref={cameraRef}
+        data-testid="take-photo-input"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={onChange}
+        className="hidden"
+      />
       <input
         ref={inputRef}
         data-testid="add-photo-input"

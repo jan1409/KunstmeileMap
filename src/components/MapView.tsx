@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import { renderToString } from 'react-dom/server';
 import 'leaflet/dist/leaflet.css';
@@ -26,7 +26,14 @@ export function MapView({ tents, center, zoom, onMarkerClick }: Props) {
   );
 
   return (
-    <MapContainer center={center} zoom={zoom} maxZoom={22} className="h-full w-full">
+    <MapContainer
+      center={center}
+      zoom={zoom}
+      maxZoom={22}
+      zoomControl={false}
+      className="h-full w-full"
+    >
+      <ZoomControl position="bottomleft" />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

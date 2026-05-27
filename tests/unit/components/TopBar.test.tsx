@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 
 import '../../../src/lib/i18n';
 import i18n from 'i18next';
@@ -13,19 +14,25 @@ vi.mock('../../../src/hooks/useIsMobile', () => ({
   useIsMobile: vi.fn(),
 }));
 
+vi.mock('../../../src/components/AuthProvider', () => ({
+  useAuth: () => ({ session: null, user: null, loading: false, signIn: vi.fn(), signOut: vi.fn() }),
+}));
+
 const tents: Tent[] = [];
 const categories: Category[] = [];
 
 function renderTopBar() {
   return render(
-    <TopBar
-      tents={tents}
-      categories={categories}
-      selectedCategoryIds={new Set<string>()}
-      onSelectTent={vi.fn()}
-      onToggleCategory={vi.fn()}
-      onClearCategories={vi.fn()}
-    />,
+    <MemoryRouter>
+      <TopBar
+        tents={tents}
+        categories={categories}
+        selectedCategoryIds={new Set<string>()}
+        onSelectTent={vi.fn()}
+        onToggleCategory={vi.fn()}
+        onClearCategories={vi.fn()}
+      />
+    </MemoryRouter>,
   );
 }
 
