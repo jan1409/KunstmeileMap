@@ -14,13 +14,13 @@ const sampleUser: EventUser = {
 };
 
 describe('UserRow', () => {
-  let onChangeRole: ReturnType<typeof vi.fn>;
-  let onRemove: ReturnType<typeof vi.fn>;
-  let onResendInvite: ReturnType<typeof vi.fn>;
+  let onChangeRole: ReturnType<typeof vi.fn> & ((profileId: string, newRole: 'owner' | 'editor' | 'contributor') => void);
+  let onRemove: ReturnType<typeof vi.fn> & ((profileId: string) => void);
+  let onResendInvite: ReturnType<typeof vi.fn> & ((email: string) => void);
   beforeEach(() => {
-    onChangeRole = vi.fn();
-    onRemove = vi.fn();
-    onResendInvite = vi.fn();
+    onChangeRole = vi.fn() as typeof onChangeRole;
+    onRemove = vi.fn() as typeof onRemove;
+    onResendInvite = vi.fn() as typeof onResendInvite;
   });
 
   it('renders email and current role', () => {

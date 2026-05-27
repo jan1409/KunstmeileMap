@@ -15,12 +15,12 @@ vi.mock('../../../src/components/ToastProvider', () => ({
 }));
 
 describe('InviteUserForm', () => {
-  let onInvited: ReturnType<typeof vi.fn>;
+  let onInvited: ReturnType<typeof vi.fn> & (() => void);
   beforeEach(() => {
     functionsInvoke.mockReset();
     showSuccess.mockReset();
     showError.mockReset();
-    onInvited = vi.fn();
+    onInvited = vi.fn() as typeof onInvited;
   });
 
   it('does not submit when email is empty', () => {
