@@ -67,7 +67,8 @@
       "events": "Events",
       "sign_out": "Abmelden",
       "sign_out_failed": "Abmelden fehlgeschlagen: {{message}}",
-      "skip_to_main": "Zum Hauptinhalt springen"
+      "skip_to_main": "Zum Hauptinhalt springen",
+      "users": "Benutzer"
     },
     "dashboard": {
       "heading": "Willkommen",
@@ -202,6 +203,31 @@
       "status_error": "Fehler",
       "back_to_list": "Zurück zur Stand-Liste",
       "loading_data": "Lade Daten…"
+    },
+    "users": {
+      "heading": "Benutzer — {{title}}",
+      "invite_heading": "Neuen Benutzer einladen",
+      "invite_email_label": "Email",
+      "invite_role_label": "Rolle",
+      "role_owner": "Owner",
+      "role_editor": "Editor",
+      "role_contributor": "Contributor",
+      "invite_submit": "Einladung senden",
+      "invite_sending": "Senden …",
+      "invite_success": "Einladung an {{email}} versandt.",
+      "invite_added_to_existing": "{{email}} wurde als {{role}} hinzugefügt (bestehender Account).",
+      "invite_already_member": "{{email}} ist bereits Mitglied dieses Events ({{role}}).",
+      "invite_error": "Einladung fehlgeschlagen: {{message}}",
+      "list_heading": "Aktuelle Benutzer",
+      "col_email": "Email",
+      "col_role": "Rolle",
+      "col_actions": "Aktionen",
+      "action_remove": "Entfernen",
+      "action_confirm_remove": "Klick zum Bestätigen",
+      "action_resend_invite": "Erneut senden",
+      "you_label": "Du selbst",
+      "pending_prefix": "(Pending)",
+      "empty": "Lade Mitstreiter ein, indem du oben eine Email einträgst."
     }
   }
 }

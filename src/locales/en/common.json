@@ -67,7 +67,8 @@
       "events": "Events",
       "sign_out": "Sign out",
       "sign_out_failed": "Sign out failed: {{message}}",
-      "skip_to_main": "Skip to main content"
+      "skip_to_main": "Skip to main content",
+      "users": "Users"
     },
     "dashboard": {
       "heading": "Welcome",
@@ -202,6 +203,31 @@
       "status_error": "Error",
       "back_to_list": "Back to tent list",
       "loading_data": "Loading data…"
+    },
+    "users": {
+      "heading": "Users — {{title}}",
+      "invite_heading": "Invite new user",
+      "invite_email_label": "Email",
+      "invite_role_label": "Role",
+      "role_owner": "Owner",
+      "role_editor": "Editor",
+      "role_contributor": "Contributor",
+      "invite_submit": "Send invitation",
+      "invite_sending": "Sending…",
+      "invite_success": "Invitation sent to {{email}}.",
+      "invite_added_to_existing": "{{email}} added as {{role}} (existing account).",
+      "invite_already_member": "{{email}} is already a member of this event ({{role}}).",
+      "invite_error": "Invitation failed: {{message}}",
+      "list_heading": "Current users",
+      "col_email": "Email",
+      "col_role": "Role",
+      "col_actions": "Actions",
+      "action_remove": "Remove",
+      "action_confirm_remove": "Click to confirm",
+      "action_resend_invite": "Resend",
+      "you_label": "You",
+      "pending_prefix": "(Pending)",
+      "empty": "Invite collaborators by entering an email above."
     }
   }
 }
