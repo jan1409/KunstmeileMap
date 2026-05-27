@@ -40,7 +40,10 @@ function jsonResponse(body: unknown, status = 200): Response {
 async function findUserByEmail(
   serviceClient: SupabaseClient,
   normalizedEmail: string,
-): Promise<{ user?: { id: string; email?: string } | null; error?: { message: string } }> {
+): Promise<{
+  user?: { id: string; email?: string; email_confirmed_at?: string | null } | null;
+  error?: { message: string };
+}> {
   const perPage = 1000;
   for (let page = 1; ; page++) {
     const { data, error } = await serviceClient.auth.admin.listUsers({ page, perPage });
