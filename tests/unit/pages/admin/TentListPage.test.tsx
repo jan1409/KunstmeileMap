@@ -29,7 +29,12 @@ vi.mock('../../../../src/components/ToastProvider', () => ({
   useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn() }),
 }));
 
+vi.mock('../../../../src/hooks/useEventPermissions', () => ({
+  useEventPermissions: vi.fn(),
+}));
+
 import TentListPage from '../../../../src/pages/admin/TentListPage';
+import { useEventPermissions } from '../../../../src/hooks/useEventPermissions';
 
 const sampleEvent = {
   id: 'evt-1',
@@ -91,6 +96,15 @@ describe('TentListPage', () => {
     order.mockReset();
     useEventMock.mockReset();
     eq.mockReturnValue({ order });
+    // Default to editor-level perms so the pre-existing tests (which assert
+    // + Neuer Stand is visible) keep passing without modification.
+    vi.mocked(useEventPermissions).mockReturnValue({
+      loading: false,
+      canAccess: true,
+      canContribute: true,
+      canEdit: true,
+      canOwn: false,
+    });
   });
 
   it('shows a placeholder while the event is still loading', () => {
@@ -201,5 +215,49 @@ describe('TentListPage', () => {
       expect(link).toHaveAttribute('target', '_blank');
       expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
     }
+  });
+
+  it('hides + Neuer Stand and CSV-Import buttons for a contributor', async () => {
+    useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
+    order.mockResolvedValue({ data: sampleTents, error: null });
+    vi.mocked(useEventPermissions).mockReturnValue({
+      loading: false,
+      canAccess: true,
+      canContribute: true,
+      canEdit: false,
+      canOwn: false,
+    });
+
+    renderApp();
+    await screen.findByText('Galerie Nord');
+
+    expect(
+      screen.queryByRole('link', { name: /Neuer Stand|New tent/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /CSV-Import|CSV import/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows both buttons for an editor', async () => {
+    useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
+    order.mockResolvedValue({ data: sampleTents, error: null });
+    vi.mocked(useEventPermissions).mockReturnValue({
+      loading: false,
+      canAccess: true,
+      canContribute: true,
+      canEdit: true,
+      canOwn: false,
+    });
+
+    renderApp();
+    await screen.findByText('Galerie Nord');
+
+    expect(
+      screen.getByRole('link', { name: /Neuer Stand|New tent/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /CSV-Import|CSV import/i }),
+    ).toBeInTheDocument();
   });
 });

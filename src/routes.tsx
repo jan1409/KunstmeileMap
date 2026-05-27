@@ -5,6 +5,7 @@ import ImpressumPage from './pages/public/ImpressumPage';
 import DatenschutzPage from './pages/public/DatenschutzPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import { RequireAuth } from './components/RequireAuth';
+import { RequireEventRole } from './components/RequireEventRole';
 import { CookieBanner } from './components/CookieBanner';
 import { ToastProvider } from './components/ToastProvider';
 
@@ -21,6 +22,7 @@ const TentEditPage = lazy(() => import('./pages/admin/TentEditPage'));
 const TentImportPage = lazy(() => import('./pages/admin/TentImportPage'));
 const CategoryListPage = lazy(() => import('./pages/admin/CategoryListPage'));
 const EventSettingsPage = lazy(() => import('./pages/admin/EventSettingsPage'));
+const UsersPage = lazy(() => import('./pages/admin/UsersPage'));
 
 const adminFallback = (
   <div
@@ -64,12 +66,62 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: suspended(<DashboardPage />) },
           { path: 'events', element: suspended(<EventListPage />) },
-          { path: 'events/:eventSlug/tents', element: suspended(<TentListPage />) },
-          { path: 'events/:eventSlug/tents/new', element: suspended(<TentEditPage />) },
-          { path: 'events/:eventSlug/tents/import', element: suspended(<TentImportPage />) },
-          { path: 'events/:eventSlug/tents/:tentId', element: suspended(<TentEditPage />) },
-          { path: 'events/:eventSlug/categories', element: suspended(<CategoryListPage />) },
-          { path: 'events/:eventSlug/settings', element: suspended(<EventSettingsPage />) },
+          {
+            path: 'events/:eventSlug/tents',
+            element: (
+              <RequireEventRole minRole="contributor">
+                {suspended(<TentListPage />)}
+              </RequireEventRole>
+            ),
+          },
+          {
+            path: 'events/:eventSlug/tents/new',
+            element: (
+              <RequireEventRole minRole="editor">
+                {suspended(<TentEditPage />)}
+              </RequireEventRole>
+            ),
+          },
+          {
+            path: 'events/:eventSlug/tents/import',
+            element: (
+              <RequireEventRole minRole="editor">
+                {suspended(<TentImportPage />)}
+              </RequireEventRole>
+            ),
+          },
+          {
+            path: 'events/:eventSlug/tents/:tentId',
+            element: (
+              <RequireEventRole minRole="contributor">
+                {suspended(<TentEditPage />)}
+              </RequireEventRole>
+            ),
+          },
+          {
+            path: 'events/:eventSlug/categories',
+            element: (
+              <RequireEventRole minRole="editor">
+                {suspended(<CategoryListPage />)}
+              </RequireEventRole>
+            ),
+          },
+          {
+            path: 'events/:eventSlug/settings',
+            element: (
+              <RequireEventRole minRole="owner">
+                {suspended(<EventSettingsPage />)}
+              </RequireEventRole>
+            ),
+          },
+          {
+            path: 'events/:eventSlug/users',
+            element: (
+              <RequireEventRole minRole="owner">
+                {suspended(<UsersPage />)}
+              </RequireEventRole>
+            ),
+          },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

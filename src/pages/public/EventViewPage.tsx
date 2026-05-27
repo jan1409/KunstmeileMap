@@ -5,7 +5,7 @@ import { useEvent } from '../../hooks/useEvent';
 import { useTents } from '../../hooks/useTents';
 import { useCategories } from '../../hooks/useCategories';
 import { usePhotos } from '../../hooks/usePhotos';
-import { useCanEditEvent } from '../../hooks/useCanEditEvent';
+import { useEventPermissions } from '../../hooks/useEventPermissions';
 import { MapView } from '../../components/MapView';
 import { SidePanel } from '../../components/SidePanel';
 import { TopBar } from '../../components/TopBar';
@@ -20,7 +20,7 @@ export default function EventViewPage() {
   const { event, loading, error } = useEvent(eventSlug);
   const { tents } = useTents(event?.id);
   const { categories } = useCategories(event?.id);
-  const { canEdit } = useCanEditEvent(event?.id);
+  const perms = useEventPermissions(event?.id);
 
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(
     new Set(),
@@ -111,7 +111,7 @@ export default function EventViewPage() {
           photoUrls={photoUrls}
           onClose={() => selectTentBySlug(null)}
           eventId={event.id}
-          canEdit={canEdit}
+          canEdit={perms.canContribute}
           onPhotosChanged={() => setPhotosReloadKey((k) => k + 1)}
         />
       )}
