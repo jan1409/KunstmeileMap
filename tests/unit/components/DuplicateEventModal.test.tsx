@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import '../../../src/lib/i18n';
+
 const rpcFn = vi.hoisted(() => vi.fn());
 vi.mock('../../../src/lib/supabase', () => ({
   supabase: { rpc: rpcFn },
@@ -19,9 +21,9 @@ const sourceEvent = {
   ends_at: null,
   venue_name: null,
   venue_address: null,
-  splat_url: null,
-  splat_origin: null,
-  splat_camera_default: null,
+  default_lat: 49.0,
+  default_lng: 8.4,
+  default_zoom: 17,
   status: 'published' as const,
   is_featured: true,
   created_at: '2026-04-01T00:00:00Z',
@@ -48,10 +50,10 @@ describe('DuplicateEventModal', () => {
     );
 
     expect(screen.getByLabelText(/^slug$/i)).toHaveValue('kunstmeile-2026-copy');
-    expect(screen.getByLabelText(/title \(de\)/i)).toHaveValue(
+    expect(screen.getByLabelText(/title \(de\)|Titel \(DE\)/i)).toHaveValue(
       'Kunstmeile 2026 (Kopie)',
     );
-    expect(screen.getByLabelText(/^year$/i)).toHaveValue(2027);
+    expect(screen.getByLabelText(/^year$|^Jahr$/i)).toHaveValue(2027);
   });
 
   it('renders the source title in the heading', () => {
@@ -78,8 +80,8 @@ describe('DuplicateEventModal', () => {
       />,
     );
 
-    const cloneTents = screen.getByLabelText(/clone tents/i);
-    const clonePositions = screen.getByLabelText(/clone tent positions/i);
+    const cloneTents = screen.getByLabelText(/clone tents|Stände klonen/i);
+    const clonePositions = screen.getByLabelText(/clone tent positions|Stand-Positionen klonen/i);
 
     expect(clonePositions).not.toBeDisabled();
 
@@ -103,14 +105,14 @@ describe('DuplicateEventModal', () => {
     const slug = screen.getByLabelText(/^slug$/i);
     await user.clear(slug);
     await user.type(slug, 'kunstmeile-2027');
-    const year = screen.getByLabelText(/^year$/i);
+    const year = screen.getByLabelText(/^year$|^Jahr$/i);
     await user.clear(year);
     await user.type(year, '2027');
 
     // Flip clone_tent_positions off so we know our checkbox state lands.
-    await user.click(screen.getByLabelText(/clone tent positions/i));
+    await user.click(screen.getByLabelText(/clone tent positions|Stand-Positionen klonen/i));
 
-    await user.click(screen.getByRole('button', { name: /^duplicate$/i }));
+    await user.click(screen.getByRole('button', { name: /^duplicate$|^Duplizieren$/i }));
 
     await waitFor(() => expect(rpcFn).toHaveBeenCalledTimes(1));
     expect(rpcFn).toHaveBeenCalledWith('duplicate_event', {
@@ -121,7 +123,6 @@ describe('DuplicateEventModal', () => {
       clone_categories: true,
       clone_tents: true,
       clone_tent_positions: false,
-      clone_splat_url: true,
     });
     expect(onCreated).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -141,7 +142,7 @@ describe('DuplicateEventModal', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /^duplicate$/i }));
+    await user.click(screen.getByRole('button', { name: /^duplicate$|^Duplizieren$/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/permission denied/i);
     expect(onCreated).not.toHaveBeenCalled();
@@ -170,7 +171,7 @@ describe('DuplicateEventModal', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    await user.click(screen.getByRole('button', { name: /^cancel$|^Abbrechen$/i }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(rpcFn).not.toHaveBeenCalled();

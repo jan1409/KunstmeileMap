@@ -27,9 +27,9 @@ export function BackToOverviewButton({ visible, onClick, panelOpen = false }: Pr
     <button
       type="button"
       onClick={onClick}
-      className={`fixed z-40 rounded bg-white/10 px-3 py-2 text-xs text-white shadow-lg backdrop-blur hover:bg-white/20 ${position}`}
+      className={`fixed z-[1010] rounded bg-white/10 px-3 py-2 text-xs text-white shadow-lg backdrop-blur hover:bg-white/20 ${position}`}
     >
-      <span aria-hidden="true">↩</span> {t('viewer.back_to_overview')}
+      <span aria-hidden="true">↩</span> {t('map.back_to_overview')}
     </button>
   );
 }

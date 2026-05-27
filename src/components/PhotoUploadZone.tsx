@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase, type TentPhoto } from '../lib/supabase';
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function PhotoUploadZone({ eventId, tentId }: Props) {
+  const { t } = useTranslation();
   const [photos, setPhotos] = useState<TentPhoto[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
 
   return (
     <div>
-      <h3 className="mb-2 text-sm font-semibold">Photos</h3>
+      <h3 className="mb-2 text-sm font-semibold">{t('admin.photo_upload.heading')}</h3>
       <div className="grid grid-cols-3 gap-2">
         {photos.map((p) => {
           const url = supabase.storage
@@ -74,12 +76,12 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
             <div key={p.id} className="relative">
               <img
                 src={url}
-                alt="Tent photo"
+                alt={t('admin.photo_upload.alt')}
                 className="aspect-square w-full rounded object-cover"
               />
               <button
                 type="button"
-                aria-label="Remove photo"
+                aria-label={t('admin.photo_upload.remove')}
                 onClick={() => remove(p)}
                 className="absolute right-1 top-1 rounded bg-black/70 px-1 text-xs"
               >
@@ -90,7 +92,7 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
         })}
       </div>
       <label className="mt-2 block text-xs text-white/60">
-        <span className="block">Add photos</span>
+        <span className="block">{t('admin.photo_upload.add_photos')}</span>
         <input
           type="file"
           accept="image/*"

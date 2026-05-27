@@ -1,8 +1,11 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../components/AuthProvider';
 import { useToast } from '../../components/ToastProvider';
+import { LanguageToggle } from '../../components/LanguageToggle';
 
 export default function AdminLayout() {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { showError } = useToast();
@@ -12,7 +15,7 @@ export default function AdminLayout() {
       await signOut();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'unknown';
-      showError(`Sign out failed: ${msg}`);
+      showError(t('admin.nav.sign_out_failed', { message: msg }));
     }
     navigate('/admin/login', { replace: true });
   }
@@ -23,20 +26,24 @@ export default function AdminLayout() {
         href="#main"
         className="sr-only rounded bg-white/10 p-2 text-sm focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50"
       >
-        Skip to main content
+        {t('admin.nav.skip_to_main')}
       </a>
       <header className="flex items-center justify-between border-b border-white/10 p-4">
         <nav className="flex gap-4 text-sm">
-          <Link to="/admin">Dashboard</Link>
-          <Link to="/admin/events">Events</Link>
+          <Link to="/admin">{t('admin.nav.dashboard')}</Link>
+          <Link to="/admin/events">{t('admin.nav.events')}</Link>
+          <Link to="/" className="text-white/70 hover:text-white">
+            ↗ {t('admin.nav.view_site')}
+          </Link>
         </nav>
         <div className="flex items-center gap-3 text-sm">
+          <LanguageToggle />
           <span className="text-white/60">{user?.email}</span>
           <button
             onClick={onSignOut}
             className="rounded bg-white/10 px-2 py-1"
           >
-            Sign out
+            {t('admin.nav.sign_out')}
           </button>
         </div>
       </header>

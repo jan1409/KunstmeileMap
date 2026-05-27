@@ -1,29 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase, type Tent } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 import { useCategories } from '../../hooks/useCategories';
-import { SplatViewer } from '../../components/SplatViewer';
+import { useTents } from '../../hooks/useTents';
 import { PhotoUploadZone } from '../../components/PhotoUploadZone';
 import { useToast } from '../../components/ToastProvider';
 import {
   TentEditForm,
   type TentFormValues,
 } from '../../components/TentEditForm';
-
-type Position = { x: number; y: number; z: number };
+import type { OtherTent } from '../../components/TentMapEditor';
 
 export default function TentEditPage() {
+  const { t } = useTranslation();
   const { eventSlug, tentId } = useParams();
   const navigate = useNavigate();
   const { event } = useEvent(eventSlug);
   const { categories } = useCategories(event?.id);
+  const { tents: allEventTents } = useTents(event?.id);
   const { showError } = useToast();
   const [tent, setTent] = useState<Tent | null>(null);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
-  const [position, setPosition] = useState<Position | null>(null);
-  const [placeMode, setPlaceMode] = useState(false);
-  const [hoverPoint, setHoverPoint] = useState<Position | null>(null);
+
+  // Other already-placed tents in this event (excluding the one being edited).
+  // Rendered as green context markers in the map editor so admins can avoid
+  // placing a new pin on top of an existing one.
+  const otherTents: OtherTent[] = useMemo(
+    () =>
+      allEventTents
+        .filter(
+          (t): t is typeof t & { lat: number; lng: number } =>
+            t.lat != null && t.lng != null && t.id !== tent?.id,
+        )
+        .map((t) => ({
+          id: t.id,
+          name: t.name,
+          display_number: t.display_number,
+          lat: t.lat,
+          lng: t.lng,
+        })),
+    [allEventTents, tent?.id],
+  );
 
   // Load existing tent if editing (path is .../tents/<uuid> rather than /new).
   useEffect(() => {
@@ -46,25 +65,14 @@ export default function TentEditPage() {
         };
         setTent(rest as Tent);
         setCategoryIds(loadedCategoryIds);
-        setPosition((rest as { position?: unknown }).position as Position);
       });
     return () => {
       cancelled = true;
     };
   }, [tentId]);
 
-  // ESC cancels in-progress placement.
-  useEffect(() => {
-    if (!placeMode) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPlaceMode(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [placeMode]);
-
   async function onSubmit(values: TentFormValues) {
-    if (!event || !position) return;
+    if (!event) return;
 
     // Fields written on both insert and update. event_id is the partition key
     // and must NOT appear in the update payload — it would be a no-op at best
@@ -82,7 +90,8 @@ export default function TentEditPage() {
       instagram_url: values.instagram_url || null,
       facebook_url: values.facebook_url || null,
       email_public: values.email_public || null,
-      position,
+      lat: values.lat ?? null,
+      lng: values.lng ?? null,
     };
 
     try {
@@ -123,7 +132,7 @@ export default function TentEditPage() {
       navigate(`/admin/events/${event.slug}/tents`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';
-      showError(`Save failed: ${msg}`);
+      showError(t('admin.tent.save_failed', { message: msg }));
       // Don't re-throw — let RHF reset isSubmitting normally.
     }
   }
@@ -136,47 +145,25 @@ export default function TentEditPage() {
   if (isEditing && !tent) return <p>…</p>;
 
   return (
-    <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-2">
-      <div>
-        <h1 className="mb-3 text-xl font-semibold">
-          {tent ? `Edit: ${tent.name}` : 'New Tent'}
-        </h1>
-        <TentEditForm
-          initial={tent ? { ...tent, category_ids: categoryIds } : undefined}
-          categories={categories}
-          position={position}
-          onRequestPlace={() => setPlaceMode(true)}
-          onSubmit={onSubmit}
-        />
-        {tent && (
-          <div className="mt-6">
-            <PhotoUploadZone eventId={event.id} tentId={tent.id} />
-          </div>
-        )}
-      </div>
-      <div className="relative h-[60vh] overflow-hidden rounded lg:h-[80vh]">
-        <SplatViewer
-          splatUrl={event.splat_url ?? 'https://sparkjs.dev/sample/garden.splat'}
-          markers={[]}
-          placeMode={placeMode}
-          onPlaceHover={setHoverPoint}
-          onPlaceClick={(p) => {
-            setPosition(p);
-            setPlaceMode(false);
-          }}
-        />
-        {placeMode && (
-          <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center">
-            <span className="rounded bg-black/70 px-3 py-1 text-xs">
-              Click to place{' '}
-              {hoverPoint
-                ? `(${hoverPoint.x.toFixed(1)}, ${hoverPoint.y.toFixed(1)}, ${hoverPoint.z.toFixed(1)})`
-                : '…'}{' '}
-              — ESC to cancel
-            </span>
-          </div>
-        )}
-      </div>
+    <div>
+      <h1 className="mb-3 text-xl font-semibold">
+        {tent
+          ? t('admin.tent.heading_edit', { name: tent.name })
+          : t('admin.tent.heading_new')}
+      </h1>
+      <TentEditForm
+        initial={tent ? { ...tent, category_ids: categoryIds } : undefined}
+        categories={categories}
+        defaultCenter={[event.default_lat, event.default_lng]}
+        defaultZoom={event.default_zoom}
+        otherTents={otherTents}
+        onSubmit={onSubmit}
+      />
+      {tent && (
+        <div className="mt-6 max-w-2xl">
+          <PhotoUploadZone eventId={event.id} tentId={tent.id} />
+        </div>
+      )}
     </div>
   );
 }

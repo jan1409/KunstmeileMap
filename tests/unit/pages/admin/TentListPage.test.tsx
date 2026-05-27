@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
+import '../../../../src/lib/i18n';
+
 const { eq, order } = vi.hoisted(() => ({
   eq: vi.fn(),
   order: vi.fn(),
@@ -42,7 +44,8 @@ const sampleTents = [
     slug: 'atelier-sued',
     name: 'Atelier Süd',
     display_number: 1,
-    position: { x: -3, y: 0, z: 5 },
+    lat: null,
+    lng: null,
   },
   {
     id: 'tent-a',
@@ -50,7 +53,8 @@ const sampleTents = [
     slug: 'galerie-nord',
     name: 'Galerie Nord',
     display_number: 2,
-    position: { x: 1, y: 0, z: 2 },
+    lat: null,
+    lng: null,
   },
 ];
 
@@ -99,7 +103,7 @@ describe('TentListPage', () => {
     renderApp();
 
     expect(
-      await screen.findByRole('heading', { name: /Kunstmeile 2026.*Tents/i }),
+      await screen.findByRole('heading', { name: /Kunstmeile 2026.*(Tents|Stände)/i }),
     ).toBeInTheDocument();
     expect(await screen.findByText('Galerie Nord')).toBeInTheDocument();
     expect(screen.getByText('Atelier Süd')).toBeInTheDocument();
@@ -139,7 +143,7 @@ describe('TentListPage', () => {
 
     renderApp();
 
-    expect(await screen.findByText(/no tents yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no tents yet|Noch keine Stände/i)).toBeInTheDocument();
   });
 
   it('links to the new-tent page and per-tent edit pages with correct slugs/ids', async () => {
@@ -149,13 +153,13 @@ describe('TentListPage', () => {
     renderApp();
     await screen.findByText('Galerie Nord');
 
-    const newTentLink = screen.getByRole('link', { name: /new tent/i });
+    const newTentLink = screen.getByRole('link', { name: /new tent|Neuer Stand/i });
     expect(newTentLink).toHaveAttribute(
       'href',
       '/admin/events/kunstmeile-2026/tents/new',
     );
 
-    const editLinks = screen.getAllByRole('link', { name: /edit/i });
+    const editLinks = screen.getAllByRole('link', { name: /edit|Bearbeiten/i });
     const editHrefs = editLinks.map((a) => a.getAttribute('href'));
     expect(editHrefs).toContain('/admin/events/kunstmeile-2026/tents/tent-a');
     expect(editHrefs).toContain('/admin/events/kunstmeile-2026/tents/tent-b');
@@ -173,14 +177,14 @@ describe('TentListPage', () => {
     });
   });
 
-  it('links each row to the public 3D view in a new tab via the event/tent permalink', async () => {
+  it('links each row to the public view in a new tab via the event/tent permalink', async () => {
     useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
     order.mockResolvedValue({ data: sampleTents, error: null });
 
     renderApp();
     await screen.findByText('Galerie Nord');
 
-    const viewLinks = screen.getAllByRole('link', { name: /view 3d/i });
+    const viewLinks = screen.getAllByRole('link', { name: /^view$|^Ansehen$/i });
     const hrefs = viewLinks.map((a) => a.getAttribute('href'));
     expect(hrefs).toContain('/kunstmeile-2026/tent/galerie-nord');
     expect(hrefs).toContain('/kunstmeile-2026/tent/atelier-sued');

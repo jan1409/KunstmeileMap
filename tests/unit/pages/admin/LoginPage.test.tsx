@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
+import '../../../../src/lib/i18n';
+
 const signIn = vi.fn();
 vi.mock('../../../../src/components/AuthProvider', () => ({
   useAuth: () => ({ signIn }),
@@ -29,9 +31,9 @@ describe('LoginPage', () => {
 
   it('renders email + password fields and a submit button', () => {
     renderApp();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/email|E-Mail/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password|Passwort/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in|Anmelden/i })).toBeInTheDocument();
   });
 
   it('navigates to /admin on successful sign-in', async () => {
@@ -39,9 +41,9 @@ describe('LoginPage', () => {
     const user = userEvent.setup();
     renderApp();
 
-    await user.type(screen.getByLabelText(/email/i), 'a@b.de');
-    await user.type(screen.getByLabelText(/password/i), 'pw');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await user.type(screen.getByLabelText(/email|E-Mail/i), 'a@b.de');
+    await user.type(screen.getByLabelText(/password|Passwort/i), 'pw');
+    await user.click(screen.getByRole('button', { name: /sign in|Anmelden/i }));
 
     expect(signIn).toHaveBeenCalledWith('a@b.de', 'pw');
     expect(await screen.findByText('admin-home')).toBeInTheDocument();
@@ -52,9 +54,9 @@ describe('LoginPage', () => {
     const user = userEvent.setup();
     renderApp();
 
-    await user.type(screen.getByLabelText(/email/i), 'a@b.de');
-    await user.type(screen.getByLabelText(/password/i), 'bad');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await user.type(screen.getByLabelText(/email|E-Mail/i), 'a@b.de');
+    await user.type(screen.getByLabelText(/password|Passwort/i), 'bad');
+    await user.click(screen.getByRole('button', { name: /sign in|Anmelden/i }));
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Invalid login');
@@ -85,9 +87,9 @@ describe('LoginPage', () => {
       </MemoryRouter>,
     );
 
-    await user.type(screen.getByLabelText(/email/i), 'a@b.de');
-    await user.type(screen.getByLabelText(/password/i), 'pw');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await user.type(screen.getByLabelText(/email|E-Mail/i), 'a@b.de');
+    await user.type(screen.getByLabelText(/password|Passwort/i), 'pw');
+    await user.click(screen.getByRole('button', { name: /sign in|Anmelden/i }));
 
     expect(await screen.findByTestId('loc')).toHaveTextContent('/admin/events?filter=open#row5');
   });

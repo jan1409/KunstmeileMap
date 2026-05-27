@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+
+import '../../../../src/lib/i18n';
+
 import { ToastProvider } from '../../../../src/components/ToastProvider';
 
 const signOut = vi.fn();
@@ -41,7 +44,7 @@ describe('AdminLayout', () => {
     const user = userEvent.setup();
     renderApp();
 
-    await user.click(screen.getByRole('button', { name: /sign out/i }));
+    await user.click(screen.getByRole('button', { name: /sign out|Abmelden/i }));
 
     expect(signOut).toHaveBeenCalled();
     expect(await screen.findByText('login-screen')).toBeInTheDocument();
@@ -52,7 +55,7 @@ describe('AdminLayout', () => {
     const user = userEvent.setup();
     renderApp();
 
-    await user.click(screen.getByRole('button', { name: /sign out/i }));
+    await user.click(screen.getByRole('button', { name: /sign out|Abmelden/i }));
 
     expect(await screen.findByText('login-screen')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(/network down/i);
@@ -60,7 +63,7 @@ describe('AdminLayout', () => {
 
   it('renders a skip link to the main content as the first focusable element', () => {
     renderApp();
-    const link = screen.getByRole('link', { name: /skip to main content/i });
+    const link = screen.getByRole('link', { name: /skip to main content|Zum Hauptinhalt springen/i });
     expect(link).toHaveAttribute('href', '#main');
     expect(document.querySelector('main')).toHaveAttribute('id', 'main');
   });

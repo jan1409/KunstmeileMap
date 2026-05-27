@@ -1,13 +1,23 @@
 {
   "app": {
     "title": "Kunstmeile",
-    "loading": "Lädt 3D-Szene...",
-    "error_load": "Die 3D-Ansicht konnte nicht geladen werden",
+    "loading": "Lade Karte...",
+    "error_load": "Die Kartenansicht konnte nicht geladen werden",
     "retry": "Erneut versuchen",
     "menu_open": "Menü öffnen",
     "menu_close": "Menü schließen",
     "auth_loading": "Authentifizierung lädt …",
-    "auth_profile_error": "Profilabruf fehlgeschlagen. Bitte abmelden und erneut versuchen."
+    "auth_profile_error": "Profilabruf fehlgeschlagen. Bitte abmelden und erneut versuchen.",
+    "login_link": "Anmelden",
+    "admin_link": "Admin"
+  },
+  "event": {
+    "not_found": "Event nicht gefunden"
+  },
+  "map": {
+    "no_coords_banner_one": "{{count}} Stand ist noch nicht auf der Karte verortet.",
+    "no_coords_banner_other": "{{count}} Stände sind noch nicht auf der Karte verortet.",
+    "back_to_overview": "Zurück zur Übersicht"
   },
   "search": {
     "placeholder": "Stand suchen...",
@@ -16,9 +26,6 @@
   "category": {
     "all": "Alle anzeigen",
     "filter_label": "Kategorie"
-  },
-  "viewer": {
-    "back_to_overview": "Zurück zur Übersicht"
   },
   "side_panel": {
     "category": "Kategorie",
@@ -29,6 +36,7 @@
     "share": "Link kopieren",
     "close": "Schließen",
     "add_photo": "Foto hinzufügen",
+    "take_photo": "Foto aufnehmen",
     "manage_photos": "Fotos verwalten",
     "uploading": "Wird hochgeladen…",
     "upload_error": "Upload fehlgeschlagen: {{message}}"
@@ -36,6 +44,11 @@
   "footer": {
     "impressum": "Impressum",
     "datenschutz": "Datenschutz"
+  },
+  "common": {
+    "back": "Zurück",
+    "loading": "Lädt …",
+    "dash": "—"
   },
   "cookie_banner": {
     "text": "Diese Seite verwendet ausschließlich technisch notwendige Cookies und lokale Speicherung für Spracheinstellungen und (im Admin-Bereich) Login-Sitzungen.",
@@ -46,5 +59,147 @@
     "title": "Kein Zugriff",
     "body": "Dieses Konto hat keine Admin-Berechtigung. Bitte wende dich an den Veranstalter, falls du Zugriff benötigst.",
     "sign_out": "Abmelden"
+  },
+  "admin": {
+    "nav": {
+      "view_site": "Zur Karte",
+      "dashboard": "Dashboard",
+      "events": "Events",
+      "sign_out": "Abmelden",
+      "sign_out_failed": "Abmelden fehlgeschlagen: {{message}}",
+      "skip_to_main": "Zum Hauptinhalt springen"
+    },
+    "dashboard": {
+      "heading": "Willkommen",
+      "quick_actions": "Schnellaktionen:",
+      "manage_events": "Events verwalten"
+    },
+    "login": {
+      "heading": "Admin-Login",
+      "email_label": "E-Mail",
+      "password_label": "Passwort",
+      "email_placeholder": "E-Mail",
+      "password_placeholder": "Passwort",
+      "submit": "Anmelden",
+      "submitting": "…"
+    },
+    "event_list": {
+      "heading": "Events",
+      "new_event": "+ Neues Event",
+      "col_slug": "Slug",
+      "col_title": "Titel",
+      "col_year": "Jahr",
+      "col_status": "Status",
+      "col_featured": "Hervorgehoben",
+      "action_manage": "Verwalten",
+      "action_categories": "Kategorien",
+      "action_settings": "Einstellungen",
+      "action_duplicate": "Duplizieren"
+    },
+    "event_settings": {
+      "heading": "Einstellungen — {{title}}",
+      "title_de_label": "Titel (DE)",
+      "title_en_label": "Titel (EN)",
+      "status_label": "Status",
+      "status_draft": "Entwurf",
+      "status_published": "Veröffentlicht",
+      "status_archived": "Archiviert",
+      "is_featured_label": "Hervorgehoben (Standard auf Startseite)",
+      "save_button": "Speichern",
+      "saving": "…",
+      "saved_flash": "Gespeichert."
+    },
+    "tent": {
+      "clear_coords": "Koordinaten löschen",
+      "heading_new": "Neuer Stand",
+      "heading_edit": "Bearbeiten: {{name}}",
+      "save_failed": "Speichern fehlgeschlagen: {{message}}",
+      "form": {
+        "slug_label": "Slug",
+        "name_label": "Name",
+        "description_de_label": "Beschreibung (DE)",
+        "description_en_label": "Description (EN)",
+        "address_label": "Adresse",
+        "display_number_label": "#",
+        "display_number_placeholder": "auto",
+        "categories_label": "Kategorien",
+        "website_label": "Webseite",
+        "instagram_label": "Instagram",
+        "facebook_label": "Facebook",
+        "email_public_label": "Öffentliche E-Mail",
+        "position_label": "Position",
+        "save_button": "Speichern",
+        "saving": "…"
+      }
+    },
+    "tent_list": {
+      "heading": "{{title}} — Stände",
+      "csv_import": "CSV-Import",
+      "new_tent": "+ Neuer Stand",
+      "col_number": "#",
+      "col_name": "Name",
+      "col_slug": "Slug",
+      "col_position": "Position",
+      "action_edit": "Bearbeiten",
+      "action_view": "Ansehen",
+      "empty": "Noch keine Stände."
+    },
+    "category": {
+      "heading": "Kategorien — {{title}}",
+      "new": "+ Neue Kategorie",
+      "slug_label": "Slug",
+      "name_de_label": "Name (DE)",
+      "name_en_label": "Name (EN)",
+      "icon_label": "Icon",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "confirm_delete": "Löschen bestätigen",
+      "col_order": "Reihenfolge",
+      "col_icon": "Icon",
+      "col_slug": "Slug",
+      "col_de": "DE",
+      "col_en": "EN",
+      "empty": "Noch keine Kategorien."
+    },
+    "duplicate_event": {
+      "heading": "\"{{title}}\" duplizieren",
+      "slug_label": "Slug",
+      "title_de_label": "Titel (DE)",
+      "year_label": "Jahr",
+      "clone_categories": "Kategorien klonen",
+      "clone_tents": "Stände klonen",
+      "clone_tent_positions": "Stand-Positionen klonen",
+      "cancel": "Abbrechen",
+      "submit": "Duplizieren",
+      "submitting": "…"
+    },
+    "photo_upload": {
+      "heading": "Fotos",
+      "add_photos": "Fotos hinzufügen",
+      "remove": "Foto entfernen",
+      "alt": "Stand-Foto"
+    },
+    "event": {
+      "default_lat_label": "Standard-Lat",
+      "default_lng_label": "Standard-Lng",
+      "default_zoom_label": "Standard-Zoom (1-19)"
+    },
+    "import": {
+      "heading": "Stände importieren",
+      "preview_heading": "Vorschau",
+      "done_heading": "Import abgeschlossen",
+      "help": "Lade eine .csv oder .xlsx mit den Stand-Daten hoch. Pflichtspalten: name, display_number.",
+      "download_template": "Vorlage herunterladen (.xlsx)",
+      "commit_button_one": "{{count}} Zeile importieren",
+      "commit_button_other": "{{count}} Zeilen importieren",
+      "error_unsupported_file": "Nur .csv und .xlsx werden unterstützt.",
+      "col_status": "Status",
+      "status_ok": "OK",
+      "status_warning": "Warnung",
+      "status_error": "Fehler",
+      "back_to_list": "Zurück zur Stand-Liste",
+      "loading_data": "Lade Daten…"
+    }
   }
 }

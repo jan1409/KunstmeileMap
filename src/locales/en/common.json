@@ -1,13 +1,23 @@
 {
   "app": {
     "title": "Kunstmeile",
-    "loading": "Loading 3D scene...",
-    "error_load": "The 3D view could not be loaded",
+    "loading": "Loading map...",
+    "error_load": "The map view could not be loaded",
     "retry": "Try again",
     "menu_open": "Open menu",
     "menu_close": "Close menu",
     "auth_loading": "Loading authentication…",
-    "auth_profile_error": "Profile fetch failed. Please sign out and try again."
+    "auth_profile_error": "Profile fetch failed. Please sign out and try again.",
+    "login_link": "Login",
+    "admin_link": "Admin"
+  },
+  "event": {
+    "not_found": "Event not found"
+  },
+  "map": {
+    "no_coords_banner_one": "{{count}} stand is not yet placed on the map.",
+    "no_coords_banner_other": "{{count}} stands are not yet placed on the map.",
+    "back_to_overview": "Back to overview"
   },
   "search": {
     "placeholder": "Search booth...",
@@ -16,9 +26,6 @@
   "category": {
     "all": "Show all",
     "filter_label": "Category"
-  },
-  "viewer": {
-    "back_to_overview": "Back to overview"
   },
   "side_panel": {
     "category": "Category",
@@ -29,6 +36,7 @@
     "share": "Copy link",
     "close": "Close",
     "add_photo": "Add photo",
+    "take_photo": "Take photo",
     "manage_photos": "Manage photos",
     "uploading": "Uploading…",
     "upload_error": "Upload failed: {{message}}"
@@ -36,6 +44,11 @@
   "footer": {
     "impressum": "Imprint",
     "datenschutz": "Privacy Policy"
+  },
+  "common": {
+    "back": "Back",
+    "loading": "Loading…",
+    "dash": "—"
   },
   "cookie_banner": {
     "text": "This site uses only strictly necessary cookies and local storage for language preferences and (in the admin area) login sessions.",
@@ -46,5 +59,147 @@
     "title": "No access",
     "body": "This account does not have admin permission. Please contact the event organizer if you need access.",
     "sign_out": "Sign out"
+  },
+  "admin": {
+    "nav": {
+      "view_site": "View site",
+      "dashboard": "Dashboard",
+      "events": "Events",
+      "sign_out": "Sign out",
+      "sign_out_failed": "Sign out failed: {{message}}",
+      "skip_to_main": "Skip to main content"
+    },
+    "dashboard": {
+      "heading": "Welcome",
+      "quick_actions": "Quick actions:",
+      "manage_events": "Manage events"
+    },
+    "login": {
+      "heading": "Admin Login",
+      "email_label": "Email",
+      "password_label": "Password",
+      "email_placeholder": "Email",
+      "password_placeholder": "Password",
+      "submit": "Sign in",
+      "submitting": "…"
+    },
+    "event_list": {
+      "heading": "Events",
+      "new_event": "+ New event",
+      "col_slug": "Slug",
+      "col_title": "Title",
+      "col_year": "Year",
+      "col_status": "Status",
+      "col_featured": "Featured",
+      "action_manage": "Manage",
+      "action_categories": "Categories",
+      "action_settings": "Settings",
+      "action_duplicate": "Duplicate"
+    },
+    "event_settings": {
+      "heading": "Settings — {{title}}",
+      "title_de_label": "Title (DE)",
+      "title_en_label": "Title (EN)",
+      "status_label": "Status",
+      "status_draft": "draft",
+      "status_published": "published",
+      "status_archived": "archived",
+      "is_featured_label": "Featured (homepage default)",
+      "save_button": "Save",
+      "saving": "…",
+      "saved_flash": "Saved."
+    },
+    "tent": {
+      "clear_coords": "Clear coordinates",
+      "heading_new": "New Tent",
+      "heading_edit": "Edit: {{name}}",
+      "save_failed": "Save failed: {{message}}",
+      "form": {
+        "slug_label": "Slug",
+        "name_label": "Name",
+        "description_de_label": "Beschreibung (DE)",
+        "description_en_label": "Description (EN)",
+        "address_label": "Address",
+        "display_number_label": "#",
+        "display_number_placeholder": "auto",
+        "categories_label": "Categories",
+        "website_label": "Website",
+        "instagram_label": "Instagram",
+        "facebook_label": "Facebook",
+        "email_public_label": "Public email",
+        "position_label": "Position",
+        "save_button": "Save",
+        "saving": "…"
+      }
+    },
+    "tent_list": {
+      "heading": "{{title}} — Tents",
+      "csv_import": "CSV import",
+      "new_tent": "+ New tent",
+      "col_number": "#",
+      "col_name": "Name",
+      "col_slug": "Slug",
+      "col_position": "Position",
+      "action_edit": "Edit",
+      "action_view": "View",
+      "empty": "No tents yet."
+    },
+    "category": {
+      "heading": "Categories — {{title}}",
+      "new": "+ New category",
+      "slug_label": "Slug",
+      "name_de_label": "Name (DE)",
+      "name_en_label": "Name (EN)",
+      "icon_label": "Icon",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "confirm_delete": "Confirm delete",
+      "col_order": "Order",
+      "col_icon": "Icon",
+      "col_slug": "Slug",
+      "col_de": "DE",
+      "col_en": "EN",
+      "empty": "No categories yet."
+    },
+    "duplicate_event": {
+      "heading": "Duplicate \"{{title}}\"",
+      "slug_label": "Slug",
+      "title_de_label": "Title (DE)",
+      "year_label": "Year",
+      "clone_categories": "Clone categories",
+      "clone_tents": "Clone tents",
+      "clone_tent_positions": "Clone tent positions",
+      "cancel": "Cancel",
+      "submit": "Duplicate",
+      "submitting": "…"
+    },
+    "photo_upload": {
+      "heading": "Photos",
+      "add_photos": "Add photos",
+      "remove": "Remove photo",
+      "alt": "Tent photo"
+    },
+    "event": {
+      "default_lat_label": "Default lat",
+      "default_lng_label": "Default lng",
+      "default_zoom_label": "Default zoom (1-19)"
+    },
+    "import": {
+      "heading": "Import stands",
+      "preview_heading": "Preview",
+      "done_heading": "Import complete",
+      "help": "Upload a .csv or .xlsx with stand data. Required columns: name, display_number.",
+      "download_template": "Download template (.xlsx)",
+      "commit_button_one": "Import {{count}} row",
+      "commit_button_other": "Import {{count}} rows",
+      "error_unsupported_file": "Only .csv and .xlsx are supported.",
+      "col_status": "Status",
+      "status_ok": "OK",
+      "status_warning": "Warning",
+      "status_error": "Error",
+      "back_to_list": "Back to tent list",
+      "loading_data": "Loading data…"
+    }
   }
 }

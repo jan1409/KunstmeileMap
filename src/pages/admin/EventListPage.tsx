@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase, type Event } from '../../lib/supabase';
 import { DuplicateEventModal } from '../../components/DuplicateEventModal';
 
 export default function EventListPage() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [dup, setDup] = useState<Event | null>(null);
@@ -28,12 +30,12 @@ export default function EventListPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Events</h1>
+        <h1 className="text-2xl font-semibold">{t('admin.event_list.heading')}</h1>
         <Link
           to="/admin/events/new"
           className="rounded bg-white/20 px-3 py-1 text-sm"
         >
-          + New event
+          {t('admin.event_list.new_event')}
         </Link>
       </div>
       {loading ? (
@@ -42,11 +44,11 @@ export default function EventListPage() {
         <table className="w-full text-left text-sm">
           <thead className="border-b border-white/10 text-xs text-white/60">
             <tr>
-              <th className="py-2">Slug</th>
-              <th>Title</th>
-              <th>Year</th>
-              <th>Status</th>
-              <th>Featured</th>
+              <th className="py-2">{t('admin.event_list.col_slug')}</th>
+              <th>{t('admin.event_list.col_title')}</th>
+              <th>{t('admin.event_list.col_year')}</th>
+              <th>{t('admin.event_list.col_status')}</th>
+              <th>{t('admin.event_list.col_featured')}</th>
               <th></th>
             </tr>
           </thead>
@@ -63,26 +65,26 @@ export default function EventListPage() {
                     to={`/admin/events/${e.slug}/tents`}
                     className="underline"
                   >
-                    Manage
+                    {t('admin.event_list.action_manage')}
                   </Link>
                   <Link
                     to={`/admin/events/${e.slug}/categories`}
                     className="underline"
                   >
-                    Categories
+                    {t('admin.event_list.action_categories')}
                   </Link>
                   <Link
                     to={`/admin/events/${e.slug}/settings`}
                     className="underline"
                   >
-                    Settings
+                    {t('admin.event_list.action_settings')}
                   </Link>
                   <button
                     type="button"
                     onClick={() => setDup(e)}
                     className="underline"
                   >
-                    Duplicate
+                    {t('admin.event_list.action_duplicate')}
                   </button>
                 </td>
               </tr>

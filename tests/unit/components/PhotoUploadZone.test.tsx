@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import '../../../src/lib/i18n';
+
 const { listOrder, insertPhoto, deleteEq, deletePhoto, uploadFn, removeFn, getPublicUrlFn } =
   vi.hoisted(() => ({
     listOrder: vi.fn(),
@@ -87,8 +89,8 @@ describe('PhotoUploadZone', () => {
     expect(imgs).toHaveLength(2);
     expect(imgs[0]).toHaveAttribute('src', 'https://cdn.example/evt-1/tent-1/a.jpg');
     expect(imgs[1]).toHaveAttribute('src', 'https://cdn.example/evt-1/tent-1/b.jpg');
-    expect(screen.getAllByRole('button', { name: /remove/i })).toHaveLength(2);
-    expect(screen.getByLabelText(/add photos/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /remove|Foto entfernen/i })).toHaveLength(2);
+    expect(screen.getByLabelText(/add photos|Fotos hinzufügen/i)).toBeInTheDocument();
   });
 
   it('uploads each chosen file to storage, inserts a tent_photos row, and refreshes the list', async () => {
@@ -99,7 +101,7 @@ describe('PhotoUploadZone', () => {
     expect(listOrder).toHaveBeenCalledTimes(1);
 
     const file = new File(['png-bytes'], 'photo.png', { type: 'image/png' });
-    await user.upload(screen.getByLabelText(/add photos/i), file);
+    await user.upload(screen.getByLabelText(/add photos|Fotos hinzufügen/i), file);
 
     await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(1));
     const [uploadPath, uploadedFile] = uploadFn.mock.calls[0]!;
@@ -124,7 +126,7 @@ describe('PhotoUploadZone', () => {
     await screen.findAllByRole('img');
     expect(listOrder).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getAllByRole('button', { name: /remove/i })[0]!);
+    await user.click(screen.getAllByRole('button', { name: /remove|Foto entfernen/i })[0]!);
 
     await waitFor(() => expect(removeFn).toHaveBeenCalledTimes(1));
     expect(removeFn).toHaveBeenCalledWith(['evt-1/tent-1/a.jpg']);
@@ -143,7 +145,7 @@ describe('PhotoUploadZone', () => {
     await screen.findAllByRole('img');
 
     const file = new File(['x'], 'big.jpg', { type: 'image/jpeg' });
-    await user.upload(screen.getByLabelText(/add photos/i), file);
+    await user.upload(screen.getByLabelText(/add photos|Fotos hinzufügen/i), file);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/storage quota exceeded/i);
     expect(insertPhoto).not.toHaveBeenCalled();
