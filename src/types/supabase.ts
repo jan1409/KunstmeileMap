@@ -351,6 +351,26 @@ export type Database = {
         }
         Returns: string
       }
+      get_event_permissions: {
+        Args: { eid: string }
+        Returns: {
+          can_access: boolean
+          can_contribute: boolean
+          can_edit: boolean
+          can_own: boolean
+        }[]
+      }
+      get_event_users: {
+        Args: { eid: string }
+        Returns: {
+          email: string
+          email_confirmed_at: string
+          full_name: string
+          invited_at: string
+          profile_id: string
+          role_in_event: Database["public"]["Enums"]["event_role"]
+        }[]
+      }
       has_event_role: {
         Args: {
           eid: string
@@ -361,7 +381,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      event_role: "owner" | "editor"
+      event_role: "owner" | "contributor" | "editor"
       event_status: "draft" | "published" | "archived"
       user_role: "admin" | "editor"
     }
@@ -494,7 +514,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      event_role: ["owner", "editor"],
+      event_role: ["owner", "contributor", "editor"],
       event_status: ["draft", "published", "archived"],
       user_role: ["admin", "editor"],
     },
