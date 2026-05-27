@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
+import '../../../../src/lib/i18n';
+
 const { order } = vi.hoisted(() => ({ order: vi.fn() }));
 vi.mock('../../../../src/lib/supabase', () => {
   const select = vi.fn().mockReturnValue({ order });
@@ -112,10 +114,10 @@ describe('EventListPage', () => {
 
     await screen.findByText('Kunstmeile 2026');
 
-    const newEventLink = screen.getByRole('link', { name: /new event/i });
+    const newEventLink = screen.getByRole('link', { name: /new event|Neues Event/i });
     expect(newEventLink).toHaveAttribute('href', '/admin/events/new');
 
-    const manageLinks = screen.getAllByRole('link', { name: /manage/i });
+    const manageLinks = screen.getAllByRole('link', { name: /manage|Verwalten/i });
     expect(manageLinks[0]).toHaveAttribute('href', '/admin/events/kunstmeile-2026/tents');
     expect(manageLinks[1]).toHaveAttribute('href', '/admin/events/kunstmeile-2025/tents');
   });
@@ -148,7 +150,7 @@ describe('EventListPage', () => {
     expect(screen.queryByTestId('duplicate-modal')).not.toBeInTheDocument();
 
     // Click the Duplicate button on the first row (Kunstmeile 2026).
-    await user.click(screen.getAllByRole('button', { name: /duplicate/i })[0]!);
+    await user.click(screen.getAllByRole('button', { name: /duplicate|Duplizieren/i })[0]!);
 
     const modal = await screen.findByTestId('duplicate-modal');
     expect(modal).toHaveAttribute('data-source-title', 'Kunstmeile 2026');
@@ -162,7 +164,7 @@ describe('EventListPage', () => {
     await screen.findByText('Kunstmeile 2026');
     expect(order).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getAllByRole('button', { name: /duplicate/i })[0]!);
+    await user.click(screen.getAllByRole('button', { name: /duplicate|Duplizieren/i })[0]!);
     await screen.findByTestId('duplicate-modal');
 
     // Drive onCreated via the stub button.
@@ -184,7 +186,7 @@ describe('EventListPage', () => {
     await screen.findByText('Kunstmeile 2026');
     expect(order).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getAllByRole('button', { name: /duplicate/i })[0]!);
+    await user.click(screen.getAllByRole('button', { name: /duplicate|Duplizieren/i })[0]!);
     await screen.findByTestId('duplicate-modal');
 
     await user.click(screen.getByRole('button', { name: /stub-close/i }));

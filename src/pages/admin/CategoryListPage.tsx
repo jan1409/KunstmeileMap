@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase, type Category } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 
 export default function CategoryListPage() {
+  const { t } = useTranslation();
   const { eventSlug } = useParams();
   const { event } = useEvent(eventSlug);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -66,7 +68,7 @@ export default function CategoryListPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">
-          Categories — {event.title_de}
+          {t('admin.category.heading', { title: event.title_de })}
         </h1>
         {!showForm && (
           <button
@@ -74,7 +76,7 @@ export default function CategoryListPage() {
             onClick={() => setShowForm(true)}
             className="rounded bg-white/20 px-3 py-1 text-sm"
           >
-            + New category
+            {t('admin.category.new')}
           </button>
         )}
       </div>
@@ -85,7 +87,7 @@ export default function CategoryListPage() {
           className="mb-4 grid grid-cols-1 gap-3 rounded border border-white/10 p-3 sm:grid-cols-4"
         >
           <label className="block text-xs">
-            <span className="block text-white/60">Slug</span>
+            <span className="block text-white/60">{t('admin.category.slug_label')}</span>
             <input
               required
               pattern="[a-z0-9-]+"
@@ -95,7 +97,7 @@ export default function CategoryListPage() {
             />
           </label>
           <label className="block text-xs">
-            <span className="block text-white/60">Name (DE)</span>
+            <span className="block text-white/60">{t('admin.category.name_de_label')}</span>
             <input
               required
               value={draft.name_de}
@@ -104,7 +106,7 @@ export default function CategoryListPage() {
             />
           </label>
           <label className="block text-xs">
-            <span className="block text-white/60">Name (EN)</span>
+            <span className="block text-white/60">{t('admin.category.name_en_label')}</span>
             <input
               value={draft.name_en}
               onChange={(e) => setDraft({ ...draft, name_en: e.target.value })}
@@ -112,7 +114,7 @@ export default function CategoryListPage() {
             />
           </label>
           <label className="block text-xs">
-            <span className="block text-white/60">Icon</span>
+            <span className="block text-white/60">{t('admin.category.icon_label')}</span>
             <input
               value={draft.icon}
               placeholder="✨"
@@ -125,7 +127,7 @@ export default function CategoryListPage() {
               type="submit"
               className="rounded bg-white/20 px-3 py-1 text-sm"
             >
-              Save
+              {t('admin.category.save')}
             </button>
             <button
               type="button"
@@ -135,7 +137,7 @@ export default function CategoryListPage() {
               }}
               className="rounded bg-white/10 px-3 py-1 text-sm"
             >
-              Cancel
+              {t('admin.category.cancel')}
             </button>
           </div>
         </form>
@@ -144,11 +146,11 @@ export default function CategoryListPage() {
       <table className="w-full text-left text-sm">
         <thead className="border-b border-white/10 text-xs text-white/60">
           <tr>
-            <th className="py-2">Order</th>
-            <th>Icon</th>
-            <th>Slug</th>
-            <th>DE</th>
-            <th>EN</th>
+            <th className="py-2">{t('admin.category.col_order')}</th>
+            <th>{t('admin.category.col_icon')}</th>
+            <th>{t('admin.category.col_slug')}</th>
+            <th>{t('admin.category.col_de')}</th>
+            <th>{t('admin.category.col_en')}</th>
             <th></th>
           </tr>
         </thead>
@@ -168,14 +170,14 @@ export default function CategoryListPage() {
                       onClick={() => confirmDelete(c.id)}
                       className="text-red-400"
                     >
-                      Confirm delete
+                      {t('admin.category.confirm_delete')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmingId(null)}
                       className="text-white/60"
                     >
-                      Cancel
+                      {t('admin.category.cancel')}
                     </button>
                   </span>
                 ) : (
@@ -184,7 +186,7 @@ export default function CategoryListPage() {
                     onClick={() => setConfirmingId(c.id)}
                     className="text-red-400"
                   >
-                    Delete
+                    {t('admin.category.delete')}
                   </button>
                 )}
               </td>
@@ -193,7 +195,7 @@ export default function CategoryListPage() {
           {categories.length === 0 && (
             <tr>
               <td colSpan={6} className="py-4 text-center text-white/50">
-                No categories yet.
+                {t('admin.category.empty')}
               </td>
             </tr>
           )}

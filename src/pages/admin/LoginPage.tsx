@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, type Location } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../components/AuthProvider';
 
 interface LocationState {
@@ -7,6 +8,7 @@ interface LocationState {
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const loc = useLocation();
@@ -38,26 +40,26 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold">Admin Login</h1>
+        <h1 className="text-2xl font-semibold">{t('admin.login.heading')}</h1>
         <label className="block">
-          <span className="sr-only">Email</span>
+          <span className="sr-only">{t('admin.login.email_label')}</span>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            placeholder={t('admin.login.email_placeholder')}
             className="w-full rounded bg-white/10 p-2 text-white"
           />
         </label>
         <label className="block">
-          <span className="sr-only">Password</span>
+          <span className="sr-only">{t('admin.login.password_label')}</span>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            placeholder={t('admin.login.password_placeholder')}
             className="w-full rounded bg-white/10 p-2 text-white"
           />
         </label>
@@ -70,7 +72,7 @@ export default function LoginPage() {
           disabled={busy}
           className="w-full rounded bg-white/20 p-2 hover:bg-white/30 disabled:opacity-50"
         >
-          {busy ? '…' : 'Sign in'}
+          {busy ? t('admin.login.submitting') : t('admin.login.submit')}
         </button>
       </form>
     </main>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase, type Tent } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 import { useCategories } from '../../hooks/useCategories';
@@ -13,6 +14,7 @@ import {
 import type { OtherTent } from '../../components/TentMapEditor';
 
 export default function TentEditPage() {
+  const { t } = useTranslation();
   const { eventSlug, tentId } = useParams();
   const navigate = useNavigate();
   const { event } = useEvent(eventSlug);
@@ -130,7 +132,7 @@ export default function TentEditPage() {
       navigate(`/admin/events/${event.slug}/tents`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';
-      showError(`Save failed: ${msg}`);
+      showError(t('admin.tent.save_failed', { message: msg }));
       // Don't re-throw — let RHF reset isSubmitting normally.
     }
   }
@@ -145,7 +147,9 @@ export default function TentEditPage() {
   return (
     <div>
       <h1 className="mb-3 text-xl font-semibold">
-        {tent ? `Edit: ${tent.name}` : 'New Tent'}
+        {tent
+          ? t('admin.tent.heading_edit', { name: tent.name })
+          : t('admin.tent.heading_new')}
       </h1>
       <TentEditForm
         initial={tent ? { ...tent, category_ids: categoryIds } : undefined}

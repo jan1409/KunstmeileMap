@@ -62,10 +62,12 @@ export default function EventSettingsPage() {
 
   return (
     <div className="max-w-xl space-y-3">
-      <h1 className="text-2xl font-semibold">Settings — {event.title_de}</h1>
+      <h1 className="text-2xl font-semibold">
+        {t('admin.event_settings.heading', { title: event.title_de })}
+      </h1>
 
       <label className="block text-xs">
-        <span className="block text-white/60">Title (DE)</span>
+        <span className="block text-white/60">{t('admin.event_settings.title_de_label')}</span>
         <input
           value={titleDe}
           onChange={(e) => setTitleDe(e.target.value)}
@@ -74,7 +76,7 @@ export default function EventSettingsPage() {
       </label>
 
       <label className="block text-xs">
-        <span className="block text-white/60">Title (EN)</span>
+        <span className="block text-white/60">{t('admin.event_settings.title_en_label')}</span>
         <input
           value={titleEn}
           onChange={(e) => setTitleEn(e.target.value)}
@@ -83,15 +85,15 @@ export default function EventSettingsPage() {
       </label>
 
       <label className="block text-xs">
-        <span className="block text-white/60">Status</span>
+        <span className="block text-white/60">{t('admin.event_settings.status_label')}</span>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as Status)}
           className="input mt-1"
         >
-          <option value="draft">draft</option>
-          <option value="published">published</option>
-          <option value="archived">archived</option>
+          <option value="draft">{t('admin.event_settings.status_draft')}</option>
+          <option value="published">{t('admin.event_settings.status_published')}</option>
+          <option value="archived">{t('admin.event_settings.status_archived')}</option>
         </select>
       </label>
 
@@ -101,7 +103,7 @@ export default function EventSettingsPage() {
           checked={isFeatured}
           onChange={(e) => setIsFeatured(e.target.checked)}
         />
-        Featured (homepage default)
+        {t('admin.event_settings.is_featured_label')}
       </label>
 
       <label className="block text-xs">
@@ -157,10 +159,10 @@ export default function EventSettingsPage() {
           disabled={busy}
           className="rounded bg-white/20 px-4 py-2 disabled:opacity-50"
         >
-          {busy ? '…' : 'Save'}
+          {busy ? t('admin.event_settings.saving') : t('admin.event_settings.save_button')}
         </button>
         {savedAt && !error && (
-          <span className="text-xs text-green-400">Saved.</span>
+          <span className="text-xs text-green-400">{t('admin.event_settings.saved_flash')}</span>
         )}
       </div>
 

@@ -3,6 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
+import '../../../../src/lib/i18n';
+
 const { listOrder, insertCat, deleteEq } = vi.hoisted(() => ({
   listOrder: vi.fn(),
   insertCat: vi.fn(),
@@ -110,7 +112,7 @@ describe('CategoryListPage', () => {
 
     expect(screen.queryByLabelText(/^slug$/i)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /new category/i }));
+    await user.click(screen.getByRole('button', { name: /new category|Neue Kategorie/i }));
 
     expect(screen.getByLabelText(/^slug$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/name \(de\)/i)).toBeInTheDocument();
@@ -124,14 +126,14 @@ describe('CategoryListPage', () => {
     await screen.findByText('Galerie');
     expect(listOrder).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole('button', { name: /new category/i }));
+    await user.click(screen.getByRole('button', { name: /new category|Neue Kategorie/i }));
 
     await user.type(screen.getByLabelText(/^slug$/i), 'food');
     await user.type(screen.getByLabelText(/name \(de\)/i), 'Essen');
     await user.type(screen.getByLabelText(/name \(en\)/i), 'Food');
     await user.type(screen.getByLabelText(/icon/i), '🍞');
 
-    await user.click(screen.getByRole('button', { name: /save/i }));
+    await user.click(screen.getByRole('button', { name: /^save$|^Speichern$/i }));
 
     await waitFor(() => expect(insertCat).toHaveBeenCalledTimes(1));
     expect(insertCat).toHaveBeenCalledWith({
@@ -152,10 +154,10 @@ describe('CategoryListPage', () => {
     renderApp();
     await screen.findByText('Galerie');
 
-    await user.click(screen.getByRole('button', { name: /new category/i }));
+    await user.click(screen.getByRole('button', { name: /new category|Neue Kategorie/i }));
     expect(screen.getByLabelText(/^slug$/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /cancel/i }));
+    await user.click(screen.getByRole('button', { name: /cancel|Abbrechen/i }));
 
     expect(screen.queryByLabelText(/^slug$/i)).not.toBeInTheDocument();
     expect(insertCat).not.toHaveBeenCalled();
@@ -167,12 +169,12 @@ describe('CategoryListPage', () => {
     await screen.findByText('Galerie');
 
     // First click: enter confirm mode for the first row.
-    await user.click(screen.getAllByRole('button', { name: /^delete$/i })[0]!);
+    await user.click(screen.getAllByRole('button', { name: /^delete$|^Löschen$/i })[0]!);
     expect(deleteEq).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /confirm delete/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm delete|Löschen bestätigen/i })).toBeInTheDocument();
 
     // Confirm: actually delete.
-    await user.click(screen.getByRole('button', { name: /confirm delete/i }));
+    await user.click(screen.getByRole('button', { name: /confirm delete|Löschen bestätigen/i }));
 
     await waitFor(() => expect(deleteEq).toHaveBeenCalledWith('id', 'c1'));
     await waitFor(() => expect(listOrder).toHaveBeenCalledTimes(2));
@@ -183,14 +185,14 @@ describe('CategoryListPage', () => {
     renderApp();
     await screen.findByText('Galerie');
 
-    await user.click(screen.getAllByRole('button', { name: /^delete$/i })[0]!);
-    expect(screen.getByRole('button', { name: /confirm delete/i })).toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: /^delete$|^Löschen$/i })[0]!);
+    expect(screen.getByRole('button', { name: /confirm delete|Löschen bestätigen/i })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    await user.click(screen.getByRole('button', { name: /^cancel$|^Abbrechen$/i }));
 
     expect(deleteEq).not.toHaveBeenCalled();
     expect(
-      screen.queryByRole('button', { name: /confirm delete/i }),
+      screen.queryByRole('button', { name: /confirm delete|Löschen bestätigen/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -198,6 +200,6 @@ describe('CategoryListPage', () => {
     listOrder.mockResolvedValue({ data: [], error: null });
     renderApp();
 
-    expect(await screen.findByText(/no categories yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no categories yet|Noch keine Kategorien/i)).toBeInTheDocument();
   });
 });
