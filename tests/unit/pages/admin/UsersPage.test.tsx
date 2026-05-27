@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import '../../../../src/lib/i18n';
 
@@ -96,5 +96,44 @@ describe('UsersPage', () => {
     });
     renderUsersPage();
     expect(screen.getByText(/Lade Mitstreiter ein|Invite collaborators/i)).toBeInTheDocument();
+  });
+
+  it("calls supabase event_admins.update when an admin changes another user's role", async () => {
+    eventState.mockReturnValue({ event: { id: 'ev1', slug: 'foo', title_de: 'Kunstmeile' }, loading: false, error: null });
+    authState.mockReturnValue({ session: { user: { id: 'p-1' } } });
+    usersState.mockReturnValue({
+      users: [
+        { profileId: 'p-1', email: 'me@example.com', fullName: 'Me', roleInEvent: 'owner', emailConfirmedAt: '2026-01-01', invitedAt: '2025-12-01' },
+        { profileId: 'p-2', email: 'helga@example.com', fullName: 'Helga', roleInEvent: 'editor', emailConfirmedAt: '2026-02-01', invitedAt: '2026-01-15' },
+      ],
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderUsersPage();
+    // Two combo-boxes render: [0] the invite-form's role select, [1] helga's
+    // row select (the current user "me" is read-only — no select).
+    const combos = screen.getAllByRole('combobox');
+    const helgaSelect = combos[combos.length - 1]!;
+    fireEvent.change(helgaSelect, { target: { value: 'contributor' } });
+    await waitFor(() => expect(supabaseUpdate).toHaveBeenCalledWith({ role_in_event: 'contributor' }));
+  });
+
+  it('calls supabase event_admins.delete after the two-click remove confirm', async () => {
+    eventState.mockReturnValue({ event: { id: 'ev1', slug: 'foo', title_de: 'Kunstmeile' }, loading: false, error: null });
+    authState.mockReturnValue({ session: { user: { id: 'p-1' } } });
+    usersState.mockReturnValue({
+      users: [
+        { profileId: 'p-1', email: 'me@example.com', fullName: 'Me', roleInEvent: 'owner', emailConfirmedAt: '2026-01-01', invitedAt: '2025-12-01' },
+        { profileId: 'p-2', email: 'helga@example.com', fullName: 'Helga', roleInEvent: 'editor', emailConfirmedAt: '2026-02-01', invitedAt: '2026-01-15' },
+      ],
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderUsersPage();
+    fireEvent.click(screen.getByRole('button', { name: /Entfernen|Remove/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Klick zum Bestätigen|Click to confirm/i }));
+    await waitFor(() => expect(supabaseDelete).toHaveBeenCalled());
   });
 });
