@@ -16,7 +16,15 @@ The function listens on `http://localhost:54321/functions/v1/invite-user`.
 ### Local test (curl)
 
 You'll need a JWT for an authenticated user. Easiest path: log in via the app
-locally and grab the JWT from `localStorage.getItem('supabase.auth.token')`.
+locally, open the browser devtools console, and run:
+
+```js
+(await supabase.auth.getSession()).data.session?.access_token
+```
+
+(supabase-js v2 stores the session under `sb-<project-ref>-auth-token` in
+`localStorage`, where the value is JSON containing `.access_token` — but
+`getSession()` is the version-stable path that doesn't depend on the key shape.)
 
 ```bash
 USER_JWT='<paste-token-here>'

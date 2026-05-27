@@ -34,6 +34,23 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+// Paginated lookup — supabase-js v2's auth.admin.listUsers does not support a
+// filter param, so we walk pages (perPage = 1000, the documented admin-API max)
+// until the email is found or a short page signals we hit the end.
+async function findUserByEmail(
+  serviceClient: SupabaseClient,
+  normalizedEmail: string,
+): Promise<{ user?: { id: string; email?: string } | null; error?: { message: string } }> {
+  const perPage = 1000;
+  for (let page = 1; ; page++) {
+    const { data, error } = await serviceClient.auth.admin.listUsers({ page, perPage });
+    if (error) return { error };
+    const found = data.users.find((u) => u.email?.toLowerCase() === normalizedEmail);
+    if (found) return { user: found };
+    if (data.users.length < perPage) return { user: null };
+  }
+}
+
 Deno.serve(async (req: Request) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
@@ -58,7 +75,8 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'invalid_json' }, 400);
   }
   const { email, event_id, role_in_event, resend } = body;
-  if (!email || !event_id || !role_in_event) {
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  if (!normalizedEmail || !event_id || !role_in_event) {
     return jsonResponse({ error: 'missing_fields', message: 'email, event_id, role_in_event required' }, 400);
   }
   if (!ROLES.includes(role_in_event)) {
@@ -103,12 +121,11 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'not_event_owner' }, 403);
   }
 
-  // 3. Check existing user by email
-  const { data: usersData, error: listErr } = await serviceClient.auth.admin.listUsers();
+  // 3. Check existing user by email (paginated — see findUserByEmail)
+  const { user: existingUser, error: listErr } = await findUserByEmail(serviceClient, normalizedEmail);
   if (listErr) {
     return jsonResponse({ error: 'list_users_failed', message: listErr.message }, 500);
   }
-  const existingUser = usersData.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
 
   if (existingUser) {
     // 3a. Existing user — check current membership in this event
@@ -125,7 +142,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({
         error: 'already_member',
         existing_role: membership.role_in_event,
-        message: `User ${email} already has role '${membership.role_in_event}' in this event.`,
+        message: `User ${normalizedEmail} already has role '${membership.role_in_event}' in this event.`,
       }, 400);
     }
     // Add the missing event_admins row. No new auth invite, no email.
@@ -145,7 +162,7 @@ Deno.serve(async (req: Request) => {
 
   // 4. New invitation — embed event/role in metadata so handle_new_user picks it up
   const { data: inviteData, error: inviteErr } = await serviceClient.auth.admin.inviteUserByEmail(
-    email,
+    normalizedEmail,
     {
       data: {
         invited_event_id: event_id,
