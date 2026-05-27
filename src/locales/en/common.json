@@ -135,6 +135,7 @@
     "tent_list": {
       "heading": "{{title}} — Tents",
       "csv_import": "CSV import",
+      "export_xlsx": "↓ Export to Excel",
       "new_tent": "+ New tent",
       "col_number": "#",
       "col_name": "Name",

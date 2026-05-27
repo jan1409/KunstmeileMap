@@ -3,12 +3,48 @@ import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase, type Tent } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
+import { exportTentsToBlob } from '../../lib/excel';
+import { flattenTentCategories } from '../../lib/tentCategories';
+import { useToast } from '../../components/ToastProvider';
 
 export default function TentListPage() {
   const { t } = useTranslation();
   const { eventSlug } = useParams();
   const { event } = useEvent(eventSlug);
   const [tents, setTents] = useState<Tent[]>([]);
+  const [exportBusy, setExportBusy] = useState(false);
+  const { showError } = useToast();
+
+  async function handleExport() {
+    if (!event) return;
+    setExportBusy(true);
+    try {
+      const { data, error } = await supabase
+        .from('tents')
+        .select('*, tent_categories(category:categories(*))')
+        .eq('event_id', event.id)
+        .order('display_number', { ascending: true, nullsFirst: false });
+      if (error) throw new Error(error.message);
+      const tentsWithCategories = flattenTentCategories((data ?? []) as never);
+      const blob = exportTentsToBlob(tentsWithCategories);
+      const today = new Date();
+      const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const filename = `kunstmeile-${event.slug}-tents-${stamp}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'export failed';
+      showError(`Export failed: ${msg}`);
+    } finally {
+      setExportBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!event) return;
@@ -36,6 +72,14 @@ export default function TentListPage() {
           {t('admin.tent_list.heading', { title: event.title_de })}
         </h1>
         <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exportBusy}
+            className="rounded bg-white/10 px-3 py-1 text-sm disabled:opacity-50"
+          >
+            {t('admin.tent_list.export_xlsx')}
+          </button>
           <Link
             to={`/admin/events/${event.slug}/tents/import`}
             className="rounded bg-white/10 px-3 py-1 text-sm"

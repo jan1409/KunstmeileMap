@@ -135,6 +135,7 @@
     "tent_list": {
       "heading": "{{title}} — Stände",
       "csv_import": "CSV-Import",
+      "export_xlsx": "↓ Excel-Export",
       "new_tent": "+ Neuer Stand",
       "col_number": "#",
       "col_name": "Name",
