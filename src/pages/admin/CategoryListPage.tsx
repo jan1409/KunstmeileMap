@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase, type Category } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
+import { exportCategoriesToBlob } from '../../lib/excel';
+import { useToast } from '../../components/ToastProvider';
 
 export default function CategoryListPage() {
   const { t } = useTranslation();
@@ -12,6 +14,8 @@ export default function CategoryListPage() {
   const [reloadTick, setReloadTick] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [exportBusy, setExportBusy] = useState(false);
+  const { showError } = useToast();
   const [draft, setDraft] = useState({
     slug: '',
     name_de: '',
@@ -62,6 +66,30 @@ export default function CategoryListPage() {
     setReloadTick((n) => n + 1);
   }
 
+  function handleExport() {
+    if (!event) return;
+    setExportBusy(true);
+    try {
+      const blob = exportCategoriesToBlob(categories);
+      const today = new Date();
+      const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const filename = `kunstmeile-${event.slug}-categories-${stamp}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'export failed';
+      showError(`Export failed: ${msg}`);
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
   if (!event) return null;
 
   return (
@@ -70,15 +98,25 @@ export default function CategoryListPage() {
         <h1 className="text-2xl font-semibold">
           {t('admin.category.heading', { title: event.title_de })}
         </h1>
-        {!showForm && (
+        <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setShowForm(true)}
-            className="rounded bg-white/20 px-3 py-1 text-sm"
+            onClick={handleExport}
+            disabled={exportBusy || categories.length === 0}
+            className="rounded bg-white/10 px-3 py-1 text-sm disabled:opacity-50"
           >
-            {t('admin.category.new')}
+            {t('admin.category.export_xlsx')}
           </button>
-        )}
+          {!showForm && (
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="rounded bg-white/20 px-3 py-1 text-sm"
+            >
+              {t('admin.category.new')}
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && (
