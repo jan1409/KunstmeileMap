@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, render } from '@testing-library/react';
 import { MapView } from '../../../src/components/MapView';
 import type { TentWithCategories } from '../../../src/lib/supabase';
 
@@ -25,23 +25,46 @@ vi.mock('react-leaflet', () => ({
   TileLayer: () => <div data-testid="tile-layer" />,
   Marker: ({
     position,
+    icon,
     eventHandlers,
   }: {
     position: [number, number];
+    icon?: { options?: { iconSize?: [number, number] } };
     eventHandlers?: { click?: () => void };
-  }) => (
-    <div
-      data-testid="marker"
-      data-position={JSON.stringify(position)}
-      onClick={() => eventHandlers?.click?.()}
-    />
-  ),
+  }) => {
+    // Surface the variant via the icon's iconSize so tests can assert on it
+    // without coupling to renderToString HTML internals.
+    const iconSize = icon?.options?.iconSize;
+    const variant =
+      iconSize && iconSize[0] === 24 ? 'dot' : 'full';
+    return (
+      <div
+        data-testid="marker"
+        data-position={JSON.stringify(position)}
+        data-variant={variant}
+        onClick={() => eventHandlers?.click?.()}
+      />
+    );
+  },
   ZoomControl: () => <div data-testid="zoom-control" />,
+  useMapEvents: (handlers: { zoomend?: () => void }) => {
+    (globalThis as unknown as { __mapZoomEndHandler?: () => void }).__mapZoomEndHandler =
+      handlers.zoomend;
+    const g = globalThis as unknown as {
+      __currentMockZoom?: number;
+      __mapSetZoom?: (z: number) => void;
+    };
+    g.__currentMockZoom = g.__currentMockZoom ?? 18;
+    g.__mapSetZoom = (z: number) => {
+      g.__currentMockZoom = z;
+    };
+    return { getZoom: () => g.__currentMockZoom ?? 18 };
+  },
 }));
 
 vi.mock('leaflet', () => ({
   default: {
-    divIcon: () => ({}),
+    divIcon: (opts: { iconSize?: [number, number] }) => ({ options: opts }),
   },
 }));
 
@@ -79,6 +102,15 @@ const SAMPLE_TENTS = [
 ] as unknown as TentWithCategories[];
 
 describe('MapView', () => {
+  beforeEach(() => {
+    const g = globalThis as unknown as {
+      __currentMockZoom?: number;
+      __mapZoomEndHandler?: () => void;
+    };
+    g.__currentMockZoom = undefined;
+    g.__mapZoomEndHandler = undefined;
+  });
+
   it('renders one marker per tent with valid coordinates', () => {
     const { getAllByTestId } = render(
       <MapView
@@ -117,5 +149,55 @@ describe('MapView', () => {
     );
     getAllByTestId('marker')[0]!.click();
     expect(onClick).toHaveBeenCalledWith(SAMPLE_TENTS[0]);
+  });
+
+  it('renders markers as "dot" variant when initial zoom is below MARKER_DETAIL_ZOOM', () => {
+    (globalThis as unknown as { __currentMockZoom?: number }).__currentMockZoom = 18;
+    const { getAllByTestId } = render(
+      <MapView
+        tents={SAMPLE_TENTS}
+        center={[49.0, 8.4]}
+        zoom={18}
+        onMarkerClick={() => {}}
+      />,
+    );
+    const markers = getAllByTestId('marker');
+    expect(markers).toHaveLength(2);
+    markers.forEach((m) => expect(m.getAttribute('data-variant')).toBe('dot'));
+  });
+
+  it('renders markers as "full" variant when initial zoom is at MARKER_DETAIL_ZOOM', () => {
+    (globalThis as unknown as { __currentMockZoom?: number }).__currentMockZoom = 20;
+    const { getAllByTestId } = render(
+      <MapView
+        tents={SAMPLE_TENTS}
+        center={[49.0, 8.4]}
+        zoom={20}
+        onMarkerClick={() => {}}
+      />,
+    );
+    getAllByTestId('marker').forEach((m) =>
+      expect(m.getAttribute('data-variant')).toBe('full'),
+    );
+  });
+
+  it('swaps marker variant when the map zoom changes (zoomend event)', async () => {
+    (globalThis as unknown as { __currentMockZoom?: number }).__currentMockZoom = 18;
+    const { getAllByTestId } = render(
+      <MapView
+        tents={SAMPLE_TENTS}
+        center={[49.0, 8.4]}
+        zoom={18}
+        onMarkerClick={() => {}}
+      />,
+    );
+    expect(getAllByTestId('marker')[0]!.getAttribute('data-variant')).toBe('dot');
+
+    await act(async () => {
+      (globalThis as unknown as { __mapSetZoom?: (z: number) => void }).__mapSetZoom?.(20);
+      (globalThis as unknown as { __mapZoomEndHandler?: () => void }).__mapZoomEndHandler?.();
+    });
+
+    expect(getAllByTestId('marker')[0]!.getAttribute('data-variant')).toBe('full');
   });
 });
