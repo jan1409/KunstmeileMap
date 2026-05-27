@@ -80,6 +80,7 @@ export function MapView({ tents, center, zoom, onMarkerClick }: Props) {
             key={t.id}
             position={[t.lat, t.lng]}
             icon={icon}
+            title={t.name}
             eventHandlers={{ click: () => onMarkerClick(t) }}
           />
         );

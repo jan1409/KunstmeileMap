@@ -26,10 +26,12 @@ vi.mock('react-leaflet', () => ({
   Marker: ({
     position,
     icon,
+    title,
     eventHandlers,
   }: {
     position: [number, number];
     icon?: { options?: { iconSize?: [number, number] } };
+    title?: string;
     eventHandlers?: { click?: () => void };
   }) => {
     // Surface the variant via the icon's iconSize so tests can assert on it
@@ -42,6 +44,7 @@ vi.mock('react-leaflet', () => ({
         data-testid="marker"
         data-position={JSON.stringify(position)}
         data-variant={variant}
+        data-title={title ?? ''}
         onClick={() => eventHandlers?.click?.()}
       />
     );
@@ -199,5 +202,20 @@ describe('MapView', () => {
     });
 
     expect(getAllByTestId('marker')[0]!.getAttribute('data-variant')).toBe('full');
+  });
+
+  it('passes the tent name as the Marker title (browser tooltip)', () => {
+    (globalThis as unknown as { __currentMockZoom?: number }).__currentMockZoom = 18;
+    const { getAllByTestId } = render(
+      <MapView
+        tents={SAMPLE_TENTS}
+        center={[49.0, 8.4]}
+        zoom={18}
+        onMarkerClick={() => {}}
+      />,
+    );
+    const markers = getAllByTestId('marker');
+    expect(markers[0]!.getAttribute('data-title')).toBe('Stand 1');
+    expect(markers[1]!.getAttribute('data-title')).toBe('Stand 2');
   });
 });
