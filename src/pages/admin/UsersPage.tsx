@@ -10,6 +10,14 @@ import { UserRow } from '../../components/UserRow';
 
 type Role = 'contributor' | 'editor' | 'owner';
 
+function LoadingPlaceholder({ label }: { label: string }) {
+  return (
+    <p role="status" aria-live="polite" className="p-6 text-white/70">
+      {label}
+    </p>
+  );
+}
+
 export default function UsersPage() {
   const { t } = useTranslation();
   const { eventSlug } = useParams();
@@ -18,7 +26,7 @@ export default function UsersPage() {
   const { session } = useAuth();
   const { showSuccess, showError } = useToast();
 
-  if (!event) return <p className="p-6">…</p>;
+  if (!event) return <LoadingPlaceholder label={t('app.auth_loading')} />;
 
   const myProfileId = session?.user?.id ?? null;
   const onlySelf = users.length === 1 && users[0]?.profileId === myProfileId;
@@ -31,7 +39,7 @@ export default function UsersPage() {
       .eq('event_id', event.id)
       .eq('profile_id', profileId);
     if (error) {
-      showError(`Update failed: ${error.message}`);
+      showError(t('admin.users.update_error', { message: error.message }));
       return;
     }
     refetch();
@@ -45,20 +53,20 @@ export default function UsersPage() {
       .eq('event_id', event.id)
       .eq('profile_id', profileId);
     if (error) {
-      showError(`Remove failed: ${error.message}`);
+      showError(t('admin.users.remove_error', { message: error.message }));
       return;
     }
     refetch();
   }
 
-  async function onResendInvite(email: string) {
+  async function onResendInvite(email: string, currentRole: Role) {
     if (!event) return;
     const { data, error } = await supabase.functions.invoke('invite-user', {
-      body: { email, event_id: event.id, role_in_event: 'contributor', resend: true },
+      body: { email, event_id: event.id, role_in_event: currentRole, resend: true },
     });
     const r = (data ?? {}) as { error?: string; message?: string };
     if (error || r.error) {
-      showError(`Resend failed: ${error?.message ?? r.message ?? r.error}`);
+      showError(t('admin.users.resend_error', { message: error?.message ?? r.message ?? r.error }));
       return;
     }
     showSuccess(t('admin.users.invite_success', { email }));
@@ -75,7 +83,7 @@ export default function UsersPage() {
       <h2 className="mb-2 text-sm font-semibold text-white/80">{t('admin.users.list_heading')}</h2>
 
       {loading ? (
-        <p>…</p>
+        <LoadingPlaceholder label={t('app.auth_loading')} />
       ) : (
         <>
           <table className="w-full text-left text-sm">

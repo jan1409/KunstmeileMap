@@ -16,7 +16,7 @@ const sampleUser: EventUser = {
 describe('UserRow', () => {
   let onChangeRole: ReturnType<typeof vi.fn> & ((profileId: string, newRole: 'owner' | 'editor' | 'contributor') => void);
   let onRemove: ReturnType<typeof vi.fn> & ((profileId: string) => void);
-  let onResendInvite: ReturnType<typeof vi.fn> & ((email: string) => void);
+  let onResendInvite: ReturnType<typeof vi.fn> & ((email: string, currentRole: 'owner' | 'editor' | 'contributor') => void);
   beforeEach(() => {
     onChangeRole = vi.fn() as typeof onChangeRole;
     onRemove = vi.fn() as typeof onRemove;
@@ -75,6 +75,6 @@ describe('UserRow', () => {
     );
     expect(screen.getByText(/\(Pending\)/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Erneut senden|Resend/i }));
-    expect(onResendInvite).toHaveBeenCalledWith('helga@example.com');
+    expect(onResendInvite).toHaveBeenCalledWith('helga@example.com', 'editor');
   });
 });

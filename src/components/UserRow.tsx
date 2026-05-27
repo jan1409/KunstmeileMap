@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EventUser } from '../hooks/useEventUsers';
 
+type Role = 'owner' | 'editor' | 'contributor';
+
 interface Props {
   user: EventUser;
   isSelf: boolean;
-  onChangeRole: (profileId: string, newRole: 'owner' | 'editor' | 'contributor') => void;
+  onChangeRole: (profileId: string, newRole: Role) => void;
   onRemove: (profileId: string) => void;
-  onResendInvite: (email: string) => void;
+  onResendInvite: (email: string, currentRole: Role) => void;
 }
 
 export function UserRow({ user, isSelf, onChangeRole, onRemove, onResendInvite }: Props) {
@@ -41,7 +43,7 @@ export function UserRow({ user, isSelf, onChangeRole, onRemove, onResendInvite }
         {isSelf ? (
           <span className="text-white/60">{t('admin.users.you_label')}</span>
         ) : isPending ? (
-          <button type="button" onClick={() => onResendInvite(user.email)} className="underline">
+          <button type="button" onClick={() => onResendInvite(user.email, user.roleInEvent)} className="underline">
             {t('admin.users.action_resend_invite')}
           </button>
         ) : confirmingRemove ? (
