@@ -234,3 +234,54 @@ comment on function get_event_users(uuid) is
   'Returns the user list for an event, joined with auth.users for email/email_confirmed_at. Owner+admin only.';
 
 grant execute on function public.get_event_users(uuid) to authenticated;
+
+-- ========================================================================
+-- 9. Read-policy widening for the contributor tier
+-- ========================================================================
+-- The four *_public_read policies in 20260429120300_rls_policies.sql call
+-- has_event_role(id) with the default 'editor' min_role. After T2's three-
+-- tier rewrite that default check returns false for contributors. A
+-- contributor invited to a draft event would not be able to see it (or its
+-- tents/categories/photos) until the event is published. The Kunstmeile
+-- workflow needs contributors to be active during the data-entry phase,
+-- when the event is still draft. So drop and recreate each read policy
+-- with an explicit 'contributor' min_role.
+
+drop policy if exists events_public_read on events;
+create policy events_public_read on events for select
+  using (
+    status = 'published'
+    or has_event_role(id, 'contributor')
+    or is_admin()
+  );
+
+drop policy if exists categories_public_read on categories;
+create policy categories_public_read on categories for select
+  using (
+    exists (
+      select 1 from events e
+      where e.id = categories.event_id
+        and (e.status = 'published' or has_event_role(e.id, 'contributor') or is_admin())
+    )
+  );
+
+drop policy if exists tents_public_read on tents;
+create policy tents_public_read on tents for select
+  using (
+    exists (
+      select 1 from events e
+      where e.id = tents.event_id
+        and (e.status = 'published' or has_event_role(e.id, 'contributor') or is_admin())
+    )
+  );
+
+drop policy if exists tent_photos_public_read on tent_photos;
+create policy tent_photos_public_read on tent_photos for select
+  using (
+    exists (
+      select 1 from tents t
+      join events e on e.id = t.event_id
+      where t.id = tent_photos.tent_id
+        and (e.status = 'published' or has_event_role(e.id, 'contributor') or is_admin())
+    )
+  );
