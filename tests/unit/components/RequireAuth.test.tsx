@@ -17,6 +17,11 @@ vi.mock('../../../src/hooks/useProfile', () => ({
   useProfile: (userId: string | undefined) => useProfileMock(userId),
 }));
 
+const useEventMembershipMock = vi.fn();
+vi.mock('../../../src/hooks/useEventMembership', () => ({
+  useEventMembership: (userId: string | undefined) => useEventMembershipMock(userId),
+}));
+
 import { RequireAuth } from '../../../src/components/RequireAuth';
 
 function renderAt(path: string) {
@@ -45,6 +50,7 @@ describe('RequireAuth', () => {
   it('shows a loading placeholder while auth is loading', () => {
     useAuthMock.mockReturnValue({ session: null, loading: true });
     useProfileMock.mockReturnValue({ profile: null, loading: false, error: null });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: false });
     renderAt('/admin');
     expect(screen.queryByText('admin-content')).toBeNull();
     expect(screen.queryByText('login-screen')).toBeNull();
@@ -54,6 +60,7 @@ describe('RequireAuth', () => {
   it('redirects to /admin/login when there is no session', () => {
     useAuthMock.mockReturnValue({ session: null, loading: false });
     useProfileMock.mockReturnValue({ profile: null, loading: false, error: null });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: false });
     renderAt('/admin');
     expect(screen.getByText('login-screen')).toBeInTheDocument();
   });
@@ -61,6 +68,7 @@ describe('RequireAuth', () => {
   it('shows a loading placeholder while the profile is being fetched', () => {
     useAuthMock.mockReturnValue({ session: { user: { id: 'u1' } }, loading: false });
     useProfileMock.mockReturnValue({ profile: null, loading: true, error: null });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: false });
     renderAt('/admin');
     expect(screen.queryByText('admin-content')).toBeNull();
     expect(screen.queryByText('no-access-screen')).toBeNull();
@@ -70,13 +78,33 @@ describe('RequireAuth', () => {
   it('redirects an editor (non-admin) to /admin/no-access', () => {
     useAuthMock.mockReturnValue({ session: { user: { id: 'u2' } }, loading: false });
     useProfileMock.mockReturnValue({ profile: editorProfile, loading: false, error: null });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: false });
     renderAt('/admin');
     expect(screen.getByText('no-access-screen')).toBeInTheDocument();
+  });
+
+  it('admits an editor who is a member of at least one event', () => {
+    useAuthMock.mockReturnValue({ session: { user: { id: 'u2' } }, loading: false });
+    useProfileMock.mockReturnValue({ profile: editorProfile, loading: false, error: null });
+    useEventMembershipMock.mockReturnValue({ isMember: true, loading: false });
+    renderAt('/admin');
+    expect(screen.getByText('admin-content')).toBeInTheDocument();
+  });
+
+  it('shows a loading placeholder while membership is being checked', () => {
+    useAuthMock.mockReturnValue({ session: { user: { id: 'u2' } }, loading: false });
+    useProfileMock.mockReturnValue({ profile: editorProfile, loading: false, error: null });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: true });
+    renderAt('/admin');
+    expect(screen.queryByText('admin-content')).toBeNull();
+    expect(screen.queryByText('no-access-screen')).toBeNull();
+    expect(screen.queryByText('login-screen')).toBeNull();
   });
 
   it('renders children when the user has the admin role', () => {
     useAuthMock.mockReturnValue({ session: { user: { id: 'u1' } }, loading: false });
     useProfileMock.mockReturnValue({ profile: adminProfile, loading: false, error: null });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: false });
     renderAt('/admin');
     expect(screen.getByText('admin-content')).toBeInTheDocument();
   });
@@ -84,6 +112,7 @@ describe('RequireAuth', () => {
   it('redirects to /admin/no-access when the profile fetch returned null (defensive)', () => {
     useAuthMock.mockReturnValue({ session: { user: { id: 'u-missing' } }, loading: false });
     useProfileMock.mockReturnValue({ profile: null, loading: false, error: null });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: false });
     renderAt('/admin');
     expect(screen.getByText('no-access-screen')).toBeInTheDocument();
   });
@@ -96,6 +125,7 @@ describe('RequireAuth', () => {
       loading: false,
       error: new Error('rls denied profiles'),
     });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: false });
     renderAt('/admin');
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(/profile fetch failed/i);
@@ -116,6 +146,7 @@ describe('RequireAuth', () => {
       loading: false,
       error: new Error('rls denied'),
     });
+    useEventMembershipMock.mockReturnValue({ isMember: false, loading: false });
     const user = userEvent.setup();
     renderAt('/admin');
 
