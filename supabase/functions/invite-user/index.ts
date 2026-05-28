@@ -184,12 +184,26 @@ Deno.serve(async (req: Request) => {
       }, 400);
     }
 
-    // Existing user, NOT yet in this event. Add directly. (No resend semantics here.)
+    // Existing user, NOT yet in this event. Add the membership row.
     const { error: insErr } = await serviceClient
       .from('event_admins')
       .insert({ event_id, profile_id: existingUser.id, role_in_event });
     if (insErr) {
       return jsonResponse({ error: 'insert_event_admin_failed', message: insErr.message }, 500);
+    }
+    // If the account was never confirmed (e.g. a previously-rescinded pending
+    // invite), it has no password — send a fresh invite email so they can set
+    // one. A confirmed user already has credentials, so just add them silently.
+    if (existingUser.email_confirmed_at == null) {
+      const { error: linkErr } = await serviceClient.auth.admin.generateLink({
+        type: 'invite',
+        email: normalizedEmail,
+        options: { redirectTo },
+      });
+      if (linkErr) {
+        return jsonResponse({ error: 'invite_failed', message: linkErr.message }, 500);
+      }
+      return jsonResponse({ ok: true, user_id: existingUser.id, status: 'invited' });
     }
     return jsonResponse({ ok: true, user_id: existingUser.id, status: 'added_to_existing_user' });
   }

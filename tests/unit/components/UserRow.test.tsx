@@ -77,4 +77,20 @@ describe('UserRow', () => {
     fireEvent.click(screen.getByRole('button', { name: /Erneut senden|Resend/i }));
     expect(onResendInvite).toHaveBeenCalledWith('helga@example.com', 'editor');
   });
+
+  it('allows removing a pending user via two-click confirm', () => {
+    const pending: EventUser = { ...sampleUser, emailConfirmedAt: null };
+    render(
+      <table><tbody>
+        <UserRow user={pending} isSelf={false} onChangeRole={onChangeRole} onRemove={onRemove} onResendInvite={onResendInvite} />
+      </tbody></table>,
+    );
+    // Resend is present for pending users…
+    expect(screen.getByRole('button', { name: /Erneut senden|Resend/i })).toBeInTheDocument();
+    // …and so is Remove now.
+    fireEvent.click(screen.getByRole('button', { name: /Entfernen|Remove/i }));
+    expect(onRemove).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /Klick zum Bestätigen|Click to confirm/i }));
+    expect(onRemove).toHaveBeenCalledWith('p-1');
+  });
 });

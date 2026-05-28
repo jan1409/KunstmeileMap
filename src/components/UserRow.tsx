@@ -42,25 +42,38 @@ export function UserRow({ user, isSelf, onChangeRole, onRemove, onResendInvite }
       <td className="space-x-3">
         {isSelf ? (
           <span className="text-white/60">{t('admin.users.you_label')}</span>
-        ) : isPending ? (
-          <button type="button" onClick={() => onResendInvite(user.email, user.roleInEvent)} className="underline">
-            {t('admin.users.action_resend_invite')}
-          </button>
-        ) : confirmingRemove ? (
-          <button
-            type="button"
-            onClick={() => {
-              onRemove(user.profileId);
-              setConfirmingRemove(false);
-            }}
-            className="text-red-400"
-          >
-            {t('admin.users.action_confirm_remove')}
-          </button>
         ) : (
-          <button type="button" onClick={() => setConfirmingRemove(true)} className="text-red-400">
-            {t('admin.users.action_remove')}
-          </button>
+          <>
+            {isPending && (
+              <button
+                type="button"
+                onClick={() => onResendInvite(user.email, user.roleInEvent)}
+                className="underline"
+              >
+                {t('admin.users.action_resend_invite')}
+              </button>
+            )}
+            {confirmingRemove ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onRemove(user.profileId);
+                  setConfirmingRemove(false);
+                }}
+                className="text-red-400"
+              >
+                {t('admin.users.action_confirm_remove')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingRemove(true)}
+                className="text-red-400"
+              >
+                {t('admin.users.action_remove')}
+              </button>
+            )}
+          </>
         )}
       </td>
     </tr>

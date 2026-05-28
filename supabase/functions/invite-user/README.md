@@ -71,8 +71,8 @@ the caller and never accepts it in the request body.
 
 | Status | Body | Meaning |
 |---|---|---|
-| 200 | `{ ok, user_id, status: 'invited' }` | New invitation sent. |
-| 200 | `{ ok, user_id, status: 'added_to_existing_user' }` | User already had an account; added to this event without a new email. |
+| 200 | `{ ok, user_id, status: 'invited' }` | New invitation sent. Also returned when re-inviting an existing but unconfirmed account (e.g. a previously-rescinded pending invite): the user is added to the event AND a fresh invite email is re-sent so they can set a password. |
+| 200 | `{ ok, user_id, status: 'added_to_existing_user' }` | A confirmed user (already has credentials) was added to this event without a new email. |
 | 200 | `{ ok, user_id, status: 'resent' }` | Re-sent magic link for an existing pending user (auth row exists but `email_confirmed_at` is null). |
 | 400 | `{ error: 'missing_fields' / 'invalid_role' / 'invalid_json' }` | Bad request body. |
 | 400 | `{ error: 'already_member', existing_role }` | This email already has a confirmed role in this event. |
