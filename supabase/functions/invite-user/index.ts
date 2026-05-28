@@ -23,13 +23,21 @@ interface InviteBody {
 
 const ROLES: Role[] = ['owner', 'editor', 'contributor'];
 
+// supabase-js v2's functions.invoke() attaches x-client-info + apikey headers
+// automatically, so the preflight must allow them or the browser blocks the
+// request. (The local stack hides this because Kong answers OPTIONS itself.)
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-supabase-api-version',
+} as const;
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'authorization, content-type',
+      ...CORS_HEADERS,
     },
   });
 }
@@ -60,9 +68,8 @@ Deno.serve(async (req: Request) => {
     return new Response(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        ...CORS_HEADERS,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, content-type',
       },
     });
   }
