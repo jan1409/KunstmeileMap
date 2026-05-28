@@ -84,6 +84,21 @@
       "submit": "Sign in",
       "submitting": "…"
     },
+    "welcome": {
+      "heading": "Welcome to Kunstmeile",
+      "intro": "Set a password to finish setting up your account.",
+      "password_label": "Password",
+      "password_placeholder": "New password",
+      "confirm_label": "Confirm password",
+      "confirm_placeholder": "Repeat password",
+      "submit": "Set password",
+      "submitting": "…",
+      "error": "Could not set password: {{message}}",
+      "password_mismatch": "The passwords do not match.",
+      "password_too_short": "The password must be at least 8 characters long.",
+      "invalid_session": "This invitation link is invalid or has expired.",
+      "to_login": "Go to login"
+    },
     "event_list": {
       "heading": "Events",
       "new_event": "+ New event",

@@ -77,6 +77,13 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'method_not_allowed' }, 405);
   }
 
+  // Derive the app origin from the request so the invite magic link returns to
+  // the same deployment that sent it (preview→preview, prod→prod) instead of
+  // falling back to the project Site URL. Supabase still validates this against
+  // the dashboard Redirect-URL allow-list.
+  const origin = req.headers.get('Origin');
+  const redirectTo = origin ? `${origin}/admin/welcome` : undefined;
+
   // Parse body
   let body: InviteBody;
   try {
@@ -163,6 +170,7 @@ Deno.serve(async (req: Request) => {
         const { error: linkErr } = await serviceClient.auth.admin.generateLink({
           type: 'invite',
           email: normalizedEmail,
+          options: { redirectTo },
         });
         if (linkErr) {
           return jsonResponse({ error: 'resend_failed', message: linkErr.message }, 500);
@@ -199,6 +207,7 @@ Deno.serve(async (req: Request) => {
         invited_event_id: event_id,
         invited_role: role_in_event,
       },
+      redirectTo,
     },
   );
   if (inviteErr) {

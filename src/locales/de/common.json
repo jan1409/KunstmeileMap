@@ -84,6 +84,21 @@
       "submit": "Anmelden",
       "submitting": "…"
     },
+    "welcome": {
+      "heading": "Willkommen bei der Kunstmeile",
+      "intro": "Lege ein Passwort fest, um deinen Zugang abzuschließen.",
+      "password_label": "Passwort",
+      "password_placeholder": "Neues Passwort",
+      "confirm_label": "Passwort bestätigen",
+      "confirm_placeholder": "Passwort wiederholen",
+      "submit": "Passwort festlegen",
+      "submitting": "…",
+      "error": "Passwort konnte nicht gesetzt werden: {{message}}",
+      "password_mismatch": "Die Passwörter stimmen nicht überein.",
+      "password_too_short": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      "invalid_session": "Dieser Einladungslink ist ungültig oder abgelaufen.",
+      "to_login": "Zur Anmeldung"
+    },
     "event_list": {
       "heading": "Events",
       "new_event": "+ Neues Event",

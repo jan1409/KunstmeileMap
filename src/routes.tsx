@@ -13,6 +13,7 @@ import { ToastProvider } from './components/ToastProvider';
 // so they live in their own chunks. RequireAuth short-circuits non-admins with
 // a Navigate before the AdminLayout chunk request is even fired.
 const LoginPage = lazy(() => import('./pages/admin/LoginPage'));
+const WelcomePage = lazy(() => import('./pages/admin/WelcomePage'));
 const NoAccessPage = lazy(() => import('./pages/admin/NoAccessPage'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
       { path: '/impressum', element: <ImpressumPage /> },
       { path: '/datenschutz', element: <DatenschutzPage /> },
       { path: '/admin/login', element: suspended(<LoginPage />) },
+      { path: '/admin/welcome', element: suspended(<WelcomePage />) },
       { path: '/admin/no-access', element: suspended(<NoAccessPage />) },
       {
         path: '/admin',
