@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '../../../../src/lib/i18n';
 
@@ -21,9 +21,9 @@ vi.mock('react-router-dom', async (orig) => ({
 
 import WelcomePage from '../../../../src/pages/admin/WelcomePage';
 
-function renderWelcome() {
+function renderWelcome(entry = '/admin/welcome') {
   return render(
-    <MemoryRouter initialEntries={['/admin/welcome']}>
+    <MemoryRouter initialEntries={[entry]}>
       <WelcomePage />
     </MemoryRouter>,
   );
@@ -92,5 +92,46 @@ describe('WelcomePage', () => {
       expect(updateUser).toHaveBeenCalledWith({ password: 'longenough1' }),
     );
     expect(navigate).toHaveBeenCalledWith('/admin', { replace: true });
+  });
+
+  it('shows loading (not invalid) while a PKCE ?code= is present but the session has not arrived', () => {
+    authState.mockReturnValue({ session: null, loading: false });
+    renderWelcome('/admin/welcome?code=abc123');
+    // Mid-exchange: neither the invalid message nor the form should show.
+    expect(
+      screen.queryByText(/ungültig oder abgelaufen|invalid or has expired/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/Neues Passwort|New password/i),
+    ).not.toBeInTheDocument();
+    // It's the loading placeholder (role="status").
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('falls through to invalid_session after the grace period elapses without a session', () => {
+    vi.useFakeTimers();
+    try {
+      authState.mockReturnValue({ session: null, loading: false });
+      renderWelcome('/admin/welcome?code=abc123');
+      expect(
+        screen.queryByText(/ungültig oder abgelaufen|invalid or has expired/i),
+      ).not.toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(4000);
+      });
+      expect(
+        screen.getByText(/ungültig oder abgelaufen|invalid or has expired/i),
+      ).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows invalid_session immediately when there is no auth artifact in the URL', () => {
+    authState.mockReturnValue({ session: null, loading: false });
+    renderWelcome('/admin/welcome');
+    expect(
+      screen.getByText(/ungültig oder abgelaufen|invalid or has expired/i),
+    ).toBeInTheDocument();
   });
 });

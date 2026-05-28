@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../components/AuthProvider';
 import { supabase } from '../../lib/supabase';
@@ -8,12 +8,46 @@ export default function WelcomePage() {
   const { t } = useTranslation();
   const { session, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // PKCE returns ?code=...; legacy/implicit returns #access_token=...; errors
+  // come back as ?error / ?error_description or in the hash.
+  const hasAuthArtifact =
+    searchParams.has('code') ||
+    searchParams.has('error') ||
+    searchParams.has('error_description') ||
+    location.hash.includes('access_token') ||
+    location.hash.includes('error');
+
+  const [graceElapsed, setGraceElapsed] = useState(false);
+  useEffect(() => {
+    if (loading || session || !hasAuthArtifact) return;
+    // PKCE code→session exchange is async; give it a moment before concluding
+    // the link is invalid.
+    const timer = setTimeout(() => setGraceElapsed(true), 4000);
+    return () => clearTimeout(timer);
+  }, [loading, session, hasAuthArtifact]);
+
   if (loading) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex min-h-screen items-center justify-center bg-neutral-900 p-6 text-white"
+      >
+        {t('app.auth_loading')}
+      </div>
+    );
+  }
+
+  if (!session && hasAuthArtifact && !graceElapsed) {
+    // Mid-exchange: AuthProvider flipped loading=false before the async PKCE
+    // code→session exchange finished. Keep waiting for onAuthStateChange.
     return (
       <div
         role="status"
