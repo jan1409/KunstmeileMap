@@ -63,6 +63,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -91,6 +93,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -105,6 +109,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -127,6 +133,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -150,6 +158,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -177,6 +187,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         initial={{
           slug: 'existing-tent',
           name: 'Existing Tent',
@@ -206,6 +218,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -237,6 +251,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -255,6 +271,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -275,6 +293,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -298,6 +318,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );
@@ -321,6 +343,8 @@ describe('TentEditForm', () => {
         categories={sampleCategories}
         defaultCenter={defaultCenter}
         defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         onSubmit={onSubmit}
       />,
     );

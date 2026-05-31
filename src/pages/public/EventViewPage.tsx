@@ -6,6 +6,7 @@ import { useTents } from '../../hooks/useTents';
 import { useCategories } from '../../hooks/useCategories';
 import { usePhotos } from '../../hooks/usePhotos';
 import { useEventPermissions } from '../../hooks/useEventPermissions';
+import { useTileStyle } from '../../hooks/useTileStyle';
 import { MapView } from '../../components/MapView';
 import { SidePanel } from '../../components/SidePanel';
 import { TopBar } from '../../components/TopBar';
@@ -21,6 +22,7 @@ export default function EventViewPage() {
   const { tents } = useTents(event?.id);
   const { categories } = useCategories(event?.id);
   const perms = useEventPermissions(event?.id);
+  const [tileStyle, setTileStyle] = useTileStyle();
 
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(
     new Set(),
@@ -87,6 +89,8 @@ export default function EventViewPage() {
           onMarkerClick={(tnt: TentWithCategories) =>
             selectTentBySlug(tnt.slug)
           }
+          tileStyle={tileStyle}
+          onTileStyleChange={setTileStyle}
         />
 
         {tentsWithoutCoords > 0 && (

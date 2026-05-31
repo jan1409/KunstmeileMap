@@ -52,7 +52,9 @@ vi.mock('react-leaflet', () => ({
       {children}
     </div>
   ),
-  TileLayer: () => <div data-testid="tile-layer" />,
+  TileLayer: ({ url }: { url?: string }) => (
+    <div data-testid="tile-layer" data-url={url ?? ''} />
+  ),
   Marker: ({
     position,
     icon,
@@ -161,6 +163,8 @@ describe('MapView', () => {
         zoom={17}
         focusTent={null}
         onMarkerClick={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     expect(getAllByTestId('marker')).toHaveLength(2);
@@ -174,6 +178,8 @@ describe('MapView', () => {
         zoom={18}
         focusTent={null}
         onMarkerClick={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     const map = getByTestId('map');
@@ -190,6 +196,8 @@ describe('MapView', () => {
         zoom={17}
         focusTent={null}
         onMarkerClick={onClick}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     getAllByTestId('marker')[0]!.click();
@@ -205,6 +213,8 @@ describe('MapView', () => {
         zoom={18}
         focusTent={null}
         onMarkerClick={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     const markers = getAllByTestId('marker');
@@ -221,6 +231,8 @@ describe('MapView', () => {
         zoom={20}
         focusTent={null}
         onMarkerClick={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     getAllByTestId('marker').forEach((m) =>
@@ -237,6 +249,8 @@ describe('MapView', () => {
         zoom={18}
         focusTent={null}
         onMarkerClick={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     expect(getAllByTestId('marker')[0]!.getAttribute('data-variant')).toBe('dot');
@@ -249,6 +263,39 @@ describe('MapView', () => {
     expect(getAllByTestId('marker')[0]!.getAttribute('data-variant')).toBe('full');
   });
 
+  it('renders the OSM tile URL when tileStyle="osm"', () => {
+    const { getByTestId } = render(
+      <MapView
+        tents={[]}
+        center={[49.0, 8.4]}
+        zoom={18}
+        focusTent={null}
+        onMarkerClick={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
+      />,
+    );
+    const url = getByTestId('tile-layer').getAttribute('data-url') ?? '';
+    expect(url).toContain('tile.openstreetmap.org');
+  });
+
+  it('renders the Esri World Imagery tile URL when tileStyle="satellite"', () => {
+    const { getByTestId } = render(
+      <MapView
+        tents={[]}
+        center={[49.0, 8.4]}
+        zoom={18}
+        focusTent={null}
+        onMarkerClick={() => {}}
+        tileStyle="satellite"
+        onTileStyleChange={() => {}}
+      />,
+    );
+    const url = getByTestId('tile-layer').getAttribute('data-url') ?? '';
+    expect(url).toContain('arcgisonline.com');
+    expect(url).toContain('World_Imagery');
+  });
+
   it('passes the tent name as the Marker title (browser tooltip)', () => {
     (globalThis as unknown as { __currentMockZoom?: number }).__currentMockZoom = 18;
     const { getAllByTestId } = render(
@@ -258,6 +305,8 @@ describe('MapView', () => {
         zoom={18}
         focusTent={null}
         onMarkerClick={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     const markers = getAllByTestId('marker');

@@ -83,6 +83,43 @@ export const MARKER_DETAIL_ZOOM = 20;
  */
 export const TENT_FOCUS_ZOOM = 20;
 
+export type TileStyle = 'osm' | 'satellite';
+
+interface TileConfig {
+  url: string;
+  attribution: string;
+  /**
+   * Max zoom the provider serves natively. Below this map zoom stays
+   * interactive but tiles may stop loading above. Both providers in this app
+   * stop serving fresh tiles above z=19 — Leaflet keeps the last tiles
+   * up-scaled when the user zooms further (maxZoom on MapContainer = 22).
+   */
+  maxNativeZoom: number;
+}
+
+/**
+ * Two interchangeable tile providers. The OSM entry mirrors the verbatim
+ * URL + attribution that lived inline in MapView/TentMapEditor before the
+ * satellite toggle was introduced — keep them in sync if you change either.
+ *
+ * Esri World Imagery is free and requires no API key. Their TOS asks for
+ * the multi-source attribution string below; do not shorten it.
+ */
+export const TILE_CONFIGS: Record<TileStyle, TileConfig> = {
+  osm: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxNativeZoom: 19,
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution:
+      'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    maxNativeZoom: 19,
+  },
+};
+
 /**
  * Compute the map center that places `tentLatLng` at the upper-third of the
  * map container (horizontally centered, vertically at 1/3 from the top) when

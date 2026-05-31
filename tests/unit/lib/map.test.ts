@@ -8,6 +8,7 @@ import {
   markerColorForCategories,
   MARKER_DETAIL_ZOOM,
   TENT_FOCUS_ZOOM,
+  TILE_CONFIGS,
   focusedCenter,
 } from '../../../src/lib/map';
 
@@ -105,6 +106,24 @@ describe('TENT_FOCUS_ZOOM', () => {
   });
   it('is an integer', () => {
     expect(Number.isInteger(TENT_FOCUS_ZOOM)).toBe(true);
+  });
+});
+
+describe('TILE_CONFIGS', () => {
+  it('exposes a non-empty OSM tile url with {z}/{x}/{y} placeholders', () => {
+    const { url, attribution } = TILE_CONFIGS.osm;
+    expect(url).toContain('{z}');
+    expect(url).toContain('{x}');
+    expect(url).toContain('{y}');
+    expect(attribution.length).toBeGreaterThan(0);
+  });
+
+  it('exposes a non-empty satellite tile url with {z}/{x}/{y} placeholders', () => {
+    const { url, attribution } = TILE_CONFIGS.satellite;
+    expect(url).toContain('{z}');
+    expect(url).toContain('{x}');
+    expect(url).toContain('{y}');
+    expect(attribution.length).toBeGreaterThan(0);
   });
 });
 

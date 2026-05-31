@@ -92,6 +92,8 @@ describe('TentMapEditor', () => {
         defaultCenter={[49.0, 8.4]}
         defaultZoom={17}
         onChange={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     expect((getByLabelText(/Lat/i) as HTMLInputElement).value).toBe('49');
@@ -107,6 +109,8 @@ describe('TentMapEditor', () => {
         defaultCenter={[49.0, 8.4]}
         defaultZoom={17}
         onChange={onChange}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     fireEvent.change(getByLabelText(/Lat/i), { target: { value: '49.5' } });
@@ -122,6 +126,8 @@ describe('TentMapEditor', () => {
         defaultCenter={[49.0, 8.4]}
         defaultZoom={17}
         onChange={onChange}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     getByTestId('marker').click(); // mock fires dragend on click
@@ -137,6 +143,8 @@ describe('TentMapEditor', () => {
         defaultCenter={[49.0, 8.4]}
         defaultZoom={17}
         onChange={onChange}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     const handler = (
@@ -157,6 +165,8 @@ describe('TentMapEditor', () => {
         defaultCenter={[49.0, 8.4]}
         defaultZoom={17}
         onChange={onChange}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
       />,
     );
     // The button label is locale-dependent (i18n in tests can pick up navigator
@@ -174,6 +184,8 @@ describe('TentMapEditor', () => {
         defaultCenter={[49.0, 8.4]}
         defaultZoom={18}
         onChange={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         otherTents={[
           { id: 'a', name: 'A', display_number: 1, lat: 49.001, lng: 8.401 },
           { id: 'b', name: 'B', display_number: 2, lat: 49.002, lng: 8.402 },
@@ -195,6 +207,8 @@ describe('TentMapEditor', () => {
         defaultCenter={[49.0, 8.4]}
         defaultZoom={20}
         onChange={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         otherTents={[
           { id: 'a', name: 'A', display_number: 1, lat: 49.001, lng: 8.401 },
         ]}
@@ -214,6 +228,8 @@ describe('TentMapEditor', () => {
         defaultCenter={[49.0, 8.4]}
         defaultZoom={18}
         onChange={() => {}}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
         otherTents={[
           { id: 'a', name: 'A', display_number: 1, lat: 49.001, lng: 8.401 },
         ]}

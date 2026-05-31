@@ -5,6 +5,7 @@ import { supabase, type Tent } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 import { useCategories } from '../../hooks/useCategories';
 import { useTents } from '../../hooks/useTents';
+import { useTileStyle } from '../../hooks/useTileStyle';
 import { PhotoUploadZone } from '../../components/PhotoUploadZone';
 import { useToast } from '../../components/ToastProvider';
 import {
@@ -23,6 +24,7 @@ export default function TentEditPage() {
   const { showError } = useToast();
   const [tent, setTent] = useState<Tent | null>(null);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [tileStyle, setTileStyle] = useTileStyle();
 
   // Other already-placed tents in this event (excluding the one being edited).
   // Rendered as green context markers in the map editor so admins can avoid
@@ -158,6 +160,8 @@ export default function TentEditPage() {
         defaultCenter={[event.default_lat, event.default_lng]}
         defaultZoom={event.default_zoom}
         otherTents={otherTents}
+        tileStyle={tileStyle}
+        onTileStyleChange={setTileStyle}
         onSubmit={onSubmit}
       />
       {tent && (
