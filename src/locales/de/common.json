@@ -19,6 +19,11 @@
     "no_coords_banner_other": "{{count}} Stände sind noch nicht auf der Karte verortet.",
     "back_to_overview": "Zurück zur Übersicht"
   },
+  "map_style": {
+    "osm": "Karte",
+    "satellite": "Satellit",
+    "toggle_aria": "Kartenansicht wechseln"
+  },
   "search": {
     "placeholder": "Stand suchen...",
     "no_results": "Keine Treffer"

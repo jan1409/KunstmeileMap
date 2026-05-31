@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { MapContainer, Marker, TileLayer, ZoomControl, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MARKER_DETAIL_ZOOM } from '../lib/map';
+import { MARKER_DETAIL_ZOOM, TILE_CONFIGS, type TileStyle } from '../lib/map';
+import { MapStyleToggle } from './MapStyleToggle';
 
 export interface OtherTent {
   id: string;
@@ -21,6 +22,8 @@ interface Props {
   onChange: (next: { lat: number | null; lng: number | null }) => void;
   /** Other already-placed tents from the same event, shown in green for spatial context. */
   otherTents?: OtherTent[];
+  tileStyle: TileStyle;
+  onTileStyleChange: (next: TileStyle) => void;
 }
 
 function MapClickHandler({
@@ -50,6 +53,8 @@ export function TentMapEditor({
   defaultZoom,
   onChange,
   otherTents = [],
+  tileStyle,
+  onTileStyleChange,
 }: Props) {
   const { t } = useTranslation();
   const hasCoord = lat != null && lng != null;
@@ -137,10 +142,13 @@ export function TentMapEditor({
         >
           <ZoomTracker onZoomChange={setCurrentZoom} />
           <ZoomControl position="bottomleft" />
+          <MapStyleToggle value={tileStyle} onChange={onTileStyleChange} />
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxNativeZoom={19}
+            // See MapView for why key={tileStyle} is required on toggle.
+            key={tileStyle}
+            attribution={TILE_CONFIGS[tileStyle].attribution}
+            url={TILE_CONFIGS[tileStyle].url}
+            maxNativeZoom={TILE_CONFIGS[tileStyle].maxNativeZoom}
             maxZoom={22}
           />
           <MapClickHandler onClick={(lt, ln) => onChange({ lat: lt, lng: ln })} />

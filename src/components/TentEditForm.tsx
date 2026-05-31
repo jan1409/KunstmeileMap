@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import type { Category, Tent } from '../lib/supabase';
+import type { TileStyle } from '../lib/map';
 import { TentMapEditor, type OtherTent } from './TentMapEditor';
 
 const TentSchema = z
@@ -53,6 +54,8 @@ interface Props {
   defaultZoom: number;
   /** Other already-placed tents from the same event (green context markers). */
   otherTents?: OtherTent[];
+  tileStyle: TileStyle;
+  onTileStyleChange: (next: TileStyle) => void;
   onSubmit: (values: TentFormValues) => Promise<void>;
 }
 
@@ -62,6 +65,8 @@ export function TentEditForm({
   defaultCenter,
   defaultZoom,
   otherTents,
+  tileStyle,
+  onTileStyleChange,
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
@@ -175,6 +180,8 @@ export function TentEditForm({
           defaultCenter={defaultCenter}
           defaultZoom={defaultZoom}
           otherTents={otherTents}
+          tileStyle={tileStyle}
+          onTileStyleChange={onTileStyleChange}
           onChange={({ lat, lng }) => {
             setValue('lat', lat ?? null, { shouldDirty: true, shouldValidate: true });
             setValue('lng', lng ?? null, { shouldDirty: true, shouldValidate: true });

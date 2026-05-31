@@ -17,8 +17,11 @@ import {
   markerColorForCategories,
   MARKER_DETAIL_ZOOM,
   TENT_FOCUS_ZOOM,
+  TILE_CONFIGS,
+  type TileStyle,
 } from '../lib/map';
 import { TentMarker } from './TentMarker';
+import { MapStyleToggle } from './MapStyleToggle';
 
 interface Props {
   tents: TentWithCategories[];
@@ -26,6 +29,8 @@ interface Props {
   zoom: number;
   focusTent: TentWithCategories | null;
   onMarkerClick: (tent: TentWithCategories) => void;
+  tileStyle: TileStyle;
+  onTileStyleChange: (next: TileStyle) => void;
 }
 
 /**
@@ -112,6 +117,8 @@ export function MapView({
   zoom,
   focusTent,
   onMarkerClick,
+  tileStyle,
+  onTileStyleChange,
 }: Props) {
   const [currentZoom, setCurrentZoom] = useState<number>(zoom);
   const variant: 'dot' | 'full' =
@@ -137,10 +144,14 @@ export function MapView({
         defaultZoom={zoom}
       />
       <ZoomControl position="bottomleft" />
+      <MapStyleToggle value={tileStyle} onChange={onTileStyleChange} />
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxNativeZoom={19}
+        // key={} forces a clean remount when toggling so Leaflet drops the
+        // previous provider's cached tiles instead of overlaying them.
+        key={tileStyle}
+        attribution={TILE_CONFIGS[tileStyle].attribution}
+        url={TILE_CONFIGS[tileStyle].url}
+        maxNativeZoom={TILE_CONFIGS[tileStyle].maxNativeZoom}
         maxZoom={22}
       />
       {placed.map((t) => {

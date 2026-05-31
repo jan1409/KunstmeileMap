@@ -19,6 +19,11 @@
     "no_coords_banner_other": "{{count}} stands are not yet placed on the map.",
     "back_to_overview": "Back to overview"
   },
+  "map_style": {
+    "osm": "Map",
+    "satellite": "Satellite",
+    "toggle_aria": "Switch map view"
+  },
   "search": {
     "placeholder": "Search booth...",
     "no_results": "No matches"
