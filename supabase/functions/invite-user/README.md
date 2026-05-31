@@ -74,8 +74,11 @@ the caller and never accepts it in the request body.
 | 200 | `{ ok, user_id, status: 'invited' }` | New invitation sent. Also returned when re-inviting an existing but unconfirmed account (e.g. a previously-rescinded pending invite): the user is added to the event AND a fresh invite email is re-sent so they can set a password. |
 | 200 | `{ ok, user_id, status: 'added_to_existing_user' }` | A confirmed user (already has credentials) was added to this event without a new email. |
 | 200 | `{ ok, user_id, status: 'resent' }` | Re-sent magic link for an existing pending user (auth row exists but `email_confirmed_at` is null). |
+| 200 | `{ ok, user_id, status: 'manually_created' }` | Manual-create succeeded (request included `password`): user is confirmed and can log in immediately at `/admin/login` with the supplied credentials; no email was sent. |
 | 400 | `{ error: 'missing_fields' / 'invalid_role' / 'invalid_json' }` | Bad request body. |
 | 400 | `{ error: 'already_member', existing_role }` | This email already has a confirmed role in this event. |
+| 400 | `{ error: 'password_too_short' }` | Manual-create request included a `password` that is missing or shorter than 8 characters. |
+| 400 | `{ error: 'email_already_exists' }` | Manual-create collided with an existing auth account for this email. |
 | 401 | `{ error: 'unauthenticated' }` | Missing or invalid JWT. |
 | 403 | `{ error: 'not_event_owner' }` | Caller is not Owner / global admin. |
-| 500 | `{ error: 'invite_failed' / 'list_users_failed' / 'resend_failed' / ... }` | Server-side Supabase API error. |
+| 500 | `{ error: 'invite_failed' / 'list_users_failed' / 'resend_failed' / 'create_user_failed' / ... }` | Server-side Supabase API error. |

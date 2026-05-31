@@ -19,6 +19,7 @@ interface InviteBody {
   event_id?: string;
   role_in_event?: Role;
   resend?: boolean;
+  password?: string;
 }
 
 const ROLES: Role[] = ['owner', 'editor', 'contributor'];
@@ -91,13 +92,21 @@ Deno.serve(async (req: Request) => {
   } catch {
     return jsonResponse({ error: 'invalid_json' }, 400);
   }
-  const { email, event_id, role_in_event, resend } = body;
+  const { email, event_id, role_in_event, resend, password } = body;
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   if (!normalizedEmail || !event_id || !role_in_event) {
     return jsonResponse({ error: 'missing_fields', message: 'email, event_id, role_in_event required' }, 400);
   }
   if (!ROLES.includes(role_in_event)) {
     return jsonResponse({ error: 'invalid_role' }, 400);
+  }
+  if (password !== undefined) {
+    if (typeof password !== 'string' || password.length < 8) {
+      return jsonResponse(
+        { error: 'password_too_short', message: 'password must be a string of at least 8 characters' },
+        400,
+      );
+    }
   }
 
   // Extract caller JWT
@@ -136,6 +145,32 @@ Deno.serve(async (req: Request) => {
   const canOwn = (perms as { can_own?: boolean } | null)?.can_own === true;
   if (!canOwn) {
     return jsonResponse({ error: 'not_event_owner' }, 403);
+  }
+
+  // Manual-create branch: owner-typed password → confirmed user, no email sent.
+  if (password) {
+    const { data: created, error: createErr } = await serviceClient.auth.admin.createUser({
+      email: normalizedEmail,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        invited_event_id: event_id,
+        invited_role: role_in_event,
+      },
+    });
+    if (createErr) {
+      // Supabase returns errors like "A user with this email address has already been registered".
+      const msg = createErr.message ?? '';
+      if (/already.*registered|already.*exists|duplicate/i.test(msg)) {
+        return jsonResponse({ error: 'email_already_exists', message: msg }, 400);
+      }
+      return jsonResponse({ error: 'create_user_failed', message: msg }, 500);
+    }
+    return jsonResponse({
+      ok: true,
+      user_id: created.user?.id ?? null,
+      status: 'manually_created',
+    });
   }
 
   // 3. Check existing user by email (paginated — see findUserByEmail)
