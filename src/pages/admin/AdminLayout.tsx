@@ -1,14 +1,22 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useMatch, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../components/AuthProvider';
 import { useToast } from '../../components/ToastProvider';
 import { LanguageToggle } from '../../components/LanguageToggle';
+import { useEvent } from '../../hooks/useEvent';
+import { useEventPermissions } from '../../hooks/useEventPermissions';
 
 export default function AdminLayout() {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { showError } = useToast();
+
+  const eventMatch = useMatch('/admin/events/:eventSlug/*');
+  const eventSlugInRoute = eventMatch?.params?.eventSlug;
+  const { event: routeEvent } = useEvent(eventSlugInRoute);
+  const eventPerms = useEventPermissions(routeEvent?.id);
+  const showUsersLink = eventPerms.canOwn;
 
   async function onSignOut() {
     try {
@@ -32,6 +40,11 @@ export default function AdminLayout() {
         <nav className="flex gap-4 text-sm">
           <Link to="/admin">{t('admin.nav.dashboard')}</Link>
           <Link to="/admin/events">{t('admin.nav.events')}</Link>
+          {showUsersLink && eventSlugInRoute && (
+            <Link to={`/admin/events/${eventSlugInRoute}/users`}>
+              {t('admin.nav.users')}
+            </Link>
+          )}
           <Link to="/" className="text-white/70 hover:text-white">
             ↗ {t('admin.nav.view_site')}
           </Link>

@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthProvider';
 import { useProfile } from '../hooks/useProfile';
+import { useEventMembership } from '../hooks/useEventMembership';
 
 function LoadingPlaceholder({ label }: { label: string }) {
   return (
@@ -19,6 +20,9 @@ function LoadingPlaceholder({ label }: { label: string }) {
 export function RequireAuth({ children }: { children: ReactElement }) {
   const { session, loading: authLoading, signOut } = useAuth();
   const { profile, loading: profileLoading, error: profileError } = useProfile(
+    session?.user.id,
+  );
+  const { isMember, loading: membershipLoading } = useEventMembership(
     session?.user.id,
   );
   const loc = useLocation();
@@ -55,6 +59,8 @@ export function RequireAuth({ children }: { children: ReactElement }) {
       </main>
     );
   }
-  if (profile?.role !== 'admin') return <Navigate to="/admin/no-access" replace />;
+  if (membershipLoading) return <LoadingPlaceholder label={t('app.auth_loading')} />;
+  const isAdmin = profile?.role === 'admin';
+  if (!isAdmin && !isMember) return <Navigate to="/admin/no-access" replace />;
   return children;
 }

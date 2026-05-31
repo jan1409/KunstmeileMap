@@ -67,7 +67,8 @@
       "events": "Events",
       "sign_out": "Sign out",
       "sign_out_failed": "Sign out failed: {{message}}",
-      "skip_to_main": "Skip to main content"
+      "skip_to_main": "Skip to main content",
+      "users": "Users"
     },
     "dashboard": {
       "heading": "Welcome",
@@ -82,6 +83,21 @@
       "password_placeholder": "Password",
       "submit": "Sign in",
       "submitting": "…"
+    },
+    "welcome": {
+      "heading": "Welcome to Kunstmeile",
+      "intro": "Set a password to finish setting up your account.",
+      "password_label": "Password",
+      "password_placeholder": "New password",
+      "confirm_label": "Confirm password",
+      "confirm_placeholder": "Repeat password",
+      "submit": "Set password",
+      "submitting": "…",
+      "error": "Could not set password: {{message}}",
+      "password_mismatch": "The passwords do not match.",
+      "password_too_short": "The password must be at least 8 characters long.",
+      "invalid_session": "This invitation link is invalid or has expired.",
+      "to_login": "Go to login"
     },
     "event_list": {
       "heading": "Events",
@@ -202,6 +218,45 @@
       "status_error": "Error",
       "back_to_list": "Back to tent list",
       "loading_data": "Loading data…"
+    },
+    "users": {
+      "heading": "Users — {{title}}",
+      "invite_heading": "Invite new user",
+      "invite_email_label": "Email",
+      "invite_role_label": "Role",
+      "role_owner": "Owner",
+      "role_editor": "Editor",
+      "role_contributor": "Contributor",
+      "invite_submit": "Send invitation",
+      "invite_sending": "Sending…",
+      "invite_success": "Invitation sent to {{email}}.",
+      "invite_added_to_existing": "{{email}} added as {{role}} (existing account).",
+      "invite_already_member": "{{email}} is already a member of this event ({{role}}).",
+      "invite_error": "Invitation failed: {{message}}",
+      "manual_create_toggle": "No email account — create manually",
+      "manual_password_label": "Password",
+      "manual_password_placeholder": "At least 8 characters",
+      "manual_password_too_short": "The password must be at least 8 characters long.",
+      "manual_submit": "Create user",
+      "manual_submitting": "Creating…",
+      "manual_created_toast": "User {{email}} created.",
+      "manual_created_heading": "User created",
+      "manual_created_message": "Share these credentials with the user — they will not be shown again:",
+      "manual_dismiss": "Dismiss",
+      "email_already_exists": "{{email}} already exists. Remove the existing user and try again.",
+      "update_error": "Update failed: {{message}}",
+      "remove_error": "Remove failed: {{message}}",
+      "resend_error": "Resend failed: {{message}}",
+      "list_heading": "Current users",
+      "col_email": "Email",
+      "col_role": "Role",
+      "col_actions": "Actions",
+      "action_remove": "Remove",
+      "action_confirm_remove": "Click to confirm",
+      "action_resend_invite": "Resend",
+      "you_label": "You",
+      "pending_prefix": "(Pending)",
+      "empty": "Invite collaborators by entering an email above."
     }
   }
 }

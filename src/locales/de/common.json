@@ -67,7 +67,8 @@
       "events": "Events",
       "sign_out": "Abmelden",
       "sign_out_failed": "Abmelden fehlgeschlagen: {{message}}",
-      "skip_to_main": "Zum Hauptinhalt springen"
+      "skip_to_main": "Zum Hauptinhalt springen",
+      "users": "Benutzer"
     },
     "dashboard": {
       "heading": "Willkommen",
@@ -82,6 +83,21 @@
       "password_placeholder": "Passwort",
       "submit": "Anmelden",
       "submitting": "…"
+    },
+    "welcome": {
+      "heading": "Willkommen bei der Kunstmeile",
+      "intro": "Lege ein Passwort fest, um deinen Zugang abzuschließen.",
+      "password_label": "Passwort",
+      "password_placeholder": "Neues Passwort",
+      "confirm_label": "Passwort bestätigen",
+      "confirm_placeholder": "Passwort wiederholen",
+      "submit": "Passwort festlegen",
+      "submitting": "…",
+      "error": "Passwort konnte nicht gesetzt werden: {{message}}",
+      "password_mismatch": "Die Passwörter stimmen nicht überein.",
+      "password_too_short": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      "invalid_session": "Dieser Einladungslink ist ungültig oder abgelaufen.",
+      "to_login": "Zur Anmeldung"
     },
     "event_list": {
       "heading": "Events",
@@ -202,6 +218,45 @@
       "status_error": "Fehler",
       "back_to_list": "Zurück zur Stand-Liste",
       "loading_data": "Lade Daten…"
+    },
+    "users": {
+      "heading": "Benutzer — {{title}}",
+      "invite_heading": "Neuen Benutzer einladen",
+      "invite_email_label": "Email",
+      "invite_role_label": "Rolle",
+      "role_owner": "Owner",
+      "role_editor": "Editor",
+      "role_contributor": "Contributor",
+      "invite_submit": "Einladung senden",
+      "invite_sending": "Senden …",
+      "invite_success": "Einladung an {{email}} versandt.",
+      "invite_added_to_existing": "{{email}} wurde als {{role}} hinzugefügt (bestehender Account).",
+      "invite_already_member": "{{email}} ist bereits Mitglied dieses Events ({{role}}).",
+      "invite_error": "Einladung fehlgeschlagen: {{message}}",
+      "manual_create_toggle": "Kein Email-Konto — manuell anlegen",
+      "manual_password_label": "Passwort",
+      "manual_password_placeholder": "Mindestens 8 Zeichen",
+      "manual_password_too_short": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      "manual_submit": "Benutzer anlegen",
+      "manual_submitting": "Anlegen …",
+      "manual_created_toast": "Benutzer {{email}} angelegt.",
+      "manual_created_heading": "Benutzer angelegt",
+      "manual_created_message": "Gib diese Zugangsdaten an den Benutzer weiter — sie werden nicht erneut angezeigt:",
+      "manual_dismiss": "Schließen",
+      "email_already_exists": "{{email}} existiert bereits. Lösche den bestehenden Benutzer und versuche es erneut.",
+      "update_error": "Aktualisierung fehlgeschlagen: {{message}}",
+      "remove_error": "Entfernen fehlgeschlagen: {{message}}",
+      "resend_error": "Erneutes Senden fehlgeschlagen: {{message}}",
+      "list_heading": "Aktuelle Benutzer",
+      "col_email": "Email",
+      "col_role": "Rolle",
+      "col_actions": "Aktionen",
+      "action_remove": "Entfernen",
+      "action_confirm_remove": "Klick zum Bestätigen",
+      "action_resend_invite": "Erneut senden",
+      "you_label": "Du selbst",
+      "pending_prefix": "(Pending)",
+      "empty": "Lade Mitstreiter ein, indem du oben eine Email einträgst."
     }
   }
 }

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase, type Tent } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
+import { useEventPermissions } from '../../hooks/useEventPermissions';
 import { exportTentsToBlob } from '../../lib/excel';
 import { flattenTentCategories } from '../../lib/tentCategories';
 import { useToast } from '../../components/ToastProvider';
@@ -11,6 +12,7 @@ export default function TentListPage() {
   const { t } = useTranslation();
   const { eventSlug } = useParams();
   const { event } = useEvent(eventSlug);
+  const perms = useEventPermissions(event?.id);
   const [tents, setTents] = useState<Tent[]>([]);
   const [exportBusy, setExportBusy] = useState(false);
   const { showError } = useToast();
@@ -80,18 +82,22 @@ export default function TentListPage() {
           >
             {t('admin.tent_list.export_xlsx')}
           </button>
-          <Link
-            to={`/admin/events/${event.slug}/tents/import`}
-            className="rounded bg-white/10 px-3 py-1 text-sm"
-          >
-            {t('admin.tent_list.csv_import')}
-          </Link>
-          <Link
-            to={`/admin/events/${event.slug}/tents/new`}
-            className="rounded bg-white/20 px-3 py-1 text-sm"
-          >
-            {t('admin.tent_list.new_tent')}
-          </Link>
+          {perms.canEdit && (
+            <>
+              <Link
+                to={`/admin/events/${event.slug}/tents/import`}
+                className="rounded bg-white/10 px-3 py-1 text-sm"
+              >
+                {t('admin.tent_list.csv_import')}
+              </Link>
+              <Link
+                to={`/admin/events/${event.slug}/tents/new`}
+                className="rounded bg-white/20 px-3 py-1 text-sm"
+              >
+                {t('admin.tent_list.new_tent')}
+              </Link>
+            </>
+          )}
         </div>
       </div>
       <table className="w-full text-left text-sm">
