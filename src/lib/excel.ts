@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import * as XLSX from 'xlsx';
 import { isValidCoord } from './map';
+import type { Category, TentWithCategories } from './supabase';
 
 /**
  * Helpers for the admin bulk-import wizard. Pure functions only — no
@@ -177,4 +179,95 @@ export function validateRow(row: RawRow, ctx: ValidateCtx): RowResult {
   };
   if (warnings.length > 0) return { status: 'warning', parsed, warnings };
   return { status: 'ok', parsed };
+}
+
+const TENT_EXPORT_COLUMNS = [
+  'name',
+  'display_number',
+  'slug',
+  'category_slugs',
+  'description_de',
+  'description_en',
+  'address',
+  'website_url',
+  'instagram_url',
+  'facebook_url',
+  'email_public',
+  'lat',
+  'lng',
+] as const;
+
+const CATEGORY_EXPORT_COLUMNS = [
+  'slug',
+  'name_de',
+  'name_en',
+  'icon',
+  'display_order',
+] as const;
+
+const XLSX_MIME_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+/** Coerces a nullish DB value to the cell-friendly empty string. */
+function cellValue<T>(v: T | null | undefined): T | '' {
+  return v == null ? '' : v;
+}
+
+/**
+ * Build an .xlsx workbook with one "Tents" sheet whose columns mirror the
+ * import wizard's RawRow shape (so exported files re-import cleanly).
+ * The categories association is read from each tent's already-joined
+ * `categories` array (see `flattenTentCategories`); no extra fetch needed.
+ */
+export function exportTentsToBlob(tents: TentWithCategories[]): Blob {
+  const rows = tents.map((t) => [
+    t.name,
+    cellValue(t.display_number),
+    t.slug,
+    (t.categories ?? []).map((c) => c.slug).join(','),
+    cellValue(t.description_de),
+    cellValue(t.description_en),
+    cellValue(t.address),
+    cellValue(t.website_url),
+    cellValue(t.instagram_url),
+    cellValue(t.facebook_url),
+    cellValue(t.email_public),
+    cellValue(t.lat),
+    cellValue(t.lng),
+  ]);
+  const aoa: (string | number | '')[][] = [
+    [...TENT_EXPORT_COLUMNS],
+    ...rows,
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tents');
+  const arrayBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  return new Blob([arrayBuffer], { type: XLSX_MIME_TYPE });
+}
+
+/**
+ * Build an .xlsx workbook with one "Categories" sheet. Rows are sorted by
+ * `display_order` ascending so the file mirrors what admins see in the UI.
+ */
+export function exportCategoriesToBlob(categories: Category[]): Blob {
+  const sorted = [...categories].sort(
+    (a, b) => a.display_order - b.display_order,
+  );
+  const rows = sorted.map((c) => [
+    c.slug,
+    c.name_de,
+    cellValue(c.name_en),
+    cellValue(c.icon),
+    c.display_order,
+  ]);
+  const aoa: (string | number | '')[][] = [
+    [...CATEGORY_EXPORT_COLUMNS],
+    ...rows,
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Categories');
+  const arrayBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  return new Blob([arrayBuffer], { type: XLSX_MIME_TYPE });
 }

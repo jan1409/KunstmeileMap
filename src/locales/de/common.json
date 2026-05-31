@@ -135,6 +135,7 @@
     "tent_list": {
       "heading": "{{title}} — Stände",
       "csv_import": "CSV-Import",
+      "export_xlsx": "↓ Excel-Export",
       "new_tent": "+ Neuer Stand",
       "col_number": "#",
       "col_name": "Name",
@@ -147,6 +148,7 @@
     "category": {
       "heading": "Kategorien — {{title}}",
       "new": "+ Neue Kategorie",
+      "export_xlsx": "↓ Excel-Export",
       "slug_label": "Slug",
       "name_de_label": "Name (DE)",
       "name_en_label": "Name (EN)",

@@ -23,6 +23,12 @@ vi.mock('../../../../src/hooks/useEvent', () => ({
   useEvent: (...args: unknown[]) => useEventMock(...args),
 }));
 
+// TentListPage uses ToastProvider for export-error reporting — mock it minimally
+// (same pattern as tests/unit/components/SidePanel.test.tsx).
+vi.mock('../../../../src/components/ToastProvider', () => ({
+  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn() }),
+}));
+
 import TentListPage from '../../../../src/pages/admin/TentListPage';
 
 const sampleEvent = {

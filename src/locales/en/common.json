@@ -135,6 +135,7 @@
     "tent_list": {
       "heading": "{{title}} — Tents",
       "csv_import": "CSV import",
+      "export_xlsx": "↓ Export to Excel",
       "new_tent": "+ New tent",
       "col_number": "#",
       "col_name": "Name",
@@ -147,6 +148,7 @@
     "category": {
       "heading": "Categories — {{title}}",
       "new": "+ New category",
+      "export_xlsx": "↓ Export to Excel",
       "slug_label": "Slug",
       "name_de_label": "Name (DE)",
       "name_en_label": "Name (EN)",
