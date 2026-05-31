@@ -9,6 +9,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { useTents } from '../../hooks/useTents';
 import {
   parserForFilename,
+  pickAlias,
   validateRow,
   type ParsedRow,
   type RawRow,
@@ -41,6 +42,7 @@ function cellToString(value: unknown): string {
 function normaliseRow(input: Record<string, unknown>): RawRow {
   return {
     name: cellToString(input.name),
+    contact_person: cellToString(pickAlias(input, 'contact_person')),
     display_number: cellToString(input.display_number),
     slug: cellToString(input.slug),
     category_slugs: cellToString(input.category_slugs),
@@ -196,6 +198,7 @@ export default function TentImportPage() {
           event_id: event.id,
           slug: parsed.slug,
           name: parsed.name,
+          contact_person: parsed.contact_person,
           description_de: parsed.description_de,
           description_en: parsed.description_en,
           address: parsed.address,

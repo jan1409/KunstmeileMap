@@ -95,6 +95,57 @@ describe('SidePanel', () => {
     expect(link).toHaveAttribute('href', '/admin/tents/tent-1/edit');
   });
 
+  it('renders the contact person line when tent.contact_person is set', () => {
+    renderWithProviders(
+      <SidePanel
+        tent={makeTent({ contact_person: 'Anna Müller' })}
+        categories={noCategories}
+        photoUrls={[]}
+        onClose={() => {}}
+        eventId="evt-1"
+        canEdit={false}
+        onPhotosChanged={() => {}}
+      />,
+    );
+    // The label is i18n'd (DE active by default in tests); match either lang.
+    expect(
+      screen.getByText(/Ansprechperson|Contact person/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Anna Müller/)).toBeInTheDocument();
+  });
+
+  it('does NOT render the contact person line when contact_person is null or empty', () => {
+    const { rerender } = renderWithProviders(
+      <SidePanel
+        tent={makeTent({ contact_person: null })}
+        categories={noCategories}
+        photoUrls={[]}
+        onClose={() => {}}
+        eventId="evt-1"
+        canEdit={false}
+        onPhotosChanged={() => {}}
+      />,
+    );
+    expect(screen.queryByText(/Ansprechperson|Contact person/i)).toBeNull();
+
+    rerender(
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>
+          <SidePanel
+            tent={makeTent({ contact_person: '' })}
+            categories={noCategories}
+            photoUrls={[]}
+            onClose={() => {}}
+            eventId="evt-1"
+            canEdit={false}
+            onPhotosChanged={() => {}}
+          />
+        </MemoryRouter>
+      </I18nextProvider>,
+    );
+    expect(screen.queryByText(/Ansprechperson|Contact person/i)).toBeNull();
+  });
+
   it('returns null when tent is null (regardless of canEdit)', () => {
     const { container } = renderWithProviders(
       <SidePanel

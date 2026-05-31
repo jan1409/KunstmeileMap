@@ -19,6 +19,33 @@ export function parserForFilename(name: string): Parser | null {
   return null;
 }
 
+/**
+ * Header aliases — keys are the canonical RawRow field names; values are
+ * alternative spellings admins may have in their spreadsheets. Used by
+ * `pickAlias` to read an input row case-insensitively without forcing the
+ * operator to rename their German columns.
+ */
+export const HEADER_ALIASES: Record<string, readonly string[]> = {
+  contact_person: ['ansprechperson', 'contact person', 'contact_person'],
+};
+
+export function pickAlias(input: Record<string, unknown>, canonical: string): unknown {
+  if (input[canonical] != null && input[canonical] !== '') return input[canonical];
+  const aliases = HEADER_ALIASES[canonical];
+  if (!aliases) return input[canonical];
+  const lowerKeys = Object.keys(input).reduce<Record<string, string>>((acc, k) => {
+    acc[k.toLowerCase()] = k;
+    return acc;
+  }, {});
+  for (const alias of aliases) {
+    const actualKey = lowerKeys[alias.toLowerCase()];
+    if (actualKey != null && input[actualKey] != null && input[actualKey] !== '') {
+      return input[actualKey];
+    }
+  }
+  return input[canonical];
+}
+
 export function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -48,6 +75,7 @@ export function generateUniqueSlug(
 
 export interface RawRow {
   name?: string;
+  contact_person?: string;
   display_number?: string;
   slug?: string;
   category_slugs?: string;
@@ -64,6 +92,7 @@ export interface RawRow {
 
 export interface ParsedRow {
   name: string;
+  contact_person: string | null;
   display_number: number;
   slug: string;
   category_slugs: string[];
@@ -164,6 +193,7 @@ export function validateRow(row: RawRow, ctx: ValidateCtx): RowResult {
 
   const parsed: ParsedRow = {
     name,
+    contact_person: row.contact_person?.trim() || null,
     display_number: displayNumber,
     slug,
     category_slugs: validCategorySlugs,
@@ -183,6 +213,7 @@ export function validateRow(row: RawRow, ctx: ValidateCtx): RowResult {
 
 const TENT_EXPORT_COLUMNS = [
   'name',
+  'contact_person',
   'display_number',
   'slug',
   'category_slugs',
@@ -222,6 +253,7 @@ function cellValue<T>(v: T | null | undefined): T | '' {
 export function exportTentsToBlob(tents: TentWithCategories[]): Blob {
   const rows = tents.map((t) => [
     t.name,
+    cellValue(t.contact_person),
     cellValue(t.display_number),
     t.slug,
     (t.categories ?? []).map((c) => c.slug).join(','),

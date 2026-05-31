@@ -12,6 +12,7 @@ const TentSchema = z
       .min(1, 'Slug is required')
       .regex(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, digits, and dashes'),
     name: z.string().min(1, 'Name is required'),
+    contact_person: z.string().optional(),
     description_de: z.string().optional(),
     description_en: z.string().optional(),
     address: z.string().optional(),
@@ -75,6 +76,7 @@ export function TentEditForm({
     defaultValues: {
       slug: initial?.slug ?? '',
       name: initial?.name ?? '',
+      contact_person: initial?.contact_person ?? '',
       description_de: initial?.description_de ?? '',
       description_en: initial?.description_en ?? '',
       address: initial?.address ?? '',
@@ -105,6 +107,13 @@ export function TentEditForm({
       </Field>
       <Field label={t('admin.tent.form.name_label')} error={errors.name?.message}>
         <input {...register('name')} className="input" />
+      </Field>
+      <Field label={t('admin.tent.form.contact_person_label')}>
+        <input
+          {...register('contact_person')}
+          placeholder={t('admin.tent.form.contact_person_placeholder')}
+          className="input"
+        />
       </Field>
       <Field label={t('admin.tent.form.description_de_label')}>
         <textarea {...register('description_de')} rows={4} className="input" />
