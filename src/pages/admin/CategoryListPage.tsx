@@ -5,6 +5,7 @@ import { supabase, type Category } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
 import { exportCategoriesToBlob } from '../../lib/excel';
 import { useToast } from '../../components/ToastProvider';
+import { CategoryImportModal } from '../../components/CategoryImportModal';
 
 export default function CategoryListPage() {
   const { t } = useTranslation();
@@ -13,14 +14,17 @@ export default function CategoryListPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [reloadTick, setReloadTick] = useState(0);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const { showError } = useToast();
   const [draft, setDraft] = useState({
     slug: '',
     name_de: '',
     name_en: '',
     icon: '',
+    display_order: 0,
   });
 
   useEffect(() => {
@@ -41,21 +45,65 @@ export default function CategoryListPage() {
   }, [event, reloadTick]);
 
   function resetDraft() {
-    setDraft({ slug: '', name_de: '', name_en: '', icon: '' });
+    setDraft({ slug: '', name_de: '', name_en: '', icon: '', display_order: 0 });
+  }
+
+  function openCreate() {
+    setEditingId(null);
+    setConfirmingId(null);
+    setDraft({
+      slug: '',
+      name_de: '',
+      name_en: '',
+      icon: '',
+      display_order: categories.length,
+    });
+    setShowForm(true);
+  }
+
+  function openEdit(c: Category) {
+    setEditingId(c.id);
+    setConfirmingId(null);
+    setDraft({
+      slug: c.slug,
+      name_de: c.name_de,
+      name_en: c.name_en ?? '',
+      icon: c.icon ?? '',
+      display_order: c.display_order,
+    });
+    setShowForm(true);
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!event) return;
-    await supabase.from('categories').insert({
-      event_id: event.id,
+    const payload = {
       slug: draft.slug,
       name_de: draft.name_de,
       name_en: draft.name_en,
       icon: draft.icon || '✨',
-      display_order: categories.length,
-    });
+      display_order: draft.display_order,
+    };
+    if (editingId === null) {
+      const { error } = await supabase
+        .from('categories')
+        .insert({ event_id: event.id, ...payload });
+      if (error) {
+        showError(t('admin.category.save_error', { message: error.message }));
+        return;
+      }
+    } else {
+      const { error } = await supabase
+        .from('categories')
+        .update(payload)
+        .eq('id', editingId);
+      if (error) {
+        showError(t('admin.category.save_error', { message: error.message }));
+        return;
+      }
+    }
     resetDraft();
+    setEditingId(null);
     setShowForm(false);
     setReloadTick((n) => n + 1);
   }
@@ -63,6 +111,12 @@ export default function CategoryListPage() {
   async function confirmDelete(id: string) {
     await supabase.from('categories').delete().eq('id', id);
     setConfirmingId(null);
+    // If the user was editing the row they just deleted, drop the form.
+    if (editingId === id) {
+      setEditingId(null);
+      setShowForm(false);
+      resetDraft();
+    }
     setReloadTick((n) => n + 1);
   }
 
@@ -101,6 +155,13 @@ export default function CategoryListPage() {
         <div className="flex gap-2">
           <button
             type="button"
+            onClick={() => setShowImport(true)}
+            className="rounded bg-white/10 px-3 py-1 text-sm"
+          >
+            {t('admin.category.import')}
+          </button>
+          <button
+            type="button"
             onClick={handleExport}
             disabled={exportBusy || categories.length === 0}
             className="rounded bg-white/10 px-3 py-1 text-sm disabled:opacity-50"
@@ -110,7 +171,7 @@ export default function CategoryListPage() {
           {!showForm && (
             <button
               type="button"
-              onClick={() => setShowForm(true)}
+              onClick={openCreate}
               className="rounded bg-white/20 px-3 py-1 text-sm"
             >
               {t('admin.category.new')}
@@ -122,7 +183,7 @@ export default function CategoryListPage() {
       {showForm && (
         <form
           onSubmit={onSubmit}
-          className="mb-4 grid grid-cols-1 gap-3 rounded border border-white/10 p-3 sm:grid-cols-4"
+          className="mb-4 grid grid-cols-1 gap-3 rounded border border-white/10 p-3 sm:grid-cols-5"
         >
           <label className="block text-xs">
             <span className="block text-white/60">{t('admin.category.slug_label')}</span>
@@ -131,6 +192,21 @@ export default function CategoryListPage() {
               pattern="[a-z0-9-]+"
               value={draft.slug}
               onChange={(e) => setDraft({ ...draft, slug: e.target.value })}
+              className="input mt-1"
+            />
+          </label>
+          <label className="block text-xs">
+            <span className="block text-white/60">{t('admin.category.order_label')}</span>
+            <input
+              type="number"
+              min="0"
+              value={draft.display_order}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  display_order: Number.parseInt(e.target.value, 10) || 0,
+                })
+              }
               className="input mt-1"
             />
           </label>
@@ -160,17 +236,18 @@ export default function CategoryListPage() {
               className="input mt-1"
             />
           </label>
-          <div className="flex gap-2 sm:col-span-4">
+          <div className="flex gap-2 sm:col-span-5">
             <button
               type="submit"
               className="rounded bg-white/20 px-3 py-1 text-sm"
             >
-              {t('admin.category.save')}
+              {t(editingId ? 'admin.category.update' : 'admin.category.save')}
             </button>
             <button
               type="button"
               onClick={() => {
                 setShowForm(false);
+                setEditingId(null);
                 resetDraft();
               }}
               className="rounded bg-white/10 px-3 py-1 text-sm"
@@ -219,13 +296,26 @@ export default function CategoryListPage() {
                     </button>
                   </span>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmingId(c.id)}
-                    className="text-red-400"
-                  >
-                    {t('admin.category.delete')}
-                  </button>
+                  <span className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(c)}
+                      className="text-white/80"
+                    >
+                      {t('admin.category.edit')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmingId(c.id);
+                        setEditingId(null);
+                        setShowForm(false);
+                      }}
+                      className="text-red-400"
+                    >
+                      {t('admin.category.delete')}
+                    </button>
+                  </span>
                 )}
               </td>
             </tr>
@@ -239,6 +329,13 @@ export default function CategoryListPage() {
           )}
         </tbody>
       </table>
+
+      <CategoryImportModal
+        eventId={event.id}
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImported={() => setReloadTick((n) => n + 1)}
+      />
     </div>
   );
 }

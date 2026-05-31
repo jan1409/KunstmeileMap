@@ -8,6 +8,7 @@ import {
   slugify,
   exportTentsToBlob,
   exportCategoriesToBlob,
+  parseCategoriesFromBlob,
 } from '../../../src/lib/excel';
 
 describe('parserForFilename', () => {
@@ -353,5 +354,115 @@ describe('exportCategoriesToBlob', () => {
     const row = aoa[1]!;
     expect(row[2] === '' || row[2] === undefined).toBe(true);
     expect(row[3] === '' || row[3] === undefined).toBe(true);
+  });
+});
+
+describe('parseCategoriesFromBlob', () => {
+  function makeXlsx(aoa: unknown[][], name = 'cats.xlsx'): File {
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Categories');
+    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    return new File([buf], name, {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+  }
+
+  function makeCsv(rows: string[][], name = 'cats.csv'): File {
+    const text = rows.map((r) => r.join(',')).join('\n');
+    return new File([text], name, { type: 'text/csv' });
+  }
+
+  it('parses the canonical export headers and returns ParsedCategoryRow records', async () => {
+    const file = makeXlsx([
+      ['slug', 'name_de', 'name_en', 'icon', 'display_order'],
+      ['galerie', 'Galerie', 'Gallery', '🎨', 0],
+      ['atelier', 'Atelier', 'Studio', '🖌️', 1],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.fatalError).toBeNull();
+    expect(result.rows).toHaveLength(2);
+    expect(result.rows[0]).toMatchObject({
+      slug: 'galerie',
+      name_de: 'Galerie',
+      name_en: 'Gallery',
+      icon: '🎨',
+      display_order: 0,
+      errors: [],
+    });
+  });
+
+  it('accepts German aliases (Reihenfolge) for display_order case-insensitively', async () => {
+    const file = makeXlsx([
+      ['Slug', 'Name (DE)', 'Name (EN)', 'Icon', 'REIHENFOLGE'],
+      ['galerie', 'Galerie', 'Gallery', '🎨', 5],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.fatalError).toBeNull();
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]).toMatchObject({
+      slug: 'galerie',
+      name_de: 'Galerie',
+      name_en: 'Gallery',
+      display_order: 5,
+      errors: [],
+    });
+  });
+
+  it('flags rows with an invalid slug', async () => {
+    const file = makeXlsx([
+      ['slug', 'name_de', 'name_en', 'icon', 'display_order'],
+      ['Bad Slug!', 'X', '', '', 0],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]!.errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(/slug/i)]),
+    );
+  });
+
+  it('flags rows with empty name_de', async () => {
+    const file = makeXlsx([
+      ['slug', 'name_de', 'name_en', 'icon', 'display_order'],
+      ['galerie', '', '', '', 0],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.rows[0]!.errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(/name_de/i)]),
+    );
+  });
+
+  it('flags rows with non-integer display_order', async () => {
+    const file = makeXlsx([
+      ['slug', 'name_de', 'name_en', 'icon', 'display_order'],
+      ['galerie', 'Galerie', '', '', 'abc'],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.rows[0]!.errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(/display_order/i)]),
+    );
+  });
+
+  it('returns fatalError when no recognised header row is present', async () => {
+    const file = makeXlsx([
+      ['totally', 'unrelated', 'columns'],
+      ['x', 'y', 'z'],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.fatalError).not.toBeNull();
+  });
+
+  it('parses CSV files with the canonical headers', async () => {
+    const file = makeCsv([
+      ['slug', 'name_de', 'name_en', 'icon', 'display_order'],
+      ['galerie', 'Galerie', 'Gallery', '🎨', '0'],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.fatalError).toBeNull();
+    expect(result.rows[0]).toMatchObject({
+      slug: 'galerie',
+      name_de: 'Galerie',
+      display_order: 0,
+    });
   });
 });
