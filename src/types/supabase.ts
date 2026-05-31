@@ -266,6 +266,7 @@ export type Database = {
       tents: {
         Row: {
           address: string | null
+          contact_person: string | null
           created_at: string
           created_by: string | null
           description_de: string | null
@@ -286,6 +287,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          contact_person?: string | null
           created_at?: string
           created_by?: string | null
           description_de?: string | null
@@ -306,6 +308,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          contact_person?: string | null
           created_at?: string
           created_by?: string | null
           description_de?: string | null

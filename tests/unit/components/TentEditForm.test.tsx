@@ -268,6 +268,52 @@ describe('TentEditForm', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it('passes a trimmed contact_person value through to onSubmit', async () => {
+    const user = userEvent.setup();
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/slug/i), 'with-contact');
+    await user.type(screen.getByLabelText(/^name$/i), 'Studio Collective');
+    await user.type(
+      screen.getByLabelText(/Ansprechperson|Contact person/i),
+      'Anna Müller',
+    );
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]![0].contact_person).toBe('Anna Müller');
+  });
+
+  it('submits an empty contact_person as the empty string (page-layer normalises to null)', async () => {
+    const user = userEvent.setup();
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/slug/i), 'no-contact');
+    await user.type(screen.getByLabelText(/^name$/i), 'No Contact');
+    // contact_person left blank
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    // RHF passes through the empty string from the input. The TentEditPage
+    // submit handler is what coerces "" → null for the DB write.
+    const val = onSubmit.mock.calls[0]![0].contact_person;
+    expect(val === '' || val == null).toBe(true);
+  });
+
   it('submits lat/lng pair when both are set via the inputs', async () => {
     const user = userEvent.setup();
     render(

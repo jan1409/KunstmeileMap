@@ -61,6 +61,13 @@ export function SidePanel({
         {tent.name}
       </h2>
 
+      {tent.contact_person && (
+        <p className="mt-1 text-sm">
+          <span className="font-medium">{t('side_panel.contact_person')}:</span>{' '}
+          {tent.contact_person}
+        </p>
+      )}
+
       {categories.length > 0 && (
         <ul className="mt-1 flex flex-wrap gap-1">
           {categories.map((c) => (

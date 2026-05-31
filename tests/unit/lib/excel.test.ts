@@ -4,6 +4,7 @@ import {
   validateRow,
   generateUniqueSlug,
   parserForFilename,
+  pickAlias,
   slugify,
   exportTentsToBlob,
   exportCategoriesToBlob,
@@ -162,11 +163,12 @@ describe('exportTentsToBlob', () => {
     return XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
   }
 
-  it('produces the 13-column header row in the expected order', async () => {
+  it('produces the 14-column header row in the expected order', async () => {
     const blob = exportTentsToBlob([minimalTent] as never);
     const aoa = await readBlobAsAoa(blob);
     expect(aoa[0]).toEqual([
       'name',
+      'contact_person',
       'display_number',
       'slug',
       'category_slugs',
@@ -183,20 +185,24 @@ describe('exportTentsToBlob', () => {
   });
 
   it('serializes a tent with its category slugs comma-joined', async () => {
-    const blob = exportTentsToBlob([minimalTent] as never);
+    const blob = exportTentsToBlob([
+      { ...minimalTent, contact_person: 'Anna Müller' },
+    ] as never);
     const aoa = await readBlobAsAoa(blob);
     const row = aoa[1]!;
     expect(row[0]).toBe('Galerie Müller');
-    expect(row[1]).toBe(42);
-    expect(row[2]).toBe('galerie-mueller');
-    expect(row[3]).toBe('painting,sculpture');
-    expect(row[11]).toBe(49.0);
-    expect(row[12]).toBe(8.4);
+    expect(row[1]).toBe('Anna Müller');
+    expect(row[2]).toBe(42);
+    expect(row[3]).toBe('galerie-mueller');
+    expect(row[4]).toBe('painting,sculpture');
+    expect(row[12]).toBe(49.0);
+    expect(row[13]).toBe(8.4);
   });
 
   it('emits empty cells for null/undefined values', async () => {
     const sparseTent = {
       ...minimalTent,
+      contact_person: null,
       display_number: null,
       description_de: null,
       description_en: null,
@@ -211,10 +217,10 @@ describe('exportTentsToBlob', () => {
     const row = aoa[1]!;
     // SheetJS represents empty cells as missing array entries OR empty strings;
     // either is acceptable. Assert the cell is NOT a literal "null" or "undefined".
-    expect(row[1]).not.toBe(null);
-    expect(row[1] === '' || row[1] === undefined).toBe(true);
-    expect(row[3] === '' || row[3] === undefined).toBe(true);
-    expect(row[11] === '' || row[11] === undefined).toBe(true);
+    expect(row[1] === '' || row[1] === undefined).toBe(true); // contact_person
+    expect(row[2] === '' || row[2] === undefined).toBe(true); // display_number
+    expect(row[4] === '' || row[4] === undefined).toBe(true); // category_slugs
+    expect(row[12] === '' || row[12] === undefined).toBe(true); // lat
   });
 
   it('produces a valid xlsx Blob with the openxml MIME type', () => {
@@ -230,7 +236,73 @@ describe('exportTentsToBlob', () => {
     const blob = exportTentsToBlob([]);
     const aoa = await readBlobAsAoa(blob);
     expect(aoa).toHaveLength(1);
-    expect(aoa[0]).toHaveLength(13);
+    expect(aoa[0]).toHaveLength(14);
+  });
+});
+
+describe('pickAlias', () => {
+  it('returns the canonical key value when present', () => {
+    const v = pickAlias({ contact_person: 'Anna' }, 'contact_person');
+    expect(v).toBe('Anna');
+  });
+
+  it('matches "Ansprechperson" (DE) case-insensitively', () => {
+    expect(pickAlias({ Ansprechperson: 'Anna' }, 'contact_person')).toBe('Anna');
+    expect(pickAlias({ ansprechperson: 'Anna' }, 'contact_person')).toBe('Anna');
+    expect(pickAlias({ ANSPRECHPERSON: 'Anna' }, 'contact_person')).toBe('Anna');
+  });
+
+  it('matches "Contact Person" (EN with space)', () => {
+    expect(pickAlias({ 'Contact Person': 'Anna' }, 'contact_person')).toBe('Anna');
+  });
+
+  it('prefers the canonical key over an alias when both are present', () => {
+    const v = pickAlias(
+      { contact_person: 'Canonical', Ansprechperson: 'Alias' },
+      'contact_person',
+    );
+    expect(v).toBe('Canonical');
+  });
+
+  it('returns the canonical-key value (which may be undefined) when nothing matches', () => {
+    expect(pickAlias({ name: 'X' }, 'contact_person')).toBeUndefined();
+  });
+});
+
+describe('validateRow with contact_person', () => {
+  const baseRow = {
+    name: 'Stand 1',
+    display_number: '42',
+    slug: '',
+    category_slugs: '',
+    description_de: '',
+    description_en: '',
+    address: '',
+    website_url: '',
+    instagram_url: '',
+    facebook_url: '',
+    email_public: '',
+    lat: '',
+    lng: '',
+  };
+
+  const ctx = {
+    knownCategorySlugs: new Set<string>(),
+    existingDisplayNumbers: new Set<number>(),
+    existingSlugs: new Set<string>(),
+    rowIndex: 1,
+  };
+
+  it('parses a trimmed contact_person value', () => {
+    const r = validateRow({ ...baseRow, contact_person: '  Anna Müller  ' }, ctx);
+    expect(r.status).toBe('ok');
+    expect(r.parsed?.contact_person).toBe('Anna Müller');
+  });
+
+  it('emits null for blank contact_person', () => {
+    const r = validateRow(baseRow, ctx);
+    expect(r.status).toBe('ok');
+    expect(r.parsed?.contact_person).toBeNull();
   });
 });
 
