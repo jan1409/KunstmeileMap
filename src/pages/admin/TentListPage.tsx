@@ -15,7 +15,12 @@ export default function TentListPage() {
   const perms = useEventPermissions(event?.id);
   const [tents, setTents] = useState<Tent[]>([]);
   const [exportBusy, setExportBusy] = useState(false);
-  const { showError } = useToast();
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkConfirmSlug, setBulkConfirmSlug] = useState('');
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const { showError, showSuccess } = useToast();
 
   async function handleExport() {
     if (!event) return;
@@ -48,6 +53,33 @@ export default function TentListPage() {
     }
   }
 
+  async function handleDelete(tentId: string) {
+    const { error } = await supabase.from('tents').delete().eq('id', tentId);
+    if (error) {
+      showError(t('admin.tent_list.delete_error', { message: error.message }));
+      setConfirmingDeleteId(null);
+      return;
+    }
+    showSuccess(t('admin.tent_list.delete_success'));
+    setConfirmingDeleteId(null);
+    setReloadTick((n) => n + 1);
+  }
+
+  async function handleBulkDelete() {
+    if (!event || bulkConfirmSlug !== event.slug) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from('tents').delete().eq('event_id', event.id);
+    setBulkBusy(false);
+    if (error) {
+      showError(t('admin.tent_list.delete_all_error', { message: error.message }));
+      return;
+    }
+    showSuccess(t('admin.tent_list.delete_all_success', { count: tents.length }));
+    setBulkOpen(false);
+    setBulkConfirmSlug('');
+    setReloadTick((n) => n + 1);
+  }
+
   useEffect(() => {
     if (!event) return;
     let cancelled = false;
@@ -63,7 +95,7 @@ export default function TentListPage() {
     return () => {
       cancelled = true;
     };
-  }, [event]);
+  }, [event, reloadTick]);
 
   if (!event) return <p>…</p>;
 
@@ -74,6 +106,18 @@ export default function TentListPage() {
           {t('admin.tent_list.heading', { title: event.title_de })}
         </h1>
         <div className="flex gap-2">
+          {perms.canEdit && tents.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setBulkConfirmSlug('');
+                setBulkOpen(true);
+              }}
+              className="rounded bg-red-500/20 px-3 py-1 text-sm text-red-200 hover:bg-red-500/30"
+            >
+              {t('admin.tent_list.delete_all_button')}
+            </button>
+          )}
           <button
             type="button"
             onClick={handleExport}
@@ -136,6 +180,24 @@ export default function TentListPage() {
                 >
                   {t('admin.tent_list.action_view')}
                 </Link>
+                {perms.canEdit &&
+                  (confirmingDeleteId === tent.id ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(tent.id)}
+                      className="text-red-400"
+                    >
+                      {t('admin.tent_list.action_confirm_delete')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingDeleteId(tent.id)}
+                      className="text-red-400"
+                    >
+                      {t('admin.tent_list.action_delete')}
+                    </button>
+                  ))}
               </td>
             </tr>
           ))}
@@ -148,6 +210,64 @@ export default function TentListPage() {
           )}
         </tbody>
       </table>
+      {bulkOpen && event && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bulk-delete-heading"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        >
+          <div className="w-full max-w-md rounded-lg bg-neutral-900 p-5 shadow-xl">
+            <h2
+              id="bulk-delete-heading"
+              className="text-lg font-semibold text-red-300"
+            >
+              {t('admin.tent_list.delete_all_modal_heading')}
+            </h2>
+            <p className="mt-2 text-sm text-white/80">
+              {t('admin.tent_list.delete_all_modal_warning', {
+                count: tents.length,
+                slug: event.slug,
+              })}
+            </p>
+            <label className="mt-3 block text-xs">
+              <span className="block text-white/60">
+                {t('admin.tent_list.delete_all_modal_slug_label')}
+              </span>
+              <input
+                type="text"
+                value={bulkConfirmSlug}
+                onChange={(e) => setBulkConfirmSlug(e.target.value)}
+                className="input mt-1 w-full"
+                autoFocus
+              />
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setBulkOpen(false);
+                  setBulkConfirmSlug('');
+                }}
+                className="rounded bg-white/10 px-3 py-1 text-sm"
+                disabled={bulkBusy}
+              >
+                {t('admin.tent_list.delete_all_modal_cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={bulkConfirmSlug !== event.slug || bulkBusy}
+                className="rounded bg-red-500/30 px-3 py-1 text-sm text-red-100 hover:bg-red-500/40 disabled:opacity-50"
+              >
+                {bulkBusy
+                  ? t('admin.tent_list.delete_all_modal_submitting')
+                  : t('admin.tent_list.delete_all_modal_submit')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

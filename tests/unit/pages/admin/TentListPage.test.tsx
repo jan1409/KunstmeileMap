@@ -1,19 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import '../../../../src/lib/i18n';
 
-const { eq, order } = vi.hoisted(() => ({
+const { eq, order, deleteEq } = vi.hoisted(() => ({
   eq: vi.fn(),
   order: vi.fn(),
+  deleteEq: vi.fn(),
 }));
 
 vi.mock('../../../../src/lib/supabase', () => {
   const select = vi.fn().mockReturnValue({ eq });
+  const del = vi.fn().mockReturnValue({ eq: deleteEq });
   return {
     supabase: {
-      from: vi.fn().mockReturnValue({ select }),
+      from: vi.fn().mockReturnValue({ select, delete: del }),
     },
   };
 });
@@ -23,10 +25,15 @@ vi.mock('../../../../src/hooks/useEvent', () => ({
   useEvent: (...args: unknown[]) => useEventMock(...args),
 }));
 
-// TentListPage uses ToastProvider for export-error reporting — mock it minimally
-// (same pattern as tests/unit/components/SidePanel.test.tsx).
+// TentListPage uses ToastProvider for export-error reporting + delete
+// success/error toasts — mock it minimally (same pattern as
+// tests/unit/components/SidePanel.test.tsx).
+const { showError, showSuccess } = vi.hoisted(() => ({
+  showError: vi.fn(),
+  showSuccess: vi.fn(),
+}));
 vi.mock('../../../../src/components/ToastProvider', () => ({
-  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn() }),
+  useToast: () => ({ showError, showSuccess }),
 }));
 
 vi.mock('../../../../src/hooks/useEventPermissions', () => ({
@@ -94,8 +101,12 @@ describe('TentListPage', () => {
   beforeEach(() => {
     eq.mockReset();
     order.mockReset();
+    deleteEq.mockReset();
     useEventMock.mockReset();
+    showError.mockReset();
+    showSuccess.mockReset();
     eq.mockReturnValue({ order });
+    deleteEq.mockResolvedValue({ error: null });
     // Default to editor-level perms so the pre-existing tests (which assert
     // + Neuer Stand is visible) keep passing without modification.
     vi.mocked(useEventPermissions).mockReturnValue({
@@ -259,5 +270,131 @@ describe('TentListPage', () => {
     expect(
       screen.getByRole('link', { name: /CSV-Import|CSV import/i }),
     ).toBeInTheDocument();
+  });
+
+  it('shows a Löschen button on each row for an editor and hides it for a contributor', async () => {
+    useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
+    order.mockResolvedValue({ data: sampleTents, error: null });
+
+    const { unmount } = renderApp();
+    await screen.findByText('Galerie Nord');
+
+    const editorDeleteButtons = screen.getAllByRole('button', {
+      name: /^Löschen$|^Delete$/i,
+    });
+    expect(editorDeleteButtons.length).toBe(sampleTents.length);
+    unmount();
+
+    vi.mocked(useEventPermissions).mockReturnValue({
+      loading: false,
+      canAccess: true,
+      canContribute: true,
+      canEdit: false,
+      canOwn: false,
+    });
+
+    renderApp();
+    await screen.findByText('Galerie Nord');
+
+    expect(
+      screen.queryByRole('button', { name: /^Löschen$|^Delete$/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('deletes a tent via two-click confirm and shows a success toast', async () => {
+    useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
+    order.mockResolvedValue({ data: sampleTents, error: null });
+
+    renderApp();
+    await screen.findByText('Galerie Nord');
+
+    // First row in display_number order is tent-b (Atelier Süd, #1).
+    const rowDeleteButtons = screen.getAllByRole('button', {
+      name: /^Löschen$|^Delete$/i,
+    });
+    const firstDeleteButton = rowDeleteButtons[0];
+    if (!firstDeleteButton) throw new Error('expected at least one delete button');
+    fireEvent.click(firstDeleteButton);
+
+    // After first click, that button becomes the confirm-state button.
+    expect(deleteEq).not.toHaveBeenCalled();
+    const confirmBtn = await screen.findByRole('button', {
+      name: /Klick zum Bestätigen|Click to confirm/i,
+    });
+
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(deleteEq).toHaveBeenCalledWith('id', 'tent-b');
+    });
+    expect(showSuccess).toHaveBeenCalled();
+  });
+
+  it('hides the bulk-delete button when there are no tents', async () => {
+    useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
+    order.mockResolvedValue({ data: [], error: null });
+
+    renderApp();
+    await screen.findByText(/no tents yet|Noch keine Stände/i);
+
+    expect(
+      screen.queryByRole('button', { name: /Alle Stände löschen|Delete all tents/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('requires the event slug to enable the bulk-delete submit button', async () => {
+    useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
+    order.mockResolvedValue({ data: sampleTents, error: null });
+
+    renderApp();
+    await screen.findByText('Galerie Nord');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /Alle Stände löschen|Delete all tents/i }),
+    );
+
+    const dialog = await screen.findByRole('dialog');
+    const submitBtn = screen.getByRole('button', {
+      name: /Endgültig löschen|Permanently delete/i,
+    });
+    expect(submitBtn).toBeDisabled();
+
+    const input = dialog.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(input).toBeTruthy();
+
+    fireEvent.change(input, { target: { value: 'wrong-slug' } });
+    expect(submitBtn).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: 'kunstmeile-2026' } });
+    expect(submitBtn).not.toBeDisabled();
+
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(deleteEq).toHaveBeenCalledWith('event_id', 'evt-1');
+    });
+  });
+
+  it('closes the bulk-delete modal without deleting when cancel is clicked', async () => {
+    useEventMock.mockReturnValue({ event: sampleEvent, loading: false, error: null });
+    order.mockResolvedValue({ data: sampleTents, error: null });
+
+    renderApp();
+    await screen.findByText('Galerie Nord');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /Alle Stände löschen|Delete all tents/i }),
+    );
+
+    await screen.findByRole('dialog');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /^Abbrechen$|^Cancel$/i }),
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    expect(deleteEq).not.toHaveBeenCalled();
   });
 });
