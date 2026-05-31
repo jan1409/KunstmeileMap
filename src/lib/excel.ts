@@ -279,6 +279,181 @@ export function exportTentsToBlob(tents: TentWithCategories[]): Blob {
 }
 
 /**
+ * Canonical → alias header map for the category import. Keys are the canonical
+ * column names exactly as written by `exportCategoriesToBlob`; values are
+ * additional spellings (German, spaced) admins might keep in their files.
+ * Matching is case-insensitive.
+ */
+export const CATEGORY_HEADER_ALIASES: Record<string, readonly string[]> = {
+  slug: ['slug'],
+  name_de: ['name_de', 'name de', 'name (de)'],
+  name_en: ['name_en', 'name en', 'name (en)'],
+  icon: ['icon'],
+  display_order: ['display_order', 'reihenfolge', 'order'],
+};
+
+export interface ParsedCategoryRow {
+  rowNumber: number;
+  slug: string;
+  name_de: string;
+  name_en: string | null;
+  icon: string;
+  display_order: number;
+  errors: string[];
+}
+
+export interface CategoryParseResult {
+  rows: ParsedCategoryRow[];
+  fatalError: string | null;
+}
+
+/** Build a lower-cased alias → canonical-key lookup from the alias config. */
+function buildCategoryAliasLookup(): Record<string, string> {
+  const lookup: Record<string, string> = {};
+  for (const [canonical, aliases] of Object.entries(CATEGORY_HEADER_ALIASES)) {
+    lookup[canonical.toLowerCase()] = canonical;
+    for (const alias of aliases) {
+      lookup[alias.toLowerCase()] = canonical;
+    }
+  }
+  return lookup;
+}
+
+function coerceCell(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
+const SLUG_RE = /^[a-z0-9-]+$/;
+
+/**
+ * Parse a CSV/XLSX file of category rows. Header recognition is case-insensitive
+ * and accepts both the canonical export columns and the localised aliases listed
+ * in CATEGORY_HEADER_ALIASES.
+ *
+ * Returns:
+ * - `rows`: one ParsedCategoryRow per data row, in file order, with per-row errors.
+ * - `fatalError`: a non-null string when the file as a whole can't be processed
+ *   (no header row, no recognisable columns, parser/read failure).
+ */
+export async function parseCategoriesFromBlob(
+  file: File,
+): Promise<CategoryParseResult> {
+  const parser = parserForFilename(file.name);
+  if (!parser) {
+    return { rows: [], fatalError: 'unsupported file type' };
+  }
+
+  let aoa: unknown[][];
+  try {
+    if (parser === 'csv') {
+      const text = await file.text();
+      const wb = XLSX.read(text, { type: 'string' });
+      const sheetName = wb.SheetNames[0];
+      if (!sheetName) return { rows: [], fatalError: 'empty workbook' };
+      const ws = wb.Sheets[sheetName];
+      if (!ws) return { rows: [], fatalError: 'empty workbook' };
+      aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: '' });
+    } else {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const sheetName = wb.SheetNames[0];
+      if (!sheetName) return { rows: [], fatalError: 'empty workbook' };
+      const ws = wb.Sheets[sheetName];
+      if (!ws) return { rows: [], fatalError: 'empty workbook' };
+      aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: '' });
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'parse failed';
+    return { rows: [], fatalError: msg };
+  }
+
+  if (aoa.length === 0) {
+    return { rows: [], fatalError: 'no header row' };
+  }
+
+  const headerRow = aoa[0] ?? [];
+  const aliasLookup = buildCategoryAliasLookup();
+  // canonicalKey → column index in the data rows
+  const columnIndex: Record<string, number> = {};
+  headerRow.forEach((cell, idx) => {
+    const key = coerceCell(cell).trim().toLowerCase();
+    if (!key) return;
+    const canonical = aliasLookup[key];
+    if (canonical && !(canonical in columnIndex)) {
+      columnIndex[canonical] = idx;
+    }
+  });
+
+  // Require at least one recognised column to consider the header row valid.
+  if (Object.keys(columnIndex).length === 0) {
+    return { rows: [], fatalError: 'no header row' };
+  }
+
+  function read(row: unknown[], canonical: string): string {
+    const idx = columnIndex[canonical];
+    if (idx === undefined) return '';
+    return coerceCell(row[idx]).trim();
+  }
+
+  const rows: ParsedCategoryRow[] = [];
+  for (let i = 1; i < aoa.length; i++) {
+    const raw = aoa[i] ?? [];
+    // Skip wholly-empty rows so trailing blanks don't show up as errors.
+    const isAllEmpty = (Object.keys(columnIndex) as string[]).every(
+      (k) => read(raw, k) === '',
+    );
+    if (isAllEmpty) continue;
+
+    const errors: string[] = [];
+    const slug = read(raw, 'slug');
+    const name_de = read(raw, 'name_de');
+    const name_en_raw = read(raw, 'name_en');
+    const icon = read(raw, 'icon');
+    const orderRaw = read(raw, 'display_order');
+
+    if (!slug) {
+      errors.push('slug is required');
+    } else if (!SLUG_RE.test(slug)) {
+      errors.push('slug must match [a-z0-9-]+');
+    }
+    if (!name_de) errors.push('name_de is required');
+
+    let display_order = 0;
+    if (orderRaw === '') {
+      // Default missing order to 0 — admins might omit it for fresh imports.
+      display_order = 0;
+    } else {
+      const n = Number(orderRaw);
+      if (!Number.isInteger(n)) {
+        errors.push('display_order must be an integer');
+      } else {
+        display_order = n;
+      }
+    }
+
+    rows.push({
+      rowNumber: i + 1,
+      slug,
+      name_de,
+      name_en: name_en_raw === '' ? null : name_en_raw,
+      icon: icon || '✨',
+      display_order,
+      errors,
+    });
+  }
+
+  if (rows.length === 0) {
+    return { rows: [], fatalError: null };
+  }
+
+  return { rows, fatalError: null };
+}
+
+/**
  * Build an .xlsx workbook with one "Categories" sheet. Rows are sorted by
  * `display_order` ascending so the file mirrors what admins see in the UI.
  */
