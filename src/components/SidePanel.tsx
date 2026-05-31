@@ -62,10 +62,7 @@ export function SidePanel({
       </h2>
 
       {tent.contact_person && (
-        <p className="mt-1 text-sm">
-          <span className="font-medium">{t('side_panel.contact_person')}:</span>{' '}
-          {tent.contact_person}
-        </p>
+        <p className="mt-1 text-sm text-white/80">{tent.contact_person}</p>
       )}
 
       {categories.length > 0 && (
