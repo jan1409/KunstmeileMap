@@ -4,6 +4,8 @@
  * `react-leaflet`.
  */
 
+import L from 'leaflet';
+
 export function isValidCoord(lat: number, lng: number): boolean {
   if (typeof lat !== 'number' || typeof lng !== 'number') return false;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
@@ -74,3 +76,34 @@ export function markerColorForCategories(
  * See docs/superpowers/specs/2026-05-27-zoom-based-markers-design.md.
  */
 export const MARKER_DETAIL_ZOOM = 20;
+
+/**
+ * Zoom level used when the user selects a tent. At this zoom the full numbered
+ * badge is visible (>= MARKER_DETAIL_ZOOM), making the chosen tent unambiguous.
+ */
+export const TENT_FOCUS_ZOOM = 20;
+
+/**
+ * Compute the map center that places `tentLatLng` at the upper-third of the
+ * map container (horizontally centered, vertically at 1/3 from the top) when
+ * the map is rendered at `targetZoom`.
+ *
+ * Pure-ish helper — exported for unit testing. Pass `map` (the Leaflet map
+ * instance) so the projection + container size are read consistently.
+ *
+ * The map's flyTo() target latlng becomes the rendered (W/2, H/2) center.
+ * We want the tent rendered at (W/2, H/3), so the new center must sit
+ * H/2 - H/3 = H/6 pixels SOUTH of the tent (Leaflet screen-y grows
+ * downward, so adding to y in pixel space shifts the resulting latlng south).
+ */
+export function focusedCenter(
+  map: L.Map,
+  tentLatLng: L.LatLng,
+  targetZoom: number,
+): L.LatLng {
+  const size = map.getSize();
+  const offsetY = size.y / 6;
+  const tentPoint = map.project(tentLatLng, targetZoom);
+  const shiftedPoint = L.point(tentPoint.x, tentPoint.y + offsetY);
+  return map.unproject(shiftedPoint, targetZoom);
+}

@@ -83,6 +83,7 @@ export default function EventViewPage() {
           tents={visibleTents}
           center={[event.default_lat, event.default_lng]}
           zoom={event.default_zoom}
+          focusTent={selectedTent}
           onMarkerClick={(tnt: TentWithCategories) =>
             selectTentBySlug(tnt.slug)
           }
