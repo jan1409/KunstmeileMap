@@ -4,11 +4,11 @@ import { photoPublicUrl } from '../lib/photos';
 
 /**
  * Width passed to Supabase Image Transformations for the public side panel.
- * The desktop panel is 400px wide; doubling for retina screens lands at ~800,
- * with a small headroom buffer so we don't re-upscale on slightly wider
- * tablets.
+ * On desktop the panel is a 2-col grid (each photo ~170px wide); on mobile
+ * each photo renders at h-40 (~160px tall, variable width). 640px covers 2x
+ * retina for both cases with a comfortable buffer.
  */
-const SIDE_PANEL_THUMB_WIDTH = 1024;
+const SIDE_PANEL_THUMB_WIDTH = 640;
 
 export function usePhotos(
   tentId: string | undefined,

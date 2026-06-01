@@ -49,12 +49,14 @@ describe('usePhotos', () => {
   it('requests a thumbnail-sized URL via Supabase image transformations', async () => {
     renderHook(() => usePhotos('t1'));
     await waitFor(() => expect(getPublicUrlMock).toHaveBeenCalled());
-    // Every call should pass a `transform.width` option for fast thumbnails.
+    // Every call should pass a `transform.width` option for fast thumbnails,
+    // sized for the side panel (per-tile, not full panel width).
     for (const call of getPublicUrlMock.mock.calls) {
       const [, opts] = call;
       expect(opts).toBeDefined();
       expect(opts.transform.width).toBeTypeOf('number');
-      expect(opts.transform.width).toBeGreaterThanOrEqual(800);
+      expect(opts.transform.width).toBeGreaterThanOrEqual(400);
+      expect(opts.transform.width).toBeLessThanOrEqual(1024);
     }
   });
 
