@@ -24,6 +24,7 @@ const TentImportPage = lazy(() => import('./pages/admin/TentImportPage'));
 const CategoryListPage = lazy(() => import('./pages/admin/CategoryListPage'));
 const EventSettingsPage = lazy(() => import('./pages/admin/EventSettingsPage'));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage'));
+const PositionsPage = lazy(() => import('./pages/admin/PositionsPage'));
 
 const adminFallback = (
   <div
@@ -97,6 +98,14 @@ export const router = createBrowserRouter([
             element: (
               <RequireEventRole minRole="contributor">
                 {suspended(<TentEditPage />)}
+              </RequireEventRole>
+            ),
+          },
+          {
+            path: 'events/:eventSlug/positions',
+            element: (
+              <RequireEventRole minRole="contributor">
+                {suspended(<PositionsPage />)}
               </RequireEventRole>
             ),
           },
