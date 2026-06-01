@@ -203,19 +203,26 @@ describe('PhotoUploadZone', () => {
 
     await user.click(rotateButtons[0]!);
 
-    // Fetched the original (no transform) for the first photo.
+    // Fetched the original (no transform) for the first photo. Uses
+    // cache: 'no-store' so the browser never serves a stale pre-rotation
+    // copy on subsequent rotations.
     await waitFor(() => expect(rotateBlobMock).toHaveBeenCalledTimes(1));
     expect(fetch).toHaveBeenCalledTimes(1);
-    const fetchedUrl = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    const [fetchedUrl, fetchOpts] = (
+      fetch as ReturnType<typeof vi.fn>
+    ).mock.calls[0]!;
     expect(fetchedUrl).toContain('evt-1/tent-1/a.jpg');
+    expect(fetchOpts).toMatchObject({ cache: 'no-store' });
 
-    // Uploaded the rotated bytes back to the same storage path with upsert.
+    // Uploaded the rotated bytes back to the same storage path with upsert
+    // and a no-cache cacheControl so the public view picks up changes.
     await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(1));
     const [uploadPath, _rotatedBlob, uploadOpts] = uploadFn.mock.calls[0]!;
     expect(uploadPath).toBe('evt-1/tent-1/a.jpg');
     expect(uploadOpts).toMatchObject({
       upsert: true,
       contentType: 'image/jpeg',
+      cacheControl: '0',
     });
 
     // The rendered image src now carries a cache-busting `v=` token so the
@@ -224,6 +231,32 @@ describe('PhotoUploadZone', () => {
       const img = screen.getAllByRole('img')[0]!;
       expect(img.getAttribute('src')).toMatch(/[?&]v=\d+/);
     });
+  });
+
+  it('rotating a photo twice in a row fetches different URLs (cache-buster bumps each round)', async () => {
+    const user = userEvent.setup();
+    render(<PhotoUploadZone eventId="evt-1" tentId="tent-1" />);
+    await screen.findAllByRole('img');
+
+    const rotateButton = () =>
+      screen.getAllByRole('button', { name: /rotate|drehen/i })[0]!;
+
+    await user.click(rotateButton());
+    await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(1));
+    // Wait for the rotating state to clear so the button is enabled again.
+    await waitFor(() =>
+      expect((rotateButton() as HTMLButtonElement).disabled).toBe(false),
+    );
+
+    await user.click(rotateButton());
+    await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(2));
+
+    const [firstUrl] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    const [secondUrl] = (fetch as ReturnType<typeof vi.fn>).mock.calls[1]!;
+    // Second fetch must be a distinct URL (with the bumped cacheKey appended)
+    // so the browser doesn't serve a stale pre-rotation copy.
+    expect(firstUrl).not.toBe(secondUrl);
+    expect(secondUrl).toMatch(/[?&]v=\d+/);
   });
 
   it('surfaces a rotation error toast when the upload of rotated bytes fails', async () => {

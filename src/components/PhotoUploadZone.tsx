@@ -84,9 +84,15 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
     setRotatingId(p.id);
     setError(null);
     try {
-      // Fetch the original (no transform) so we rotate the actual stored
-      // bytes, not the resized thumbnail.
-      const response = await fetch(photoPublicUrl(p.storage_path));
+      // Fetch the original (no transform). Use the rotation bump count as a
+      // cacheKey so each successive rotation downloads the *current* stored
+      // file — otherwise the browser would serve a cached pre-rotation copy
+      // on the 2nd click and we'd just keep re-uploading the same 90° rotation.
+      const bump = rotationBumps[p.id];
+      const response = await fetch(
+        photoPublicUrl(p.storage_path, { cacheKey: bump }),
+        { cache: 'no-store' },
+      );
       if (!response.ok) {
         throw new Error(`Failed to download original (${response.status})`);
       }
@@ -97,9 +103,13 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
         .upload(p.storage_path, rotated, {
           upsert: true,
           contentType: 'image/jpeg',
+          // Tell the CDN/browser to revalidate immediately so subsequent
+          // rotations and the public side panel always see the latest file
+          // instead of a stale cached copy.
+          cacheControl: '0',
         });
       if (upErr) throw new Error(upErr.message);
-      // Force a fresh fetch of the now-overwritten image.
+      // Force the rendered <img> to re-fetch the rotated thumbnail.
       setRotationBumps((prev) => ({
         ...prev,
         [p.id]: (prev[p.id] ?? 0) + 1,
