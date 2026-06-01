@@ -38,15 +38,22 @@ describe('photoPublicUrl', () => {
   it('passes width as a transform option', () => {
     photoPublicUrl('e/t/a.jpg', { width: 800 });
     expect(getPublicUrlMock).toHaveBeenCalledWith('e/t/a.jpg', {
-      transform: { width: 800, quality: undefined },
+      transform: { width: 800 },
     });
   });
 
   it('passes quality as a transform option', () => {
     photoPublicUrl('e/t/a.jpg', { quality: 60 });
     expect(getPublicUrlMock).toHaveBeenCalledWith('e/t/a.jpg', {
-      transform: { width: undefined, quality: 60 },
+      transform: { quality: 60 },
     });
+  });
+
+  it('omits undefined keys from the transform object', () => {
+    photoPublicUrl('e/t/a.jpg', { width: 800, quality: undefined });
+    const [, opts] = getPublicUrlMock.mock.calls[0]!;
+    expect(opts.transform).toEqual({ width: 800 });
+    expect('quality' in opts.transform).toBe(false);
   });
 
   it('passes both width and quality together', () => {

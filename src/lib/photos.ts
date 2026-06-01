@@ -19,10 +19,15 @@ export function photoPublicUrl(
   storagePath: string,
   options: PhotoUrlOptions = {},
 ): string {
-  const hasTransform = options.width != null || options.quality != null;
-  const arg = hasTransform
-    ? { transform: { width: options.width, quality: options.quality } }
-    : undefined;
-  return supabase.storage.from(BUCKET).getPublicUrl(storagePath, arg).data
-    .publicUrl;
+  // Build the transform object only with defined keys — passing
+  // `quality: undefined` can cause Supabase to reject the transform and
+  // serve a broken response.
+  const transform: { width?: number; quality?: number } = {};
+  if (options.width != null) transform.width = options.width;
+  if (options.quality != null) transform.quality = options.quality;
+  const hasTransform = Object.keys(transform).length > 0;
+  return supabase.storage
+    .from(BUCKET)
+    .getPublicUrl(storagePath, hasTransform ? { transform } : undefined)
+    .data.publicUrl;
 }
