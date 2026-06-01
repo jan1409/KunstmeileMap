@@ -224,7 +224,10 @@ export default function PositionsPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
+    // Subtract ~7rem to account for AdminLayout's header (~53px) + main's
+    // p-6 padding (48px). With only 4rem we overflowed by ~37px, which
+    // clipped the Save footer below the viewport.
+    <div className="flex h-[calc(100vh-7rem)] flex-col">
       <h1 className="mb-2 text-xl font-semibold">
         {t('admin.positions.heading', { title: event.title_de })}
       </h1>
@@ -253,12 +256,12 @@ export default function PositionsPage() {
         </div>
       </div>
       {canEdit && (
-        <div className="mt-3 flex items-center gap-3">
+        <div className="mt-3 flex shrink-0 items-center gap-3 rounded border border-white/10 bg-neutral-900/60 p-3">
           <button
             type="button"
             onClick={onSave}
             disabled={dirty.dirtyCount === 0 || saving}
-            className="rounded bg-emerald-500/80 px-3 py-1 text-sm font-medium disabled:opacity-40"
+            className="rounded bg-emerald-500/80 px-4 py-2 text-sm font-medium hover:bg-emerald-500 disabled:opacity-40"
           >
             {saving
               ? t('admin.positions.saving')
@@ -268,7 +271,7 @@ export default function PositionsPage() {
             <button
               type="button"
               onClick={() => setConfirmDiscard(true)}
-              className="rounded bg-white/10 px-3 py-1 text-sm hover:bg-white/20"
+              className="rounded bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
             >
               {t('admin.positions.discard_button')}
             </button>
