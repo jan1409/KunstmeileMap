@@ -30,9 +30,9 @@ export function CookieBanner() {
     <div
       role="region"
       aria-label="Cookie consent"
-      className="fixed bottom-0 left-0 right-0 z-50 bg-neutral-950/95 p-4 text-sm text-white backdrop-blur"
+      className="fixed bottom-0 left-0 right-0 z-[1200] bg-neutral-950/95 p-4 text-sm text-white backdrop-blur"
     >
-      <div className="mx-auto flex max-w-5xl flex-col items-start gap-3 md:flex-row md:items-center">
+      <div className="mx-auto flex max-w-5xl flex-col items-stretch gap-3 md:flex-row md:items-center">
         <p className="flex-1">
           {t('cookie_banner.text')}{' '}
           <Link to="/datenschutz" className="underline">
@@ -42,7 +42,7 @@ export function CookieBanner() {
         <button
           type="button"
           onClick={onOk}
-          className="rounded bg-white/20 px-3 py-1 hover:bg-white/30"
+          className="min-h-[44px] w-full rounded bg-white/20 px-5 text-base font-medium hover:bg-white/30 md:w-auto md:min-h-0 md:px-3 md:py-1 md:text-sm md:font-normal"
         >
           {t('cookie_banner.ok')}
         </button>
