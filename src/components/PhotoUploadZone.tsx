@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase, type TentPhoto } from '../lib/supabase';
+import { photoPublicUrl } from '../lib/photos';
+
+/**
+ * Width for the 3-column admin photo grid. Each cell renders at ~218px wide
+ * inside max-w-2xl; doubling for retina lands at ~500px with a buffer.
+ */
+const ADMIN_GRID_THUMB_WIDTH = 600;
 
 interface Props {
   eventId: string;
@@ -69,9 +76,9 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
       <h3 className="mb-2 text-sm font-semibold">{t('admin.photo_upload.heading')}</h3>
       <div className="grid grid-cols-3 gap-2">
         {photos.map((p) => {
-          const url = supabase.storage
-            .from('tent-photos')
-            .getPublicUrl(p.storage_path).data.publicUrl;
+          const url = photoPublicUrl(p.storage_path, {
+            width: ADMIN_GRID_THUMB_WIDTH,
+          });
           return (
             <div key={p.id} className="relative">
               <img

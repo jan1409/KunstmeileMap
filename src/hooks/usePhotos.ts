@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { photoPublicUrl } from '../lib/photos';
 
-export function usePhotos(tentId: string | undefined, reloadKey: number = 0): string[] {
+/**
+ * Width passed to Supabase Image Transformations for the public side panel.
+ * The desktop panel is 400px wide; doubling for retina screens lands at ~800,
+ * with a small headroom buffer so we don't re-upscale on slightly wider
+ * tablets.
+ */
+const SIDE_PANEL_THUMB_WIDTH = 1024;
+
+export function usePhotos(
+  tentId: string | undefined,
+  reloadKey: number = 0,
+  options: { width?: number } = {},
+): string[] {
   const [urls, setUrls] = useState<string[]>([]);
 
   useEffect(() => {
@@ -11,6 +24,7 @@ export function usePhotos(tentId: string | undefined, reloadKey: number = 0): st
       return;
     }
     let cancelled = false;
+    const width = options.width ?? SIDE_PANEL_THUMB_WIDTH;
     supabase
       .from('tent_photos')
       .select('storage_path,display_order')
@@ -18,16 +32,15 @@ export function usePhotos(tentId: string | undefined, reloadKey: number = 0): st
       .order('display_order', { ascending: true })
       .then(({ data }) => {
         if (cancelled || !data) return;
-        const result: string[] = data.map((p) => {
-          const { data: pub } = supabase.storage.from('tent-photos').getPublicUrl(p.storage_path);
-          return pub.publicUrl;
-        });
+        const result: string[] = data.map((p) =>
+          photoPublicUrl(p.storage_path, { width }),
+        );
         setUrls(result);
       });
     return () => {
       cancelled = true;
     };
-  }, [tentId, reloadKey]);
+  }, [tentId, reloadKey, options.width]);
 
   return urls;
 }

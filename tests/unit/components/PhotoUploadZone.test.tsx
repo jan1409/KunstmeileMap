@@ -93,6 +93,21 @@ describe('PhotoUploadZone', () => {
     expect(screen.getByLabelText(/add photos|Fotos hinzufügen/i)).toBeInTheDocument();
   });
 
+  it('requests grid-sized thumbnails via Supabase image transformations', async () => {
+    render(<PhotoUploadZone eventId="evt-1" tentId="tent-1" />);
+    await screen.findAllByRole('img');
+
+    // Every public-url call for grid rendering should include a thumbnail width.
+    expect(getPublicUrlFn).toHaveBeenCalled();
+    for (const call of getPublicUrlFn.mock.calls) {
+      const [, opts] = call;
+      expect(opts).toBeDefined();
+      expect(opts.transform.width).toBeTypeOf('number');
+      expect(opts.transform.width).toBeGreaterThan(0);
+      expect(opts.transform.width).toBeLessThanOrEqual(800);
+    }
+  });
+
   it('uploads each chosen file to storage, inserts a tent_photos row, and refreshes the list', async () => {
     const user = userEvent.setup();
     render(<PhotoUploadZone eventId="evt-1" tentId="tent-1" />);

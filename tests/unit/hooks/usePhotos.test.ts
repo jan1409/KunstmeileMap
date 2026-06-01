@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { usePhotos } from '../../../src/hooks/usePhotos';
 
+const { getPublicUrlMock } = vi.hoisted(() => ({
+  getPublicUrlMock: vi.fn(),
+}));
+
 vi.mock('../../../src/lib/supabase', () => {
   const order = vi.fn().mockResolvedValue({
     data: [
@@ -12,14 +16,16 @@ vi.mock('../../../src/lib/supabase', () => {
   });
   const eq = vi.fn().mockReturnValue({ order });
   const select = vi.fn().mockReturnValue({ eq });
-  const getPublicUrl = vi.fn().mockImplementation((p: string) => ({
-    data: { publicUrl: `https://cdn.example/${p}` },
-  }));
+  getPublicUrlMock.mockImplementation(
+    (p: string, _opts?: { transform?: { width?: number } }) => ({
+      data: { publicUrl: `https://cdn.example/${p}` },
+    }),
+  );
   return {
     supabase: {
       from: vi.fn().mockReturnValue({ select }),
       storage: {
-        from: vi.fn().mockReturnValue({ getPublicUrl }),
+        from: vi.fn().mockReturnValue({ getPublicUrl: getPublicUrlMock }),
       },
     },
   };
@@ -38,6 +44,27 @@ describe('usePhotos', () => {
   it('returns an empty array when tentId is undefined', () => {
     const { result } = renderHook(() => usePhotos(undefined));
     expect(result.current).toEqual([]);
+  });
+
+  it('requests a thumbnail-sized URL via Supabase image transformations', async () => {
+    renderHook(() => usePhotos('t1'));
+    await waitFor(() => expect(getPublicUrlMock).toHaveBeenCalled());
+    // Every call should pass a `transform.width` option for fast thumbnails.
+    for (const call of getPublicUrlMock.mock.calls) {
+      const [, opts] = call;
+      expect(opts).toBeDefined();
+      expect(opts.transform.width).toBeTypeOf('number');
+      expect(opts.transform.width).toBeGreaterThanOrEqual(800);
+    }
+  });
+
+  it('honors a custom width option when provided', async () => {
+    renderHook(() => usePhotos('t1', 0, { width: 400 }));
+    await waitFor(() => expect(getPublicUrlMock).toHaveBeenCalled());
+    const widths = getPublicUrlMock.mock.calls.map(
+      (c) => c[1]?.transform?.width,
+    );
+    expect(widths).toContain(400);
   });
 
   it('refetches when the optional reloadKey arg changes', async () => {
