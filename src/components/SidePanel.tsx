@@ -143,14 +143,14 @@ export function SidePanel({
       )}
 
       {photoUrls.length > 0 && (
-        <div className="-mx-1 mt-4 flex shrink-0 snap-x snap-mandatory gap-2 overflow-x-auto pb-2 md:mx-0 md:block md:columns-2 md:gap-2 md:overflow-x-visible md:snap-none">
+        <div className="-mx-1 mt-4 flex shrink-0 snap-x snap-mandatory gap-2 overflow-x-auto pb-2 md:mx-0 md:flex-col md:items-center md:overflow-x-visible md:snap-none">
           {photoUrls.map((url, i) => (
             <img
               key={url}
               src={url}
               alt=""
               loading={i === 0 ? 'eager' : 'lazy'}
-              className="h-40 snap-start rounded shadow-md md:mb-2 md:block md:h-auto md:w-full md:break-inside-avoid"
+              className="h-40 snap-start rounded shadow-md md:h-48 md:w-auto"
             />
           ))}
         </div>
