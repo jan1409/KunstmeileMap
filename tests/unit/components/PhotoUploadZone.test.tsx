@@ -4,16 +4,29 @@ import userEvent from '@testing-library/user-event';
 
 import '../../../src/lib/i18n';
 
-const { listOrder, insertPhoto, deleteEq, deletePhoto, uploadFn, removeFn, getPublicUrlFn } =
-  vi.hoisted(() => ({
-    listOrder: vi.fn(),
-    insertPhoto: vi.fn(),
-    deleteEq: vi.fn(),
-    deletePhoto: vi.fn(),
-    uploadFn: vi.fn(),
-    removeFn: vi.fn(),
-    getPublicUrlFn: vi.fn(),
-  }));
+const {
+  listOrder,
+  insertPhoto,
+  deleteEq,
+  deletePhoto,
+  uploadFn,
+  removeFn,
+  getPublicUrlFn,
+  rotateBlobMock,
+} = vi.hoisted(() => ({
+  listOrder: vi.fn(),
+  insertPhoto: vi.fn(),
+  deleteEq: vi.fn(),
+  deletePhoto: vi.fn(),
+  uploadFn: vi.fn(),
+  removeFn: vi.fn(),
+  getPublicUrlFn: vi.fn(),
+  rotateBlobMock: vi.fn(),
+}));
+
+vi.mock('../../../src/lib/imageRotate', () => ({
+  rotateImageBlob90CW: rotateBlobMock,
+}));
 
 vi.mock('../../../src/lib/supabase', () => {
   // tent_photos chain: from('tent_photos') exposes select/insert/delete.
@@ -71,6 +84,7 @@ describe('PhotoUploadZone', () => {
     uploadFn.mockReset();
     removeFn.mockReset();
     getPublicUrlFn.mockReset();
+    rotateBlobMock.mockReset();
 
     listOrder.mockResolvedValue({ data: samplePhotos, error: null });
     insertPhoto.mockResolvedValue({ data: null, error: null });
@@ -80,6 +94,17 @@ describe('PhotoUploadZone', () => {
     getPublicUrlFn.mockImplementation((path: string) => ({
       data: { publicUrl: `https://cdn.example/${path}` },
     }));
+    rotateBlobMock.mockImplementation(async () => new Blob(['rotated-bytes']));
+    // Stub global fetch — the rotate handler downloads the current original
+    // and feeds it to the canvas rotation helper.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob(['original-bytes'])),
+      }),
+    );
   });
 
   it('renders existing photos as a grid with delete buttons and a file input', async () => {
@@ -164,5 +189,57 @@ describe('PhotoUploadZone', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/storage quota exceeded/i);
     expect(insertPhoto).not.toHaveBeenCalled();
+  });
+
+  it('rotates a photo: downloads the original, calls rotateImageBlob90CW, and upserts the rotated bytes', async () => {
+    const user = userEvent.setup();
+    render(<PhotoUploadZone eventId="evt-1" tentId="tent-1" />);
+    await screen.findAllByRole('img');
+
+    const rotateButtons = screen.getAllByRole('button', {
+      name: /rotate|drehen/i,
+    });
+    expect(rotateButtons).toHaveLength(2);
+
+    await user.click(rotateButtons[0]!);
+
+    // Fetched the original (no transform) for the first photo.
+    await waitFor(() => expect(rotateBlobMock).toHaveBeenCalledTimes(1));
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const fetchedUrl = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(fetchedUrl).toContain('evt-1/tent-1/a.jpg');
+
+    // Uploaded the rotated bytes back to the same storage path with upsert.
+    await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(1));
+    const [uploadPath, _rotatedBlob, uploadOpts] = uploadFn.mock.calls[0]!;
+    expect(uploadPath).toBe('evt-1/tent-1/a.jpg');
+    expect(uploadOpts).toMatchObject({
+      upsert: true,
+      contentType: 'image/jpeg',
+    });
+
+    // The rendered image src now carries a cache-busting `v=` token so the
+    // browser refetches the rotated file instead of using the cached version.
+    await waitFor(() => {
+      const img = screen.getAllByRole('img')[0]!;
+      expect(img.getAttribute('src')).toMatch(/[?&]v=\d+/);
+    });
+  });
+
+  it('surfaces a rotation error toast when the upload of rotated bytes fails', async () => {
+    const user = userEvent.setup();
+    uploadFn.mockResolvedValue({
+      data: null,
+      error: { message: 'Quota exceeded' },
+    });
+
+    render(<PhotoUploadZone eventId="evt-1" tentId="tent-1" />);
+    await screen.findAllByRole('img');
+
+    await user.click(
+      screen.getAllByRole('button', { name: /rotate|drehen/i })[0]!,
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Quota exceeded/);
   });
 });

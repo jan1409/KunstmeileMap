@@ -236,6 +236,8 @@
       "heading": "Photos",
       "add_photos": "Add photos",
       "remove": "Remove photo",
+      "rotate": "Rotate 90°",
+      "rotate_error": "Rotation failed: {{message}}",
       "alt": "Tent photo"
     },
     "event": {

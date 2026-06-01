@@ -7,6 +7,12 @@ export interface PhotoUrlOptions {
   width?: number;
   /** JPEG quality, 1-100. Defaults to Supabase's default (~80). */
   quality?: number;
+  /**
+   * Cache-busting token appended to the URL as `&v=…`. Bump this whenever the
+   * underlying file at the same storage path is overwritten (e.g. after a
+   * rotation) to force the browser to re-fetch.
+   */
+  cacheKey?: string | number;
 }
 
 /**
@@ -33,8 +39,11 @@ export function photoPublicUrl(
   if (options.quality != null) transform.quality = options.quality;
   const hasTransform = Object.keys(transform).length > 0;
   if (hasTransform) transform.resize = 'contain';
-  return supabase.storage
+  const url = supabase.storage
     .from(BUCKET)
     .getPublicUrl(storagePath, hasTransform ? { transform } : undefined)
     .data.publicUrl;
+  if (options.cacheKey == null) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}v=${encodeURIComponent(String(options.cacheKey))}`;
 }
