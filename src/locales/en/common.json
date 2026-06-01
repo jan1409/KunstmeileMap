@@ -113,6 +113,7 @@
       "col_status": "Status",
       "col_featured": "Featured",
       "action_manage": "Manage",
+      "action_positions": "Positions",
       "action_categories": "Categories",
       "action_settings": "Settings",
       "action_duplicate": "Duplicate"
@@ -296,6 +297,26 @@
       "you_label": "You",
       "pending_prefix": "(Pending)",
       "empty": "Invite collaborators by entering an email above."
+    },
+    "positions": {
+      "heading": "Positions — {{title}}",
+      "placed_heading": "Placed ({{count}})",
+      "unplaced_heading": "Not placed ({{count}})",
+      "placed_empty": "No tents placed yet.",
+      "revert_aria": "Revert {{name}} to saved position",
+      "save_button": "Save changes ({{count}})",
+      "saving": "Saving…",
+      "discard_button": "Discard all",
+      "discard_confirm_heading": "Discard {{count}} changes?",
+      "discard_confirm_body": "All unsaved position changes will be lost.",
+      "discard_confirm_submit": "Discard",
+      "discard_confirm_cancel": "Cancel",
+      "save_success": "{{count}} positions saved.",
+      "save_partial_error": "{{ok}} of {{total}} saved. {{failed}} failed: {{message}}",
+      "nav_guard_message": "You have unsaved position changes. Leave anyway?",
+      "mobile_gate_title": "Desktop screen required",
+      "mobile_gate_body": "This view requires a desktop screen.",
+      "mobile_gate_link": "Open tent list"
     }
   }
 }

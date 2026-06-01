@@ -68,6 +68,12 @@ export default function EventListPage() {
                     {t('admin.event_list.action_manage')}
                   </Link>
                   <Link
+                    to={`/admin/events/${e.slug}/positions`}
+                    className="hidden underline md:inline"
+                  >
+                    {t('admin.event_list.action_positions')}
+                  </Link>
+                  <Link
                     to={`/admin/events/${e.slug}/categories`}
                     className="underline"
                   >
