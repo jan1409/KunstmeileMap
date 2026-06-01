@@ -14,6 +14,12 @@ export interface PhotoUrlOptions {
  * Supabase Image Transformations serve a resized/recompressed variant — much
  * faster to load than the original. Pass no options to get the original (used
  * for downloads and rotation source). Requires the Supabase Pro plan.
+ *
+ * IMPORTANT: we always pass `resize: 'contain'` when transforming, because
+ * Supabase's default mode is `cover` — which crops projecting parts to fill
+ * the target box. With only `width` specified, that cropping produced
+ * unintended narrow slices of portrait photos. `contain` resizes the image to
+ * fit within the requested width while preserving the original aspect ratio.
  */
 export function photoPublicUrl(
   storagePath: string,
@@ -22,10 +28,11 @@ export function photoPublicUrl(
   // Build the transform object only with defined keys — passing
   // `quality: undefined` can cause Supabase to reject the transform and
   // serve a broken response.
-  const transform: { width?: number; quality?: number } = {};
+  const transform: { width?: number; quality?: number; resize?: 'contain' } = {};
   if (options.width != null) transform.width = options.width;
   if (options.quality != null) transform.quality = options.quality;
   const hasTransform = Object.keys(transform).length > 0;
+  if (hasTransform) transform.resize = 'contain';
   return supabase.storage
     .from(BUCKET)
     .getPublicUrl(storagePath, hasTransform ? { transform } : undefined)

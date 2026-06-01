@@ -35,31 +35,32 @@ describe('photoPublicUrl', () => {
     expect(getPublicUrlMock).toHaveBeenCalledWith('e/t/a.jpg', undefined);
   });
 
-  it('passes width as a transform option', () => {
+  it('passes width as a transform option with resize=contain', () => {
     photoPublicUrl('e/t/a.jpg', { width: 800 });
     expect(getPublicUrlMock).toHaveBeenCalledWith('e/t/a.jpg', {
-      transform: { width: 800 },
+      transform: { width: 800, resize: 'contain' },
     });
   });
 
-  it('passes quality as a transform option', () => {
+  it('passes quality as a transform option with resize=contain', () => {
     photoPublicUrl('e/t/a.jpg', { quality: 60 });
     expect(getPublicUrlMock).toHaveBeenCalledWith('e/t/a.jpg', {
-      transform: { quality: 60 },
+      transform: { quality: 60, resize: 'contain' },
     });
   });
 
   it('omits undefined keys from the transform object', () => {
     photoPublicUrl('e/t/a.jpg', { width: 800, quality: undefined });
     const [, opts] = getPublicUrlMock.mock.calls[0]!;
-    expect(opts.transform).toEqual({ width: 800 });
+    expect(opts.transform.width).toBe(800);
+    expect(opts.transform.resize).toBe('contain');
     expect('quality' in opts.transform).toBe(false);
   });
 
-  it('passes both width and quality together', () => {
+  it('passes both width and quality together with resize=contain', () => {
     photoPublicUrl('e/t/a.jpg', { width: 800, quality: 75 });
     expect(getPublicUrlMock).toHaveBeenCalledWith('e/t/a.jpg', {
-      transform: { width: 800, quality: 75 },
+      transform: { width: 800, quality: 75, resize: 'contain' },
     });
   });
 
