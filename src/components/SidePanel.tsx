@@ -12,6 +12,8 @@ interface Props {
   onShare?: () => void;
   /** Required when canEdit is true. */
   eventId?: string;
+  /** Required when canEdit is true — used to build the admin tent-edit URL. */
+  eventSlug?: string;
   canEdit?: boolean;
   onPhotosChanged?: () => void;
 }
@@ -23,6 +25,7 @@ export function SidePanel({
   onClose,
   onShare,
   eventId,
+  eventSlug,
   canEdit = false,
   onPhotosChanged,
 }: Props) {
@@ -123,7 +126,7 @@ export function SidePanel({
         </div>
       )}
 
-      {canEdit && eventId && tent && onPhotosChanged && (
+      {canEdit && eventId && eventSlug && tent && onPhotosChanged && (
         <div className="mt-2 flex flex-col gap-2 border-t border-white/10 pt-2">
           <AddPhotosControl
             eventId={eventId}
@@ -131,7 +134,7 @@ export function SidePanel({
             onUploaded={onPhotosChanged}
           />
           <Link
-            to={`/admin/tents/${tent.id}/edit`}
+            to={`/admin/events/${eventSlug}/tents/${tent.id}`}
             className="text-xs text-white/60 hover:text-white"
           >
             ✎ {t('side_panel.manage_photos')}
