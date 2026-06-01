@@ -236,6 +236,8 @@
       "heading": "Fotos",
       "add_photos": "Fotos hinzufügen",
       "remove": "Foto entfernen",
+      "rotate": "Um 90° drehen",
+      "rotate_error": "Drehung fehlgeschlagen: {{message}}",
       "alt": "Stand-Foto"
     },
     "event": {

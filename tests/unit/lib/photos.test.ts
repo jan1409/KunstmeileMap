@@ -70,4 +70,31 @@ describe('photoPublicUrl', () => {
     });
     expect(photoPublicUrl('p')).toBe('https://cdn.example/thumb');
   });
+
+  it('appends ?v= cache-busting token when cacheKey is set (no existing query string)', () => {
+    getPublicUrlMock.mockReturnValue({
+      data: { publicUrl: 'https://cdn.example/thumb' },
+    });
+    expect(photoPublicUrl('p', { cacheKey: 7 })).toBe(
+      'https://cdn.example/thumb?v=7',
+    );
+  });
+
+  it('appends &v= cache-busting token when cacheKey is set and URL already has a query string', () => {
+    getPublicUrlMock.mockReturnValue({
+      data: { publicUrl: 'https://cdn.example/thumb?width=600' },
+    });
+    expect(photoPublicUrl('p', { width: 600, cacheKey: 3 })).toBe(
+      'https://cdn.example/thumb?width=600&v=3',
+    );
+  });
+
+  it('skips the cache-busting token when cacheKey is undefined', () => {
+    getPublicUrlMock.mockReturnValue({
+      data: { publicUrl: 'https://cdn.example/thumb?width=600' },
+    });
+    expect(photoPublicUrl('p', { width: 600 })).toBe(
+      'https://cdn.example/thumb?width=600',
+    );
+  });
 });
