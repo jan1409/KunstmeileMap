@@ -28,14 +28,21 @@ vi.mock('../../../src/lib/imageRotate', () => ({
   rotateImageBlob90CW: rotateBlobMock,
 }));
 
+const { updateEq, updateMock } = vi.hoisted(() => ({
+  updateEq: vi.fn(),
+  updateMock: vi.fn(),
+}));
+
 vi.mock('../../../src/lib/supabase', () => {
-  // tent_photos chain: from('tent_photos') exposes select/insert/delete.
+  // tent_photos chain: from('tent_photos') exposes select/insert/delete/update.
   // - list: from(...).select('*').eq(...).order(...)
   // - insert: from(...).insert({...})
   // - delete: from(...).delete().eq(...)
+  // - update (for rotation): from(...).update({...}).eq(...)
   const listEq = vi.fn().mockReturnValue({ order: listOrder });
   const select = vi.fn().mockReturnValue({ eq: listEq });
   const deleteSelf = vi.fn().mockReturnValue({ eq: deleteEq });
+  updateMock.mockReturnValue({ eq: updateEq });
 
   // storage chain: storage.from('tent-photos').upload/remove/getPublicUrl
   const storageBucket = {
@@ -50,6 +57,7 @@ vi.mock('../../../src/lib/supabase', () => {
         select,
         insert: insertPhoto,
         delete: deleteSelf,
+        update: updateMock,
       }),
       storage: {
         from: vi.fn().mockReturnValue(storageBucket),
@@ -89,6 +97,8 @@ describe('PhotoUploadZone', () => {
     listOrder.mockResolvedValue({ data: samplePhotos, error: null });
     insertPhoto.mockResolvedValue({ data: null, error: null });
     deleteEq.mockResolvedValue({ data: null, error: null });
+    updateEq.mockResolvedValue({ data: null, error: null });
+    updateMock.mockClear();
     uploadFn.mockResolvedValue({ data: null, error: null });
     removeFn.mockResolvedValue({ data: null, error: null });
     getPublicUrlFn.mockImplementation((path: string) => ({
@@ -191,7 +201,7 @@ describe('PhotoUploadZone', () => {
     expect(insertPhoto).not.toHaveBeenCalled();
   });
 
-  it('rotates a photo: downloads the original, calls rotateImageBlob90CW, and upserts the rotated bytes', async () => {
+  it('rotates a photo: downloads current file, uploads rotated bytes to a NEW path, updates the tent_photos row, deletes the old file', async () => {
     const user = userEvent.setup();
     render(<PhotoUploadZone eventId="evt-1" tentId="tent-1" />);
     await screen.findAllByRole('img');
@@ -203,9 +213,7 @@ describe('PhotoUploadZone', () => {
 
     await user.click(rotateButtons[0]!);
 
-    // Fetched the original (no transform) for the first photo. Uses
-    // cache: 'no-store' so the browser never serves a stale pre-rotation
-    // copy on subsequent rotations.
+    // Fetch is called with cache: 'no-store' to avoid stale CDN/browser copies.
     await waitFor(() => expect(rotateBlobMock).toHaveBeenCalledTimes(1));
     expect(fetch).toHaveBeenCalledTimes(1);
     const [fetchedUrl, fetchOpts] = (
@@ -214,26 +222,29 @@ describe('PhotoUploadZone', () => {
     expect(fetchedUrl).toContain('evt-1/tent-1/a.jpg');
     expect(fetchOpts).toMatchObject({ cache: 'no-store' });
 
-    // Uploaded the rotated bytes back to the same storage path with upsert
-    // and a no-cache cacheControl so the public view picks up changes.
+    // Upload target is a NEW path under the same event/tent folder.
     await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(1));
     const [uploadPath, _rotatedBlob, uploadOpts] = uploadFn.mock.calls[0]!;
-    expect(uploadPath).toBe('evt-1/tent-1/a.jpg');
-    expect(uploadOpts).toMatchObject({
-      upsert: true,
-      contentType: 'image/jpeg',
-      cacheControl: '0',
-    });
+    expect(uploadPath).toMatch(/^evt-1\/tent-1\/[0-9a-f-]+\.jpg$/);
+    expect(uploadPath).not.toBe('evt-1/tent-1/a.jpg');
+    expect(uploadOpts).toMatchObject({ contentType: 'image/jpeg' });
 
-    // The rendered image src now carries a cache-busting `v=` token so the
-    // browser refetches the rotated file instead of using the cached version.
-    await waitFor(() => {
-      const img = screen.getAllByRole('img')[0]!;
-      expect(img.getAttribute('src')).toMatch(/[?&]v=\d+/);
-    });
+    // The tent_photos row is updated to point at the new path.
+    await waitFor(() => expect(updateMock).toHaveBeenCalledTimes(1));
+    const updatePayload = updateMock.mock.calls[0]![0];
+    expect(updatePayload.storage_path).toBe(uploadPath);
+    expect(updateEq).toHaveBeenCalledWith('id', 'p1');
+
+    // The old file is removed.
+    await waitFor(() =>
+      expect(removeFn).toHaveBeenCalledWith(['evt-1/tent-1/a.jpg']),
+    );
+
+    // Photos list re-fetched so the UI picks up the new storage_path.
+    await waitFor(() => expect(listOrder).toHaveBeenCalledTimes(2));
   });
 
-  it('rotating a photo twice in a row fetches different URLs (cache-buster bumps each round)', async () => {
+  it('rotating twice in a row creates two distinct new paths (each rotation fully replaces the previous)', async () => {
     const user = userEvent.setup();
     render(<PhotoUploadZone eventId="evt-1" tentId="tent-1" />);
     await screen.findAllByRole('img');
@@ -243,7 +254,6 @@ describe('PhotoUploadZone', () => {
 
     await user.click(rotateButton());
     await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(1));
-    // Wait for the rotating state to clear so the button is enabled again.
     await waitFor(() =>
       expect((rotateButton() as HTMLButtonElement).disabled).toBe(false),
     );
@@ -251,12 +261,35 @@ describe('PhotoUploadZone', () => {
     await user.click(rotateButton());
     await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(2));
 
-    const [firstUrl] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
-    const [secondUrl] = (fetch as ReturnType<typeof vi.fn>).mock.calls[1]!;
-    // Second fetch must be a distinct URL (with the bumped cacheKey appended)
-    // so the browser doesn't serve a stale pre-rotation copy.
-    expect(firstUrl).not.toBe(secondUrl);
-    expect(secondUrl).toMatch(/[?&]v=\d+/);
+    const firstPath = uploadFn.mock.calls[0]![0];
+    const secondPath = uploadFn.mock.calls[1]![0];
+    expect(firstPath).not.toBe(secondPath);
+    expect(updateMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('rolls back the new uploaded file when the tent_photos row update fails', async () => {
+    const user = userEvent.setup();
+    updateEq.mockResolvedValue({
+      data: null,
+      error: { message: 'permission denied' },
+    });
+
+    render(<PhotoUploadZone eventId="evt-1" tentId="tent-1" />);
+    await screen.findAllByRole('img');
+
+    await user.click(
+      screen.getAllByRole('button', { name: /rotate|drehen/i })[0]!,
+    );
+
+    await waitFor(() => expect(uploadFn).toHaveBeenCalledTimes(1));
+    const newPath = uploadFn.mock.calls[0]![0];
+    // Orphan-cleanup: remove the just-uploaded file because the DB update failed.
+    await waitFor(() => expect(removeFn).toHaveBeenCalledWith([newPath]));
+    // Original file is NOT removed because the rotation didn't actually take.
+    expect(removeFn).not.toHaveBeenCalledWith(['evt-1/tent-1/a.jpg']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /permission denied/i,
+    );
   });
 
   it('surfaces a rotation error toast when the upload of rotated bytes fails', async () => {

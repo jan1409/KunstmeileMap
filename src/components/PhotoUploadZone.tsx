@@ -21,12 +21,6 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
-  // Bumped per-photo when a rotation overwrites the underlying file; appended
-  // to the rendered URL as ?v= to bust the browser cache (storage path is
-  // unchanged after an upsert, so the URL would otherwise stay stale).
-  const [rotationBumps, setRotationBumps] = useState<Record<string, number>>(
-    {},
-  );
   const [rotatingId, setRotatingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,36 +78,43 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
     setRotatingId(p.id);
     setError(null);
     try {
-      // Fetch the original (no transform). Use the rotation bump count as a
-      // cacheKey so each successive rotation downloads the *current* stored
-      // file — otherwise the browser would serve a cached pre-rotation copy
-      // on the 2nd click and we'd just keep re-uploading the same 90° rotation.
-      const bump = rotationBumps[p.id];
-      const response = await fetch(
-        photoPublicUrl(p.storage_path, { cacheKey: bump }),
-        { cache: 'no-store' },
-      );
+      // Fetch the current stored file. cache: 'no-store' guards against the
+      // browser/CDN serving us a stale copy that would just round-trip the
+      // same rotation.
+      const response = await fetch(photoPublicUrl(p.storage_path), {
+        cache: 'no-store',
+      });
       if (!response.ok) {
-        throw new Error(`Failed to download original (${response.status})`);
+        throw new Error(`Failed to download photo (${response.status})`);
       }
       const blob = await response.blob();
       const rotated = await rotateImageBlob90CW(blob);
+
+      // Upload to a NEW path (fresh UUID) and update the tent_photos row to
+      // point at it. Upserting at the same path turned out to be unreliable
+      // because edge caches kept serving the pre-rotation copy; rotating the
+      // URL itself sidesteps every caching layer.
+      const newPath = `${eventId}/${tentId}/${crypto.randomUUID()}.jpg`;
       const { error: upErr } = await supabase.storage
         .from('tent-photos')
-        .upload(p.storage_path, rotated, {
-          upsert: true,
-          contentType: 'image/jpeg',
-          // Tell the CDN/browser to revalidate immediately so subsequent
-          // rotations and the public side panel always see the latest file
-          // instead of a stale cached copy.
-          cacheControl: '0',
-        });
+        .upload(newPath, rotated, { contentType: 'image/jpeg' });
       if (upErr) throw new Error(upErr.message);
-      // Force the rendered <img> to re-fetch the rotated thumbnail.
-      setRotationBumps((prev) => ({
-        ...prev,
-        [p.id]: (prev[p.id] ?? 0) + 1,
-      }));
+
+      const { error: updErr } = await supabase
+        .from('tent_photos')
+        .update({ storage_path: newPath })
+        .eq('id', p.id);
+      if (updErr) {
+        // Roll back the just-uploaded orphan to avoid leaving litter.
+        await supabase.storage.from('tent-photos').remove([newPath]);
+        throw new Error(updErr.message);
+      }
+
+      // Best-effort: delete the now-unreferenced old file. If it fails, we
+      // accept a small orphan over a broken UI state.
+      await supabase.storage.from('tent-photos').remove([p.storage_path]);
+
+      setReloadTick((n) => n + 1);
     } catch (err) {
       setError(
         t('admin.photo_upload.rotate_error', {
@@ -132,7 +133,6 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
         {photos.map((p) => {
           const url = photoPublicUrl(p.storage_path, {
             width: ADMIN_GRID_THUMB_WIDTH,
-            cacheKey: rotationBumps[p.id],
           });
           const isRotating = rotatingId === p.id;
           return (
