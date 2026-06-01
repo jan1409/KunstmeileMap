@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useBlocker, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
@@ -87,16 +87,47 @@ export default function PositionsPage() {
     return out;
   }, [placedTents]);
 
-  const dirty = useDirtyPositions(originals);
+  // Local overrides that survive after a successful save until useTents refetches.
+  const [committedOverrides, setCommittedOverrides] = useState<
+    Record<string, Coords>
+  >({});
 
-  // Apply staged edits over the original positions for the map.
+  // Drop an override id only when the original has caught up (matches within
+  // epsilon). Until then, the override holds so the marker doesn't jump back.
+  useEffect(() => {
+    setCommittedOverrides((prev) => {
+      const next: Record<string, Coords> = {};
+      for (const [id, coords] of Object.entries(prev)) {
+        const orig = originals[id];
+        if (
+          orig &&
+          Math.abs(orig.lat - coords.lat) < 1e-9 &&
+          Math.abs(orig.lng - coords.lng) < 1e-9
+        ) {
+          continue; // drop — refetch matched
+        }
+        next[id] = coords;
+      }
+      return next;
+    });
+  }, [originals]);
+
+  const effectiveOriginals = useMemo(
+    () => ({ ...originals, ...committedOverrides }),
+    [originals, committedOverrides],
+  );
+
+  const dirty = useDirtyPositions(effectiveOriginals);
+
+  // Apply staged edits (and any post-save overrides) over the original positions.
   const renderedTents: PositionsMapTent[] = useMemo(
     () =>
       placedTents.map((tent) => {
-        const coords = dirty.getCoords(tent.id) ?? tent;
+        const coords =
+          dirty.getCoords(tent.id) ?? effectiveOriginals[tent.id] ?? tent;
         return { ...tent, lat: coords.lat, lng: coords.lng };
       }),
-    [placedTents, dirty],
+    [placedTents, dirty, effectiveOriginals],
   );
 
   // Browser-level "you have unsaved changes" guard.
@@ -109,6 +140,14 @@ export default function PositionsPage() {
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [dirty.dirtyCount]);
+
+  // In-app navigation guard — intercept route changes when there are unsaved edits.
+  useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      dirty.dirtyCount > 0 &&
+      currentLocation.pathname !== nextLocation.pathname &&
+      !window.confirm(t('admin.positions.nav_guard_message')),
+  );
 
   if (!event) return null;
 
@@ -156,6 +195,16 @@ export default function PositionsPage() {
         if (r.status === 'fulfilled') okIds.push(id);
         else failures.push((r.reason as Error).message ?? 'error');
       });
+      // Capture committed coords so the marker doesn't jump back after commit
+      // (useTents hasn't refetched yet — the override holds until it does).
+      if (okIds.length > 0) {
+        const overrides: Record<string, Coords> = {};
+        for (const id of okIds) {
+          const c = dirty.getCoords(id);
+          if (c) overrides[id] = c;
+        }
+        setCommittedOverrides((prev) => ({ ...prev, ...overrides }));
+      }
       dirty.commit(okIds);
       if (failures.length === 0) {
         showSuccess(t('admin.positions.save_success', { count: okIds.length }));

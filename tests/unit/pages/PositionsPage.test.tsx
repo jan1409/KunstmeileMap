@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import i18n from '../../../src/lib/i18n';
 
 // Shared supabase mock — overridden per test for update behavior.
@@ -88,6 +88,8 @@ vi.mock('../../../src/components/PositionsMap', () => {
             key={t.id}
             data-testid={`drag-${t.id}`}
             data-dirty={dirtyIds.has(t.id) ? 'true' : 'false'}
+            data-lat={t.lat}
+            data-lng={t.lng}
             onClick={() => onPositionChange(t.id, t.lat + 0.001, t.lng + 0.001)}
           >
             drag {t.name}
@@ -114,17 +116,19 @@ afterEach(() => {
 });
 
 function renderPage() {
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/admin/events/:eventSlug/positions',
+        element: <PositionsPage />,
+      },
+    ],
+    { initialEntries: ['/admin/events/evt-1/positions'] },
+  );
   return render(
     <I18nextProvider i18n={i18n}>
       <ToastProvider>
-        <MemoryRouter initialEntries={['/admin/events/evt-1/positions']}>
-          <Routes>
-            <Route
-              path="/admin/events/:eventSlug/positions"
-              element={<PositionsPage />}
-            />
-          </Routes>
-        </MemoryRouter>
+        <RouterProvider router={router} />
       </ToastProvider>
     </I18nextProvider>,
   );
@@ -225,6 +229,25 @@ describe('PositionsPage', () => {
       name: /save changes \(1\)|änderungen speichern \(1\)/i,
     });
     expect(btnAfter).toBeEnabled();
+  });
+
+  it('marker stays at the saved position after a successful save (no jump-back)', async () => {
+    const { getByTestId } = renderPage();
+    // Pre-drag: Alpha at the seed coords.
+    const preLat = parseFloat(getByTestId('drag-a').getAttribute('data-lat')!);
+    // Drag Alpha (+0.001) and save.
+    await userEvent.click(getByTestId('drag-a'));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /save changes \(1\)|änderungen speichern \(1\)/i,
+      }),
+    );
+    await waitFor(() => {
+      expect(getByTestId('drag-a').getAttribute('data-dirty')).toBe('false');
+    });
+    // After save, the marker stays at the post-drag coord, NOT the pre-drag coord.
+    const postLat = parseFloat(getByTestId('drag-a').getAttribute('data-lat')!);
+    expect(postLat).toBeCloseTo(preLat + 0.001, 6);
   });
 
   it('discard-all opens confirm and clears every edit on confirm', async () => {
