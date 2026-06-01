@@ -116,6 +116,7 @@ export default function EventViewPage() {
           photoUrls={photoUrls}
           onClose={() => selectTentBySlug(null)}
           eventId={event.id}
+          eventSlug={event.slug}
           canEdit={perms.canContribute}
           onPhotosChanged={() => setPhotosReloadKey((k) => k + 1)}
         />

@@ -83,6 +83,7 @@ describe('SidePanel', () => {
         photoUrls={[]}
         onClose={() => {}}
         eventId="evt-1"
+        eventSlug="evt-1-slug"
         canEdit={true}
         onPhotosChanged={() => {}}
       />,
@@ -92,7 +93,10 @@ describe('SidePanel', () => {
     ).toBeInTheDocument();
     const link = screen.getByRole('link', { name: /manage photos|fotos verwalten/i });
     expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/admin/tents/tent-1/edit');
+    expect(link).toHaveAttribute(
+      'href',
+      '/admin/events/evt-1-slug/tents/tent-1',
+    );
   });
 
   it('renders the contact person name when tent.contact_person is set', () => {
