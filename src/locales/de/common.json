@@ -113,6 +113,7 @@
       "col_status": "Status",
       "col_featured": "Hervorgehoben",
       "action_manage": "Verwalten",
+      "action_positions": "Positionen",
       "action_categories": "Kategorien",
       "action_settings": "Einstellungen",
       "action_duplicate": "Duplizieren"
@@ -296,6 +297,26 @@
       "you_label": "Du selbst",
       "pending_prefix": "(Pending)",
       "empty": "Lade Mitstreiter ein, indem du oben eine Email einträgst."
+    },
+    "positions": {
+      "heading": "Positionen — {{title}}",
+      "placed_heading": "Platziert ({{count}})",
+      "unplaced_heading": "Nicht platziert ({{count}})",
+      "placed_empty": "Noch keine Stände platziert.",
+      "revert_aria": "{{name}} auf gespeicherte Position zurücksetzen",
+      "save_button": "Änderungen speichern ({{count}})",
+      "saving": "Wird gespeichert…",
+      "discard_button": "Alle verwerfen",
+      "discard_confirm_heading": "{{count}} Änderungen verwerfen?",
+      "discard_confirm_body": "Alle nicht gespeicherten Positionsänderungen gehen verloren.",
+      "discard_confirm_submit": "Verwerfen",
+      "discard_confirm_cancel": "Abbrechen",
+      "save_success": "{{count}} Positionen gespeichert.",
+      "save_partial_error": "{{ok}} von {{total}} gespeichert. {{failed}} fehlgeschlagen: {{message}}",
+      "nav_guard_message": "Du hast nicht gespeicherte Positionsänderungen. Trotzdem verlassen?",
+      "mobile_gate_title": "Desktopbildschirm erforderlich",
+      "mobile_gate_body": "Diese Ansicht benötigt einen Desktopbildschirm.",
+      "mobile_gate_link": "Standliste öffnen"
     }
   }
 }
