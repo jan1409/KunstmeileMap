@@ -150,7 +150,7 @@ export function SidePanel({
               src={url}
               alt=""
               loading={i === 0 ? 'eager' : 'lazy'}
-              className="h-40 snap-start rounded shadow-md md:aspect-square md:h-auto md:w-full md:object-cover"
+              className="h-40 snap-start rounded shadow-md md:aspect-square md:h-auto md:w-full md:bg-white/5 md:object-contain"
             />
           ))}
         </div>
