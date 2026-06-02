@@ -43,8 +43,15 @@
     "add_photo": "Foto hinzufügen",
     "take_photo": "Foto aufnehmen",
     "manage_photos": "Fotos verwalten",
+    "view_photo": "Foto ansehen",
     "uploading": "Wird hochgeladen…",
     "upload_error": "Upload fehlgeschlagen: {{message}}"
+  },
+  "lightbox": {
+    "close": "Schließen",
+    "previous": "Vorheriges Foto",
+    "next": "Nächstes Foto",
+    "image_alt": "Foto"
   },
   "footer": {
     "impressum": "Impressum",

@@ -43,8 +43,15 @@
     "add_photo": "Add photo",
     "take_photo": "Take photo",
     "manage_photos": "Manage photos",
+    "view_photo": "View photo",
     "uploading": "Uploading…",
     "upload_error": "Upload failed: {{message}}"
+  },
+  "lightbox": {
+    "close": "Close",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "image_alt": "Photo"
   },
   "footer": {
     "impressum": "Imprint",

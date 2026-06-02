@@ -10,17 +10,24 @@ import { photoPublicUrl } from '../lib/photos';
  */
 const SIDE_PANEL_THUMB_WIDTH = 640;
 
+export interface PhotoItem {
+  /** Resized/recompressed variant for fast grid display. */
+  thumbUrl: string;
+  /** Original, uncompressed file — used by the full-screen lightbox. */
+  fullUrl: string;
+}
+
 export function usePhotos(
   tentId: string | undefined,
   reloadKey: number = 0,
   options: { width?: number } = {},
-): string[] {
-  const [urls, setUrls] = useState<string[]>([]);
+): PhotoItem[] {
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
 
   useEffect(() => {
     if (!tentId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronizes hook state when input becomes falsy; not derived state. Long-term: migrate to TanStack Query.
-      setUrls([]);
+      setPhotos([]);
       return;
     }
     let cancelled = false;
@@ -32,15 +39,16 @@ export function usePhotos(
       .order('display_order', { ascending: true })
       .then(({ data }) => {
         if (cancelled || !data) return;
-        const result: string[] = data.map((p) =>
-          photoPublicUrl(p.storage_path, { width }),
-        );
-        setUrls(result);
+        const result: PhotoItem[] = data.map((p) => ({
+          thumbUrl: photoPublicUrl(p.storage_path, { width }),
+          fullUrl: photoPublicUrl(p.storage_path),
+        }));
+        setPhotos(result);
       });
     return () => {
       cancelled = true;
     };
   }, [tentId, reloadKey, options.width]);
 
-  return urls;
+  return photos;
 }
