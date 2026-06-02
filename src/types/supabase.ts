@@ -279,6 +279,7 @@ export type Database = {
           instagram_url: string | null
           lat: number | null
           lng: number | null
+          marker_icon: string | null
           name: string
           slug: string
           updated_at: string
@@ -300,6 +301,7 @@ export type Database = {
           instagram_url?: string | null
           lat?: number | null
           lng?: number | null
+          marker_icon?: string | null
           name: string
           slug: string
           updated_at?: string
@@ -321,6 +323,7 @@ export type Database = {
           instagram_url?: string | null
           lat?: number | null
           lng?: number | null
+          marker_icon?: string | null
           name?: string
           slug?: string
           updated_at?: string

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Category, Tent } from '../lib/supabase';
 import type { TileStyle } from '../lib/map';
 import { TentMapEditor, type OtherTent } from './TentMapEditor';
+import { MARKER_ICONS } from '../lib/markerIcons';
 
 const TentSchema = z
   .object({
@@ -24,6 +25,7 @@ const TentSchema = z
       z.number().int().positive().optional(),
     ),
     category_ids: z.array(z.string().uuid()).default([]),
+    marker_icon: z.string().optional(),
     website_url: z.url().optional().or(z.literal('')),
     instagram_url: z.url().optional().or(z.literal('')),
     facebook_url: z.url().optional().or(z.literal('')),
@@ -87,6 +89,7 @@ export function TentEditForm({
       address: initial?.address ?? '',
       display_number: initial?.display_number ?? undefined,
       category_ids: initial?.category_ids ?? [],
+      marker_icon: initial?.marker_icon ?? '',
       website_url: initial?.website_url ?? '',
       instagram_url: initial?.instagram_url ?? '',
       facebook_url: initial?.facebook_url ?? '',
@@ -159,6 +162,16 @@ export function TentEditForm({
           ))}
         </div>
       </div>
+      <Field label={t('admin.tent.form.marker_icon_label')}>
+        <select {...register('marker_icon')} className="input">
+          <option value="">{t('admin.tent.form.marker_icon_none')}</option>
+          {MARKER_ICONS.map((m) => (
+            <option key={m.key} value={m.key}>
+              {m.labelDe}
+            </option>
+          ))}
+        </select>
+      </Field>
       <Field label={t('admin.tent.form.website_label')} error={errors.website_url?.message}>
         <input {...register('website_url')} className="input" />
       </Field>

@@ -336,6 +336,83 @@ describe('TentEditForm', () => {
     expect(val === '' || val == null).toBe(true);
   });
 
+  it('renders a marker icon picker', () => {
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(
+      screen.getByLabelText(/Map symbol|Kartensymbol/i),
+    ).toBeInTheDocument();
+  });
+
+  it('submits the selected marker_icon', async () => {
+    const user = userEvent.setup();
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/slug/i), 'imbiss');
+    await user.type(screen.getByLabelText(/^name$/i), 'Imbiss');
+    await user.selectOptions(
+      screen.getByLabelText(/Map symbol|Kartensymbol/i),
+      'parking',
+    );
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]![0].marker_icon).toBe('parking');
+  });
+
+  it('submits an empty marker_icon when none is selected', async () => {
+    const user = userEvent.setup();
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
+        onSubmit={onSubmit}
+      />,
+    );
+    await user.type(screen.getByLabelText(/slug/i), 'plain');
+    await user.type(screen.getByLabelText(/^name$/i), 'Plain');
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const val = onSubmit.mock.calls[0]![0].marker_icon;
+    expect(val === '' || val == null).toBe(true);
+  });
+
+  it('populates marker_icon from initial when editing', () => {
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
+        initial={{ slug: 'fish-stand', name: 'Fish Stand', marker_icon: 'fish' }}
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(screen.getByLabelText(/Map symbol|Kartensymbol/i)).toHaveValue('fish');
+  });
+
   it('submits lat/lng pair when both are set via the inputs', async () => {
     const user = userEvent.setup();
     render(

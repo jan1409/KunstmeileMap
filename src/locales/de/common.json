@@ -147,6 +147,8 @@
         "display_number_label": "#",
         "display_number_placeholder": "auto",
         "categories_label": "Kategorien",
+        "marker_icon_label": "Kartensymbol",
+        "marker_icon_none": "Keins (Nummer anzeigen)",
         "website_label": "Webseite",
         "instagram_label": "Instagram",
         "facebook_label": "Facebook",

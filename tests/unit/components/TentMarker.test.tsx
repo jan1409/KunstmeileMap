@@ -68,4 +68,44 @@ describe('TentMarker', () => {
     );
     expect(getByText('7')).toBeInTheDocument();
   });
+
+  it('full variant renders the icon SVG instead of the number when iconKey is set', () => {
+    const { container, queryByText } = render(
+      <TentMarker
+        displayNumber={42}
+        color="#000"
+        ariaLabel="Pommesbude"
+        iconKey="parking"
+      />,
+    );
+    expect(container.querySelector('svg')).toBeInTheDocument();
+    expect(queryByText('42')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the number for an unknown iconKey', () => {
+    const { container, getByText } = render(
+      <TentMarker
+        displayNumber={42}
+        color="#000"
+        ariaLabel="Stand 42"
+        iconKey="not-a-real-icon"
+      />,
+    );
+    expect(container.querySelector('svg')).not.toBeInTheDocument();
+    expect(getByText('42')).toBeInTheDocument();
+  });
+
+  it('dot variant stays a plain dot and ignores iconKey', () => {
+    const { container } = render(
+      <TentMarker
+        displayNumber={42}
+        color="#000"
+        ariaLabel="Stand 42"
+        variant="dot"
+        iconKey="parking"
+      />,
+    );
+    expect(container.querySelector('svg')).not.toBeInTheDocument();
+    expect(container.textContent).toBe('');
+  });
 });
