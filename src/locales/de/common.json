@@ -129,7 +129,14 @@
       "is_featured_label": "Hervorgehoben (Standard auf Startseite)",
       "save_button": "Speichern",
       "saving": "…",
-      "saved_flash": "Gespeichert."
+      "saved_flash": "Gespeichert.",
+      "export_heading": "Event exportieren",
+      "export_help": "Lade ein ZIP mit einem Ordner je Stand (Fotos in voller Auflösung + eine formatierte HTML-Seite) und einer Übersichtsseite mit Links zu allen Ständen.",
+      "export_button": "↓ Event exportieren (ZIP)",
+      "exporting": "Exportiere… {{done}}/{{total}} Fotos",
+      "export_done": "Export fertig ({{tents}} Stände, {{photos}} Fotos).",
+      "export_skipped": "{{count}} Datei(en) konnten nicht geladen werden und wurden übersprungen.",
+      "export_error": "Export fehlgeschlagen: {{message}}"
     },
     "tent": {
       "clear_coords": "Koordinaten löschen",
