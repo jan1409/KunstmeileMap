@@ -6,6 +6,14 @@
   .input {
     @apply w-full rounded bg-white/10 p-2 text-white;
   }
+
+  /* Native dropdown popups render <option>s with OS defaults (white bg). The
+     translucent bg-white/10 on the closed select doesn't carry into the open
+     list, so options were white-on-white until hovered/selected. Force a solid
+     dark, readable palette on the options themselves. */
+  .input option {
+    @apply bg-neutral-900 text-white;
+  }
 }
 
 html, body, #root {
