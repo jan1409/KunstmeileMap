@@ -5,6 +5,13 @@ const BUCKET = 'tent-photos';
 export interface PhotoUrlOptions {
   /** Target width in CSS pixels. Supabase scales the source down to this. */
   width?: number;
+  /**
+   * Target height in CSS pixels. Combined with `width` and the `contain` resize
+   * mode, the image is fit within a width×height box — i.e. setting both to the
+   * same value caps the *long edge* regardless of portrait/landscape orientation
+   * (used by the web-optimized snapshot export).
+   */
+  height?: number;
   /** JPEG quality, 1-100. Defaults to Supabase's default (~80). */
   quality?: number;
   /**
@@ -34,8 +41,14 @@ export function photoPublicUrl(
   // Build the transform object only with defined keys — passing
   // `quality: undefined` can cause Supabase to reject the transform and
   // serve a broken response.
-  const transform: { width?: number; quality?: number; resize?: 'contain' } = {};
+  const transform: {
+    width?: number;
+    height?: number;
+    quality?: number;
+    resize?: 'contain';
+  } = {};
   if (options.width != null) transform.width = options.width;
+  if (options.height != null) transform.height = options.height;
   if (options.quality != null) transform.quality = options.quality;
   const hasTransform = Object.keys(transform).length > 0;
   if (hasTransform) transform.resize = 'contain';

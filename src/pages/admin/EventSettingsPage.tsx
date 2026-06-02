@@ -8,6 +8,7 @@ import {
   downloadBlob,
   type ExportProgress,
 } from '../../lib/exportEvent';
+import { buildEventSnapshot } from '../../lib/exportSnapshot';
 
 type Status = 'draft' | 'published' | 'archived';
 
@@ -31,6 +32,11 @@ export default function EventSettingsPage() {
   const [exportDone, setExportDone] = useState<{ tents: number; photos: number; skipped: number } | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
+  const [webExporting, setWebExporting] = useState(false);
+  const [webProgress, setWebProgress] = useState<ExportProgress | null>(null);
+  const [webDone, setWebDone] = useState<{ tents: number; photos: number; skipped: number } | null>(null);
+  const [webError, setWebError] = useState<string | null>(null);
+
   async function handleExport() {
     if (!event) return;
     setExporting(true);
@@ -52,6 +58,30 @@ export default function EventSettingsPage() {
     } finally {
       setExporting(false);
       setExportProgress(null);
+    }
+  }
+
+  async function handleWebExport() {
+    if (!event) return;
+    setWebExporting(true);
+    setWebProgress({ done: 0, total: 0 });
+    setWebDone(null);
+    setWebError(null);
+    try {
+      const result = await buildEventSnapshot(event, { onProgress: setWebProgress });
+      const today = new Date();
+      const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      downloadBlob(result.blob, `kunstmeile-${event.slug}-web-${stamp}.zip`);
+      setWebDone({
+        tents: result.tentCount,
+        photos: result.photoCount,
+        skipped: result.skipped.length,
+      });
+    } catch (err) {
+      setWebError(err instanceof Error ? err.message : 'export failed');
+    } finally {
+      setWebExporting(false);
+      setWebProgress(null);
     }
   }
 
@@ -240,6 +270,46 @@ export default function EventSettingsPage() {
         {exportError && (
           <p role="alert" className="mt-2 text-xs text-red-400">
             {t('admin.event_settings.export_error', { message: exportError })}
+          </p>
+        )}
+
+        <h2 className="mt-6 text-lg font-semibold">
+          {t('admin.event_settings.export_web_heading')}
+        </h2>
+        <p className="mt-1 text-xs text-white/60">
+          {t('admin.event_settings.export_web_help')}
+        </p>
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleWebExport}
+            disabled={webExporting}
+            className="rounded bg-white/20 px-4 py-2 text-sm disabled:opacity-50"
+          >
+            {webExporting
+              ? t('admin.event_settings.exporting', {
+                  done: webProgress?.done ?? 0,
+                  total: webProgress?.total ?? 0,
+                })
+              : t('admin.event_settings.export_web_button')}
+          </button>
+          {webDone && (
+            <span className="text-xs text-green-400">
+              {t('admin.event_settings.export_web_done', {
+                tents: webDone.tents,
+                photos: webDone.photos,
+              })}
+            </span>
+          )}
+        </div>
+        {webDone && webDone.skipped > 0 && (
+          <p className="mt-2 text-xs text-amber-400">
+            {t('admin.event_settings.export_skipped', { count: webDone.skipped })}
+          </p>
+        )}
+        {webError && (
+          <p role="alert" className="mt-2 text-xs text-red-400">
+            {t('admin.event_settings.export_error', { message: webError })}
           </p>
         )}
       </section>

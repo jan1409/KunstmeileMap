@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kunstmeile – Event-Archiv</title>
+    <!--
+      The export step (src/lib/exportSnapshot.ts) replaces the token below with
+      the event's JSON. It lives in a non-executed application/json tag so HTML
+      minification leaves it untouched; main.tsx parses it on boot.
+    -->
+    <script id="km-snapshot-data" type="application/json">__KM_SNAPSHOT_DATA__</script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/snapshot/main.tsx"></script>
+  </body>
+</html>

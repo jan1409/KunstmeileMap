@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Category } from '../lib/supabase';
+import { SNAPSHOT_MODE, snapshotCategories } from '../lib/snapshot';
 
 interface UseCategoriesResult {
   categories: Category[];
@@ -9,11 +10,15 @@ interface UseCategoriesResult {
 }
 
 export function useCategories(eventId: string | undefined): UseCategoriesResult {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(() =>
+    SNAPSHOT_MODE ? snapshotCategories() : [],
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // Snapshot build seeds categories from embedded data; nothing to fetch.
+    if (SNAPSHOT_MODE) return;
     if (!eventId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronizes hook state when input becomes falsy; not derived state. Long-term: migrate to TanStack Query.
       setCategories([]);

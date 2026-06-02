@@ -64,6 +64,20 @@ describe('photoPublicUrl', () => {
     });
   });
 
+  it('passes height as a transform option with resize=contain', () => {
+    photoPublicUrl('e/t/a.jpg', { height: 1200 });
+    expect(getPublicUrlMock).toHaveBeenCalledWith('e/t/a.jpg', {
+      transform: { height: 1200, resize: 'contain' },
+    });
+  });
+
+  it('caps the long edge by passing width+height together (resize=contain)', () => {
+    photoPublicUrl('e/t/a.jpg', { width: 1600, height: 1600, quality: 72 });
+    expect(getPublicUrlMock).toHaveBeenCalledWith('e/t/a.jpg', {
+      transform: { width: 1600, height: 1600, quality: 72, resize: 'contain' },
+    });
+  });
+
   it('returns the publicUrl from the underlying call', () => {
     getPublicUrlMock.mockReturnValue({
       data: { publicUrl: 'https://cdn.example/thumb' },

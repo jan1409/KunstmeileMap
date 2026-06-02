@@ -1,16 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/supabase';
+import { SNAPSHOT_MODE } from './snapshot';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!url || !anonKey) {
+// The offline snapshot build has no backend and never touches this client (the
+// data hooks short-circuit on SNAPSHOT_MODE). Skip the env-var guard and create
+// a placeholder so importing this module doesn't throw without configured vars.
+if (!SNAPSHOT_MODE && (!url || !anonKey)) {
   throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY env vars.');
 }
 
-export const supabase = createClient<Database>(url, anonKey, {
-  auth: { persistSession: true, autoRefreshToken: true },
-});
+export const supabase = createClient<Database>(
+  url ?? 'http://snapshot.invalid',
+  anonKey ?? 'snapshot-placeholder-key',
+  {
+    auth: { persistSession: true, autoRefreshToken: true },
+  },
+);
 
 export type Tables = Database['public']['Tables'];
 export type Event = Tables['events']['Row'];

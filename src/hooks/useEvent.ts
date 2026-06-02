@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Event } from '../lib/supabase';
+import { SNAPSHOT_MODE, snapshotEvent } from '../lib/snapshot';
 
 interface UseEventResult {
   event: Event | null;
@@ -9,8 +10,12 @@ interface UseEventResult {
 }
 
 export function useEvent(slug: string | undefined): UseEventResult {
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Offline snapshot build: the bundle contains exactly one event; seed it
+  // synchronously and skip the fetch effect below (no network, never loading).
+  const [event, setEvent] = useState<Event | null>(() =>
+    SNAPSHOT_MODE ? snapshotEvent() : null,
+  );
+  const [loading, setLoading] = useState(!SNAPSHOT_MODE);
   const [error, setError] = useState<Error | null>(null);
   // Mirrors `event` in a ref so the effect can skip the loading-flash without
   // taking `event` as a dep (which would loop). Used to detect the
@@ -21,6 +26,8 @@ export function useEvent(slug: string | undefined): UseEventResult {
   eventRef.current = event;
 
   useEffect(() => {
+    // Snapshot build seeds state from the embedded event; nothing to fetch.
+    if (SNAPSHOT_MODE) return;
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset error + sync loading (bail out if cached match, otherwise show spinner) before async fetch. Long-term: TanStack Query.
     setError(null);

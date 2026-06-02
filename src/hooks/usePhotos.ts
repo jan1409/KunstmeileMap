@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { photoPublicUrl } from '../lib/photos';
+import { SNAPSHOT_MODE, snapshotPhotos } from '../lib/snapshot';
 
 /**
  * Width passed to Supabase Image Transformations for the public side panel.
@@ -28,6 +29,13 @@ export function usePhotos(
     if (!tentId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronizes hook state when input becomes falsy; not derived state. Long-term: migrate to TanStack Query.
       setPhotos([]);
+      return;
+    }
+    if (SNAPSHOT_MODE) {
+      // Offline build: one optimized file per photo serves both grid and lightbox.
+      setPhotos(
+        snapshotPhotos(tentId).map((p) => ({ thumbUrl: p.file, fullUrl: p.file })),
+      );
       return;
     }
     let cancelled = false;
