@@ -1,3 +1,5 @@
+import { markerIconByKey } from '../lib/markerIcons';
+
 interface Props {
   displayNumber: number | null;
   color: string;
@@ -8,6 +10,13 @@ interface Props {
    * Used by MapView/TentMapEditor to swap detail level on zoom.
    */
   variant?: 'dot' | 'full';
+  /**
+   * Optional special-symbol key from the marker-icon registry. When set and
+   * recognized, the full badge shows that symbol instead of the display
+   * number. Unknown keys fall back to the number. Ignored by the `'dot'`
+   * variant, which stays a plain dot (too small for a legible glyph).
+   */
+  iconKey?: string | null;
 }
 
 /**
@@ -20,6 +29,7 @@ export function TentMarker({
   color,
   ariaLabel,
   variant = 'full',
+  iconKey,
 }: Props) {
   if (variant === 'dot') {
     // 24×24 outer hit-area for touch accessibility (WCAG 2.5.5),
@@ -36,13 +46,18 @@ export function TentMarker({
       </div>
     );
   }
+  const iconEntry = markerIconByKey(iconKey);
   return (
     <div
       aria-label={ariaLabel}
       style={{ backgroundColor: color }}
       className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-zinc-900 shadow"
     >
-      {displayNumber ?? '·'}
+      {iconEntry ? (
+        <iconEntry.Icon size={16} strokeWidth={2.5} aria-hidden="true" />
+      ) : (
+        (displayNumber ?? '·')
+      )}
     </div>
   );
 }

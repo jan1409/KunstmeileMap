@@ -163,6 +163,7 @@ export function MapView({
               color={color}
               ariaLabel={t.name}
               variant={variant}
+              iconKey={t.marker_icon}
             />,
           ),
           className: '',
