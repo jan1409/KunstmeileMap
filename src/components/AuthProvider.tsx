@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { SNAPSHOT_MODE } from '../lib/snapshot';
 
 interface AuthCtx {
   session: Session | null;
@@ -14,9 +15,11 @@ const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!SNAPSHOT_MODE);
 
   useEffect(() => {
+    // Offline snapshot build has no backend: stay a signed-out, read-only visitor.
+    if (SNAPSHOT_MODE) return;
     let cancelled = false;
 
     supabase.auth.getSession().then(({ data }) => {

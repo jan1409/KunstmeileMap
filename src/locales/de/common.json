@@ -143,7 +143,11 @@
       "exporting": "Exportiere… {{done}}/{{total}} Fotos",
       "export_done": "Export fertig ({{tents}} Stände, {{photos}} Fotos).",
       "export_skipped": "{{count}} Datei(en) konnten nicht geladen werden und wurden übersprungen.",
-      "export_error": "Export fehlgeschlagen: {{message}}"
+      "export_error": "Export fehlgeschlagen: {{message}}",
+      "export_web_heading": "Web-Version exportieren (für statische Website)",
+      "export_web_help": "Lade ein ZIP mit der kompletten interaktiven Karte als statische Dateien (kleine, web-optimierte Fotos). Auf einen beliebigen statischen Webserver hochladen – ideal als Rückblick auf einen vergangenen Event. Für die Kartenkacheln ist beim Ansehen eine Internetverbindung nötig.",
+      "export_web_button": "↓ Web-Version exportieren (ZIP)",
+      "export_web_done": "Web-Export fertig ({{tents}} Stände, {{photos}} Fotos)."
     },
     "tent": {
       "clear_coords": "Koordinaten löschen",

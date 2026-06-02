@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { SNAPSHOT_MODE } from '../lib/snapshot';
 
 export interface EventPermissions {
   loading: boolean;
@@ -35,6 +36,8 @@ export function useEventPermissions(eventId: string | undefined): EventPermissio
   const [state, setState] = useState<State>(INITIAL);
 
   useEffect(() => {
+    // Offline snapshot has no caller/session: everyone is a read-only visitor.
+    if (SNAPSHOT_MODE) return;
     if (!eventId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs hook state when input becomes falsy. Long-term: migrate to TanStack Query.
       setState(INITIAL);
@@ -74,7 +77,8 @@ export function useEventPermissions(eventId: string | undefined): EventPermissio
   // avoids the classic race where a setLoading(true) inside useEffect arrives
   // *after* the first render with the new eventId, leaving consumers with a
   // stale loading=false on a render where state is actually unresolved.
-  const loading = eventId !== undefined && state.fetchedFor !== eventId;
+  const loading =
+    !SNAPSHOT_MODE && eventId !== undefined && state.fetchedFor !== eventId;
 
   return {
     loading,

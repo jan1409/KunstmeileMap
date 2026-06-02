@@ -143,7 +143,11 @@
       "exporting": "Exporting… {{done}}/{{total}} photos",
       "export_done": "Export ready ({{tents}} stands, {{photos}} photos).",
       "export_skipped": "{{count}} file(s) could not be downloaded and were skipped.",
-      "export_error": "Export failed: {{message}}"
+      "export_error": "Export failed: {{message}}",
+      "export_web_heading": "Export web version (for a static website)",
+      "export_web_help": "Download a ZIP with the full interactive map as static files (small, web-optimized photos). Upload it to any static web server — ideal as a review of a past event. Viewing the map needs an internet connection for the tiles.",
+      "export_web_button": "↓ Export web version (ZIP)",
+      "export_web_done": "Web export ready ({{tents}} stands, {{photos}} photos)."
     },
     "tent": {
       "clear_coords": "Clear coordinates",
