@@ -3,6 +3,11 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
+import {
+  buildEventZip,
+  downloadBlob,
+  type ExportProgress,
+} from '../../lib/exportEvent';
 
 type Status = 'draft' | 'published' | 'archived';
 
@@ -20,6 +25,35 @@ export default function EventSettingsPage() {
   const [busy, setBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
+  const [exportDone, setExportDone] = useState<{ tents: number; photos: number; skipped: number } | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  async function handleExport() {
+    if (!event) return;
+    setExporting(true);
+    setExportProgress({ done: 0, total: 0 });
+    setExportDone(null);
+    setExportError(null);
+    try {
+      const result = await buildEventZip(event, { onProgress: setExportProgress });
+      const today = new Date();
+      const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      downloadBlob(result.blob, `kunstmeile-${event.slug}-export-${stamp}.zip`);
+      setExportDone({
+        tents: result.tentCount,
+        photos: result.photoCount,
+        skipped: result.skipped.length,
+      });
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'export failed');
+    } finally {
+      setExporting(false);
+      setExportProgress(null);
+    }
+  }
 
   useEffect(() => {
     if (!event) return;
@@ -171,6 +205,44 @@ export default function EventSettingsPage() {
           {error}
         </p>
       )}
+
+      <section className="mt-6 border-t border-white/10 pt-4">
+        <h2 className="text-lg font-semibold">{t('admin.event_settings.export_heading')}</h2>
+        <p className="mt-1 text-xs text-white/60">{t('admin.event_settings.export_help')}</p>
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className="rounded bg-white/20 px-4 py-2 text-sm disabled:opacity-50"
+          >
+            {exporting
+              ? t('admin.event_settings.exporting', {
+                  done: exportProgress?.done ?? 0,
+                  total: exportProgress?.total ?? 0,
+                })
+              : t('admin.event_settings.export_button')}
+          </button>
+          {exportDone && (
+            <span className="text-xs text-green-400">
+              {t('admin.event_settings.export_done', {
+                tents: exportDone.tents,
+                photos: exportDone.photos,
+              })}
+            </span>
+          )}
+        </div>
+        {exportDone && exportDone.skipped > 0 && (
+          <p className="mt-2 text-xs text-amber-400">
+            {t('admin.event_settings.export_skipped', { count: exportDone.skipped })}
+          </p>
+        )}
+        {exportError && (
+          <p role="alert" className="mt-2 text-xs text-red-400">
+            {t('admin.event_settings.export_error', { message: exportError })}
+          </p>
+        )}
+      </section>
     </div>
   );
 }
