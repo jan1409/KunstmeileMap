@@ -136,7 +136,14 @@
       "is_featured_label": "Featured (homepage default)",
       "save_button": "Save",
       "saving": "…",
-      "saved_flash": "Saved."
+      "saved_flash": "Saved.",
+      "export_heading": "Export event",
+      "export_help": "Download a ZIP with one folder per stand (full-resolution photos + a formatted HTML page) and an overview page linking them all.",
+      "export_button": "↓ Export event (ZIP)",
+      "exporting": "Exporting… {{done}}/{{total}} photos",
+      "export_done": "Export ready ({{tents}} stands, {{photos}} photos).",
+      "export_skipped": "{{count}} file(s) could not be downloaded and were skipped.",
+      "export_error": "Export failed: {{message}}"
     },
     "tent": {
       "clear_coords": "Clear coordinates",
@@ -154,6 +161,8 @@
         "display_number_label": "#",
         "display_number_placeholder": "auto",
         "categories_label": "Categories",
+        "marker_icon_label": "Map symbol",
+        "marker_icon_none": "None (show number)",
         "website_label": "Website",
         "instagram_label": "Instagram",
         "facebook_label": "Facebook",

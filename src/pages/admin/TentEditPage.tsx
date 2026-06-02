@@ -88,6 +88,7 @@ export default function TentEditPage() {
       description_de: values.description_de || null,
       description_en: values.description_en || null,
       address: values.address || null,
+      marker_icon: values.marker_icon || null,
       display_number: values.display_number ?? null,
       website_url: values.website_url || null,
       instagram_url: values.instagram_url || null,

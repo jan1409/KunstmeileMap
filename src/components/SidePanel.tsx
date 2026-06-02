@@ -6,6 +6,7 @@ import type { PhotoItem } from '../hooks/usePhotos';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { AddPhotosControl } from './AddPhotosControl';
 import { PhotoLightbox } from './PhotoLightbox';
+import { markerIconByKey } from '../lib/markerIcons';
 
 interface Props {
   tent: TentWithCategories | null;
@@ -42,6 +43,7 @@ export function SidePanel({
     (lang === 'de' ? tent.description_de : tent.description_en) || tent.description_de;
   const categoryLabel = (c: Category) =>
     (lang === 'en' ? c.name_en : c.name_de) ?? c.name_de;
+  const markerIcon = markerIconByKey(tent.marker_icon);
 
   return (
     <aside
@@ -61,9 +63,16 @@ export function SidePanel({
         ✕
       </button>
 
-      <h2 className="pr-8 text-2xl font-semibold">
+      <h2 className="flex items-center gap-2 pr-8 text-2xl font-semibold">
+        {markerIcon && (
+          <markerIcon.Icon
+            size={22}
+            aria-label={lang === 'en' ? markerIcon.labelEn : markerIcon.labelDe}
+            className="shrink-0 text-white/80"
+          />
+        )}
         {tent.display_number != null && (
-          <span className="mr-2 text-white/50">#{tent.display_number}</span>
+          <span className="text-white/50">#{tent.display_number}</span>
         )}
         {tent.name}
       </h2>
