@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import type { PhotoItem } from '../hooks/usePhotos';
@@ -19,6 +20,11 @@ const SWIPE_THRESHOLD = 50;
  * backdrop with a close (✕) control, optional prev/next navigation, keyboard
  * support (Esc / ←/→) and touch swipe. Sits above the SidePanel (z-[1100]).
  * Reuses the modal idiom from CategoryImportModal: backdrop + useFocusTrap.
+ *
+ * Rendered through a portal to `document.body` so `position: fixed` resolves
+ * against the viewport. Its host (SidePanel) uses `backdrop-blur`, which makes
+ * the panel a containing block for fixed descendants — without the portal the
+ * lightbox would be clipped to the panel instead of filling the window.
  */
 export function PhotoLightbox({ photos, index, onClose, onIndexChange }: Props) {
   const { t } = useTranslation();
@@ -53,7 +59,7 @@ export function PhotoLightbox({ photos, index, onClose, onIndexChange }: Props) 
     else if (dx < 0 && hasNext) onIndexChange(index + 1);
   }
 
-  return (
+  return createPortal(
     <div
       ref={trapRef}
       role="dialog"
@@ -109,6 +115,7 @@ export function PhotoLightbox({ photos, index, onClose, onIndexChange }: Props) 
           ›
         </button>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }

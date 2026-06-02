@@ -166,8 +166,13 @@ describe('SidePanel', () => {
     await user.click(
       screen.getByRole('button', { name: /view photo|foto ansehen/i }),
     );
-    expect(screen.getByTestId('lightbox-backdrop')).toBeInTheDocument();
+    const backdrop = screen.getByTestId('lightbox-backdrop');
+    expect(backdrop).toBeInTheDocument();
     expect(screen.getByRole('img')).toHaveAttribute('src', 'https://cdn/full1.jpg');
+    // Must be portaled to <body>, NOT nested inside the side-panel <aside> —
+    // the panel's backdrop-blur would otherwise clip the fixed lightbox to it.
+    expect(backdrop.closest('aside')).toBeNull();
+    expect(backdrop.parentElement).toBe(document.body);
   });
 
   it('returns null when tent is null (regardless of canEdit)', () => {
