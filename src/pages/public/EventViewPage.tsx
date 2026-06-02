@@ -34,7 +34,7 @@ export default function EventViewPage() {
   );
 
   const [photosReloadKey, setPhotosReloadKey] = useState(0);
-  const photoUrls = usePhotos(selectedTent?.id, photosReloadKey);
+  const photos = usePhotos(selectedTent?.id, photosReloadKey);
 
   const visibleTents = useMemo(() => {
     if (selectedCategoryIds.size === 0) return tents;
@@ -113,7 +113,7 @@ export default function EventViewPage() {
         <SidePanel
           tent={selectedTent}
           categories={selectedTent.categories ?? []}
-          photoUrls={photoUrls}
+          photos={photos}
           onClose={() => selectTentBySlug(null)}
           eventId={event.id}
           eventSlug={event.slug}

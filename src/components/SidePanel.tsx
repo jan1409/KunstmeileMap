@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import type { Category, TentWithCategories } from '../lib/supabase';
+import type { PhotoItem } from '../hooks/usePhotos';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { AddPhotosControl } from './AddPhotosControl';
+import { PhotoLightbox } from './PhotoLightbox';
 
 interface Props {
   tent: TentWithCategories | null;
   categories: Category[];
-  photoUrls: string[];
+  photos: PhotoItem[];
   onClose: () => void;
   onShare?: () => void;
   /** Required when canEdit is true. */
@@ -21,7 +24,7 @@ interface Props {
 export function SidePanel({
   tent,
   categories,
-  photoUrls,
+  photos,
   onClose,
   onShare,
   eventId,
@@ -31,6 +34,7 @@ export function SidePanel({
 }: Props) {
   const { t, i18n } = useTranslation();
   const trapRef = useFocusTrap<HTMLElement>(tent !== null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   if (!tent) return null;
 
   const lang = i18n.language as 'de' | 'en';
@@ -142,16 +146,23 @@ export function SidePanel({
         </div>
       )}
 
-      {photoUrls.length > 0 && (
+      {photos.length > 0 && (
         <div className="-mx-1 mt-4 flex shrink-0 snap-x snap-mandatory gap-2 overflow-x-auto pb-2 md:mx-0 md:flex-col md:items-center md:overflow-x-visible md:snap-none">
-          {photoUrls.map((url, i) => (
-            <img
-              key={url}
-              src={url}
-              alt=""
-              loading={i === 0 ? 'eager' : 'lazy'}
-              className="h-40 snap-start rounded shadow-md md:h-48 md:w-auto"
-            />
+          {photos.map((p, i) => (
+            <button
+              key={p.thumbUrl}
+              type="button"
+              onClick={() => setLightboxIndex(i)}
+              aria-label={t('side_panel.view_photo')}
+              className="shrink-0 snap-start rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              <img
+                src={p.thumbUrl}
+                alt=""
+                loading={i === 0 ? 'eager' : 'lazy'}
+                className="h-40 cursor-pointer rounded shadow-md md:h-48 md:w-auto"
+              />
+            </button>
           ))}
         </div>
       )}
@@ -162,6 +173,15 @@ export function SidePanel({
       >
         🔗 {t('side_panel.share')}
       </button>
+
+      {lightboxIndex != null && (
+        <PhotoLightbox
+          photos={photos}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onIndexChange={setLightboxIndex}
+        />
+      )}
     </aside>
   );
 }

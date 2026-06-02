@@ -34,11 +34,17 @@ vi.mock('../../../src/lib/supabase', () => {
 describe('usePhotos', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('fetches photo URLs for a given tent id', async () => {
+  it('returns a thumb + full URL pair per photo for a given tent id', async () => {
     const { result } = renderHook(() => usePhotos('t1'));
     await waitFor(() => expect(result.current.length).toBe(2));
-    expect(result.current[0]).toBe('https://cdn.example/e1/t1/photo1.jpg');
-    expect(result.current[1]).toBe('https://cdn.example/e1/t1/photo2.jpg');
+    expect(result.current[0]).toMatchObject({
+      thumbUrl: expect.stringContaining('e1/t1/photo1.jpg'),
+      fullUrl: expect.stringContaining('e1/t1/photo1.jpg'),
+    });
+    expect(result.current[1]).toMatchObject({
+      thumbUrl: expect.stringContaining('e1/t1/photo2.jpg'),
+      fullUrl: expect.stringContaining('e1/t1/photo2.jpg'),
+    });
   });
 
   it('returns an empty array when tentId is undefined', () => {
@@ -46,21 +52,23 @@ describe('usePhotos', () => {
     expect(result.current).toEqual([]);
   });
 
-  it('requests a thumbnail-sized URL via Supabase image transformations', async () => {
+  it('requests a thumbnail-sized URL AND a full-resolution URL per photo', async () => {
     renderHook(() => usePhotos('t1'));
     await waitFor(() => expect(getPublicUrlMock).toHaveBeenCalled());
-    // Every call should pass a `transform.width` option for fast thumbnails,
-    // sized for the side panel (per-tile, not full panel width).
-    for (const call of getPublicUrlMock.mock.calls) {
-      const [, opts] = call;
-      expect(opts).toBeDefined();
-      expect(opts.transform.width).toBeTypeOf('number');
+    const calls = getPublicUrlMock.mock.calls;
+    // Thumbnails: transform.width sized for the side panel (per-tile).
+    const thumbCalls = calls.filter((c) => c[1]?.transform?.width != null);
+    expect(thumbCalls.length).toBe(2);
+    for (const [, opts] of thumbCalls) {
       expect(opts.transform.width).toBeGreaterThanOrEqual(400);
       expect(opts.transform.width).toBeLessThanOrEqual(1024);
     }
+    // Full resolution: called with no transform (original, uncompressed).
+    const fullCalls = calls.filter((c) => c[1] == null);
+    expect(fullCalls.length).toBe(2);
   });
 
-  it('honors a custom width option when provided', async () => {
+  it('honors a custom thumbnail width option when provided', async () => {
     renderHook(() => usePhotos('t1', 0, { width: 400 }));
     await waitFor(() => expect(getPublicUrlMock).toHaveBeenCalled());
     const widths = getPublicUrlMock.mock.calls.map(
