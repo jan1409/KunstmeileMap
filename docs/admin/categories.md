@@ -31,6 +31,8 @@ Die **Reihenfolge** (display_order) bestimmt, in welcher Abfolge die
 Filter-Buttons für Besucher erscheinen. Niedrige Zahlen zuerst.
 :::
 
+![Kategorie-Formular mit Farbwähler](/assets/screenshots/admin/category-color-form.png)
+
 ::: tip Markerfarben
 Die **Farbe** einer Kategorie bestimmt, in welcher Farbe die zugehörigen Stände
 als Marker auf der Karte erscheinen. So lässt sich ein gezieltes, einheitliches

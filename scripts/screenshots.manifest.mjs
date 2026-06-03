@@ -36,6 +36,7 @@ export const SCREENSHOTS = [
   { path: 'admin/tent-edit.png', viewport: 'desktop', auth: true, caption: 'Stand bearbeiten – Formular' },
   { path: 'admin/tent-map-editor.png', viewport: 'desktop', auth: true, caption: 'Standposition auf der Karte setzen' },
   { path: 'admin/category-list.png', viewport: 'desktop', auth: true, caption: 'Kategorienverwaltung' },
+  { path: 'admin/category-color-form.png', viewport: 'desktop', auth: true, caption: 'Kategorie-Formular mit Farbwähler und Farbfeldern' },
   { path: 'admin/import-wizard.png', viewport: 'desktop', auth: true, caption: 'Import-Assistent (CSV/Excel) mit Vorschau' },
   { path: 'admin/export-buttons.png', viewport: 'desktop', auth: true, caption: 'Export-Funktionen' },
   { path: 'admin/photos-grid.png', viewport: 'desktop', auth: true, caption: 'Foto-Verwaltung (Raster)' },

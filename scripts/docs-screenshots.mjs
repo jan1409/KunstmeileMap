@@ -267,6 +267,15 @@ async function newContext(viewport, { auth = false } = {}) {
       })
     }
 
+    // category edit form — shows the color picker + preset swatches
+    await step('admin/category-color-form.png', async () => {
+      await page.goto(`${BASE_URL}/admin/events/${SLUG}/categories`)
+      await settle(page)
+      await page.getByRole('button', { name: /bearbeiten|edit/i }).first().click({ timeout: 5000 })
+      await settle(page, 400)
+      await save(page, 'admin/category-color-form.png')
+    })
+
     // tent edit form (first tent) + embedded map editor
     await step('admin/tent-edit.png', async () => {
       await page.goto(`${BASE_URL}/admin/events/${SLUG}/tents`)

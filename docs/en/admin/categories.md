@@ -31,6 +31,8 @@ Via the inline form:
 appear for visitors. Lower numbers first.
 :::
 
+![Category form with color picker](/assets/screenshots/admin/category-color-form.png)
+
 ::: tip Marker colors
 A category's **color** sets the color its tents appear in as markers on the map,
 so you can establish a deliberate, consistent color scheme. When no color is
