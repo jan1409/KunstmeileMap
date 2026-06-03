@@ -53,6 +53,17 @@ coordinates, categories). Ideal for backups, further editing and re-import.
 Likewise on the [Categories page](/en/admin/categories): export as Excel; import
 via CSV/Excel to create or update categories.
 
+### Columns
+
+| Column | Required | Note |
+|---|---|---|
+| `slug` | yes | Unique lowercase identifier |
+| `name_de` | yes | Name in German |
+| `name_en` | no | Name in English |
+| `icon` | no | Emoji icon |
+| `color` | no | Hex color (`#RRGGBB`), e.g. `#e57373`; empty = automatic color |
+| `display_order` | no | Number for sort order |
+
 ## Export an entire event
 
 In the event's [settings](/en/admin/events#settings) (**Owner**) two full

@@ -9,7 +9,7 @@ Categories belong to a single event.
 ## Category overview
 
 Under **Categories** (`/admin/events/:slug/categories`) all categories appear
-with slug, names (DE/EN), icon and order.
+with slug, names (DE/EN), icon, color and order.
 
 ![Category management](/assets/screenshots/admin/category-list.png)
 
@@ -23,6 +23,7 @@ Via the inline form:
 | **Name (DE)** *(required)* | German display name |
 | **Name (EN)** | English display name |
 | **Icon** | Emoji icon for the filter button (e.g. `🍕`, `🍺`, `🅿️`) |
+| **Color** | Marker color on the map. Pick any color with the color picker, or click one of the preset swatches. Leave it empty (the **Auto** button) to derive the color automatically from the slug |
 | **Order** | Number – controls the sort order of the filter buttons |
 
 ::: tip
@@ -30,12 +31,19 @@ Via the inline form:
 appear for visitors. Lower numbers first.
 :::
 
+::: tip Marker colors
+A category's **color** sets the color its tents appear in as markers on the map,
+so you can establish a deliberate, consistent color scheme. When no color is
+set, a color is derived automatically from the slug (the previous behavior). If a
+tent has several categories, the first one wins.
+:::
+
 ## Bulk import / export
 
 Categories can also be maintained via file:
 
 - **Export:** downloads all categories as an Excel file (slug, names, icon,
-  order).
+  color, order).
 - **Import:** via the import dialog, upload a CSV/Excel file to create or update
   categories.
 

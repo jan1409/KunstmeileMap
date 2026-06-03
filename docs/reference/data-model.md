@@ -18,7 +18,8 @@ Slug (eindeutig), `title_de`/`title_en`, `year`, `status`
 Audit-Felder (`created_by`, `updated_by`, Zeitstempel).
 
 ### `categories` – Kategorien
-`event_id`, Slug, `name_de`/`name_en`, `icon` (Emoji), `display_order`.
+`event_id`, Slug, `name_de`/`name_en`, `icon` (Emoji), `color` (Hex-Markerfarbe
+oder `null` für automatische Farbe), `display_order`.
 
 ### `tent_categories` – Zuordnung
 Verknüpfungstabelle Stand ↔ Kategorie (n:m).

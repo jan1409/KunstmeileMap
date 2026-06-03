@@ -18,7 +18,8 @@ Slug (unique), `title_de`/`title_en`, `year`, `status`
 audit fields (`created_by`, `updated_by`, timestamps).
 
 ### `categories`
-`event_id`, slug, `name_de`/`name_en`, `icon` (emoji), `display_order`.
+`event_id`, slug, `name_de`/`name_en`, `icon` (emoji), `color` (hex marker color
+or `null` for automatic color), `display_order`.
 
 ### `tent_categories`
 Junction table tent ↔ category (n:m).
