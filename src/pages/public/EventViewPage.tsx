@@ -34,7 +34,9 @@ export default function EventViewPage() {
   );
 
   const [photosReloadKey, setPhotosReloadKey] = useState(0);
-  const photos = usePhotos(selectedTent?.id, photosReloadKey);
+  const photos = usePhotos(selectedTent?.id, photosReloadKey, {
+    lightboxFullSize: event?.lightbox_full_size ?? false,
+  });
 
   const visibleTents = useMemo(() => {
     if (selectedCategoryIds.size === 0) return tents;

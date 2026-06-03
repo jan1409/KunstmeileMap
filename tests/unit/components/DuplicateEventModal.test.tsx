@@ -26,6 +26,7 @@ const sourceEvent = {
   default_zoom: 17,
   status: 'published' as const,
   is_featured: true,
+  lightbox_full_size: false,
   created_at: '2026-04-01T00:00:00Z',
   updated_at: '2026-04-01T00:00:00Z',
 };

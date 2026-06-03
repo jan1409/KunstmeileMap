@@ -11,17 +11,30 @@ import { SNAPSHOT_MODE, snapshotPhotos } from '../lib/snapshot';
  */
 const SIDE_PANEL_THUMB_WIDTH = 640;
 
+/**
+ * Target for the compressed lightbox preview when the event's
+ * `lightbox_full_size` setting is off. Long edge in CSS px + JPEG quality —
+ * matches the web-export snapshot, so multi-MB originals load as a few hundred
+ * KB. The full original is never altered; this only changes the requested URL.
+ */
+const LIGHTBOX_PREVIEW_LONG_EDGE = 1600;
+const LIGHTBOX_PREVIEW_QUALITY = 72;
+
 export interface PhotoItem {
   /** Resized/recompressed variant for fast grid display. */
   thumbUrl: string;
-  /** Original, uncompressed file — used by the full-screen lightbox. */
+  /**
+   * URL shown by the full-screen lightbox. The original full-size file when the
+   * event's `lightbox_full_size` is on; otherwise a compressed preview
+   * (`LIGHTBOX_PREVIEW_*`). Controlled by the `lightboxFullSize` option.
+   */
   fullUrl: string;
 }
 
 export function usePhotos(
   tentId: string | undefined,
   reloadKey: number = 0,
-  options: { width?: number } = {},
+  options: { width?: number; lightboxFullSize?: boolean } = {},
 ): PhotoItem[] {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
 
@@ -40,6 +53,7 @@ export function usePhotos(
     }
     let cancelled = false;
     const width = options.width ?? SIDE_PANEL_THUMB_WIDTH;
+    const fullSize = options.lightboxFullSize ?? true;
     supabase
       .from('tent_photos')
       .select('storage_path,display_order')
@@ -49,14 +63,20 @@ export function usePhotos(
         if (cancelled || !data) return;
         const result: PhotoItem[] = data.map((p) => ({
           thumbUrl: photoPublicUrl(p.storage_path, { width }),
-          fullUrl: photoPublicUrl(p.storage_path),
+          fullUrl: fullSize
+            ? photoPublicUrl(p.storage_path)
+            : photoPublicUrl(p.storage_path, {
+                width: LIGHTBOX_PREVIEW_LONG_EDGE,
+                height: LIGHTBOX_PREVIEW_LONG_EDGE,
+                quality: LIGHTBOX_PREVIEW_QUALITY,
+              }),
         }));
         setPhotos(result);
       });
     return () => {
       cancelled = true;
     };
-  }, [tentId, reloadKey, options.width]);
+  }, [tentId, reloadKey, options.width, options.lightboxFullSize]);
 
   return photos;
 }

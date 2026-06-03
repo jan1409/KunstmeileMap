@@ -23,6 +23,7 @@ export default function EventSettingsPage() {
   const [defaultLat, setDefaultLat] = useState<number>(49.0);
   const [defaultLng, setDefaultLng] = useState<number>(8.4);
   const [defaultZoom, setDefaultZoom] = useState<number>(17);
+  const [lightboxFullSize, setLightboxFullSize] = useState(false);
   const [busy, setBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +96,7 @@ export default function EventSettingsPage() {
     setDefaultLat(event.default_lat);
     setDefaultLng(event.default_lng);
     setDefaultZoom(event.default_zoom);
+    setLightboxFullSize(event.lightbox_full_size);
   }, [event]);
 
   async function save() {
@@ -112,6 +114,7 @@ export default function EventSettingsPage() {
         default_lat: defaultLat,
         default_lng: defaultLng,
         default_zoom: defaultZoom,
+        lightbox_full_size: lightboxFullSize,
       })
       .eq('id', event.id);
     setBusy(false);
@@ -214,6 +217,27 @@ export default function EventSettingsPage() {
           }}
           className="input mt-1"
         />
+      </label>
+
+      <label className="block text-xs">
+        <span className="block text-white/60">
+          {t('admin.event_settings.image_quality_label')}
+        </span>
+        <select
+          value={lightboxFullSize ? 'full' : 'preview'}
+          onChange={(e) => setLightboxFullSize(e.target.value === 'full')}
+          className="input mt-1"
+        >
+          <option value="preview">
+            {t('admin.event_settings.image_quality_preview')}
+          </option>
+          <option value="full">
+            {t('admin.event_settings.image_quality_full')}
+          </option>
+        </select>
+        <span className="mt-1 block text-white/40">
+          {t('admin.event_settings.image_quality_hint')}
+        </span>
       </label>
 
       <div className="flex items-center gap-3">
