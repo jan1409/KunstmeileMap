@@ -262,7 +262,9 @@
       "remove": "Foto entfernen",
       "rotate": "Um 90° drehen",
       "rotate_error": "Drehung fehlgeschlagen: {{message}}",
-      "alt": "Stand-Foto"
+      "alt": "Stand-Foto",
+      "drop_hint": "Bilder hierher ziehen zum Hochladen",
+      "drop_active": "Zum Hochladen loslassen"
     },
     "event": {
       "default_lat_label": "Standard-Lat",

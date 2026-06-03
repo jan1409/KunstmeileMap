@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase, type TentPhoto } from '../lib/supabase';
-import { photoPublicUrl } from '../lib/photos';
+import { photoPublicUrl, uploadTentPhotos } from '../lib/photos';
 import { rotateImageBlob90CW } from '../lib/imageRotate';
+import { useIsMobile } from '../hooks/useIsMobile';
+
+const isImageFile = (f: File) => f.type.startsWith('image/');
 
 /**
  * Width for the 3-column admin photo grid. Each cell renders at ~218px wide
@@ -17,11 +20,13 @@ interface Props {
 
 export function PhotoUploadZone({ eventId, tentId }: Props) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [photos, setPhotos] = useState<TentPhoto[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
   const [rotatingId, setRotatingId] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,33 +44,46 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
     };
   }, [tentId, reloadTick]);
 
-  async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+  async function runUpload(files: File[]) {
     if (files.length === 0) return;
     setBusy(true);
     setError(null);
-    let nextOrder = photos.length;
-    for (const f of files) {
-      const ext = f.name.split('.').pop() ?? 'jpg';
-      const path = `${eventId}/${tentId}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from('tent-photos')
-        .upload(path, f);
-      if (upErr) {
-        setError(upErr.message);
-        continue;
-      }
-      await supabase.from('tent_photos').insert({
-        tent_id: tentId,
-        storage_path: path,
-        display_order: nextOrder,
-      });
-      nextOrder += 1;
-    }
+    const { error: err } = await uploadTentPhotos(
+      files,
+      eventId,
+      tentId,
+      photos.length,
+    );
+    if (err) setError(err);
     setBusy(false);
-    e.target.value = '';
     setReloadTick((n) => n + 1);
   }
+
+  async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
+    await runUpload(Array.from(e.target.files ?? []).filter(isImageFile));
+    e.target.value = '';
+  }
+
+  // Desktop-only drag-and-drop. On mobile/touch (md breakpoint) no handlers are
+  // attached, so the area behaves exactly as before. onDragOver must
+  // preventDefault for the browser to allow the drop.
+  const dropProps = isMobile
+    ? {}
+    : {
+        onDragOver: (e: React.DragEvent) => {
+          e.preventDefault();
+          setDragActive(true);
+        },
+        onDragLeave: (e: React.DragEvent) => {
+          e.preventDefault();
+          setDragActive(false);
+        },
+        onDrop: (e: React.DragEvent) => {
+          e.preventDefault();
+          setDragActive(false);
+          void runUpload(Array.from(e.dataTransfer.files).filter(isImageFile));
+        },
+      };
 
   async function remove(p: TentPhoto) {
     await supabase.storage.from('tent-photos').remove([p.storage_path]);
@@ -129,6 +147,14 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
   return (
     <div>
       <h3 className="mb-2 text-sm font-semibold">{t('admin.photo_upload.heading')}</h3>
+      <div
+        {...dropProps}
+        className={`rounded ${
+          !isMobile && dragActive
+            ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-neutral-900'
+            : ''
+        }`}
+      >
       <div className="grid grid-cols-3 gap-2">
         {photos.map((p) => {
           const url = photoPublicUrl(p.storage_path, {
@@ -177,6 +203,14 @@ export function PhotoUploadZone({ eventId, tentId }: Props) {
           className="mt-1"
         />
       </label>
+      {!isMobile && (
+        <p className="mt-2 text-xs text-white/40">
+          {dragActive
+            ? t('admin.photo_upload.drop_active')
+            : t('admin.photo_upload.drop_hint')}
+        </p>
+      )}
+      </div>
       {error && (
         <p role="alert" className="mt-2 text-xs text-red-400">
           {error}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tent } from '../lib/supabase';
+import { filterTents } from '../lib/tentSearch';
 
 interface Props {
   tents: Tent[];
@@ -17,12 +18,7 @@ export function SearchBar({ tents, onSelect }: Props) {
     return () => clearTimeout(id);
   }, [q]);
 
-  const matches =
-    debounced.length === 0
-      ? []
-      : tents
-          .filter((tnt) => tnt.name.toLowerCase().includes(debounced.toLowerCase()))
-          .slice(0, 8);
+  const matches = filterTents(tents, debounced);
 
   return (
     <div className="relative">
@@ -44,7 +40,12 @@ export function SearchBar({ tents, onSelect }: Props) {
                 }}
                 className="block w-full px-3 py-2 text-left text-sm hover:bg-white/10"
               >
-                {m.name}
+                <span className="block">{m.name}</span>
+                {m.contact_person && (
+                  <span className="block text-xs text-white/50">
+                    {m.contact_person}
+                  </span>
+                )}
               </button>
             </li>
           ))}
