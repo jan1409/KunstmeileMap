@@ -108,4 +108,42 @@ describe('TentMarker', () => {
     expect(container.querySelector('svg')).not.toBeInTheDocument();
     expect(container.textContent).toBe('');
   });
+
+  it('selected full badge renders a pulsing ring and a larger badge', () => {
+    const { container, getByText } = render(
+      <TentMarker
+        displayNumber={42}
+        color="#ef4444"
+        ariaLabel="Stand 42"
+        selected
+      />,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).toMatch(/\bh-9\b/);
+    expect(container.querySelector('[class*="animate-ping"]')).toBeTruthy();
+    expect(getByText('42')).toBeInTheDocument();
+  });
+
+  it('selected dot renders a pulsing ring without a number', () => {
+    const { container } = render(
+      <TentMarker
+        displayNumber={42}
+        color="#ef4444"
+        ariaLabel="Stand 42"
+        variant="dot"
+        selected
+      />,
+    );
+    expect(container.querySelector('[class*="animate-ping"]')).toBeTruthy();
+    expect(container.textContent).toBe('');
+  });
+
+  it('unselected full badge has no pulsing ring (regression-safe default)', () => {
+    const { container } = render(
+      <TentMarker displayNumber={42} color="#ef4444" ariaLabel="Stand 42" />,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).toMatch(/\bh-7\b/);
+    expect(container.querySelector('[class*="animate-ping"]')).toBeNull();
+  });
 });

@@ -156,6 +156,17 @@ export function MapView({
       />
       {placed.map((t) => {
         const color = markerColorForCategories(t.categories ?? []);
+        const selected = t.id === focusTent?.id;
+        // Selected markers render larger (TentMarker) so the divIcon box and
+        // anchor grow to match, keeping the badge + pulse ring centered on the
+        // coordinate and unclipped.
+        const size: [number, number] = selected
+          ? variant === 'dot'
+            ? [32, 32]
+            : [40, 40]
+          : variant === 'dot'
+            ? [24, 24]
+            : [28, 28];
         const icon = L.divIcon({
           html: renderToString(
             <TentMarker
@@ -164,11 +175,12 @@ export function MapView({
               ariaLabel={t.name}
               variant={variant}
               iconKey={t.marker_icon}
+              selected={selected}
             />,
           ),
           className: '',
-          iconSize: variant === 'dot' ? [24, 24] : [28, 28],
-          iconAnchor: variant === 'dot' ? [12, 12] : [14, 14],
+          iconSize: size,
+          iconAnchor: [size[0] / 2, size[1] / 2],
         });
         return (
           <Marker
@@ -176,6 +188,7 @@ export function MapView({
             position={[t.lat, t.lng]}
             icon={icon}
             title={t.name}
+            zIndexOffset={selected ? 1000 : 0}
             eventHandlers={{ click: () => onMarkerClick(t) }}
           />
         );
