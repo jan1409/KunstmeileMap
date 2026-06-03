@@ -16,11 +16,9 @@ vi.mock('../../../src/lib/supabase', () => {
   });
   const eq = vi.fn().mockReturnValue({ order });
   const select = vi.fn().mockReturnValue({ eq });
-  getPublicUrlMock.mockImplementation(
-    (p: string, _opts?: { transform?: { width?: number } }) => ({
-      data: { publicUrl: `https://cdn.example/${p}` },
-    }),
-  );
+  getPublicUrlMock.mockImplementation((p: string) => ({
+    data: { publicUrl: `https://cdn.example/${p}` },
+  }));
   return {
     supabase: {
       from: vi.fn().mockReturnValue({ select }),
@@ -66,6 +64,35 @@ describe('usePhotos', () => {
     // Full resolution: called with no transform (original, uncompressed).
     const fullCalls = calls.filter((c) => c[1] == null);
     expect(fullCalls.length).toBe(2);
+  });
+
+  it('builds full-resolution fullUrls by default (no lightbox transform)', async () => {
+    renderHook(() => usePhotos('t1'));
+    await waitFor(() => expect(getPublicUrlMock).toHaveBeenCalled());
+    const calls = getPublicUrlMock.mock.calls;
+    // No call carries a quality transform: fullUrl is the untouched original.
+    const qualityCalls = calls.filter((c) => c[1]?.transform?.quality != null);
+    expect(qualityCalls.length).toBe(0);
+    // The two fullUrl calls pass no transform at all.
+    expect(calls.filter((c) => c[1] == null).length).toBe(2);
+  });
+
+  it('requests a compressed 1600/q72 preview when lightboxFullSize is false', async () => {
+    renderHook(() => usePhotos('t1', 0, { lightboxFullSize: false }));
+    await waitFor(() => expect(getPublicUrlMock).toHaveBeenCalled());
+    const calls = getPublicUrlMock.mock.calls;
+    // One preview transform per photo, capping the long edge at 1600 / q72.
+    const previewCalls = calls.filter((c) => c[1]?.transform?.quality === 72);
+    expect(previewCalls.length).toBe(2);
+    for (const [, opts] of previewCalls) {
+      expect(opts.transform.width).toBe(1600);
+      expect(opts.transform.height).toBe(1600);
+    }
+    // Thumbnails still use the 640 side-panel width, unaffected by the setting.
+    const thumbCalls = calls.filter((c) => c[1]?.transform?.width === 640);
+    expect(thumbCalls.length).toBe(2);
+    // No untransformed original is requested in compressed mode.
+    expect(calls.filter((c) => c[1] == null).length).toBe(0);
   });
 
   it('honors a custom thumbnail width option when provided', async () => {
