@@ -308,7 +308,7 @@ describe('validateRow with contact_person', () => {
 });
 
 describe('exportCategoriesToBlob', () => {
-  const cat = (overrides: Partial<{ id: string; slug: string; name_de: string; name_en: string | null; icon: string | null; display_order: number }> = {}) => ({
+  const cat = (overrides: Partial<{ id: string; slug: string; name_de: string; name_en: string | null; icon: string | null; color: string | null; display_order: number }> = {}) => ({
     id: overrides.id ?? 'c-id',
     event_id: 'e1',
     slug: overrides.slug ?? 'painting',
@@ -317,6 +317,7 @@ describe('exportCategoriesToBlob', () => {
     // would fall through to the default for null).
     name_en: 'name_en' in overrides ? overrides.name_en : 'Painting',
     icon: 'icon' in overrides ? overrides.icon : '🎨',
+    color: 'color' in overrides ? overrides.color : null,
     display_order: overrides.display_order ?? 0,
     created_at: '2026-01-01T00:00:00Z',
   });
@@ -328,10 +329,28 @@ describe('exportCategoriesToBlob', () => {
     return XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
   }
 
-  it('produces the 5-column header row', async () => {
+  it('produces the 6-column header row', async () => {
     const blob = exportCategoriesToBlob([cat()] as never);
     const aoa = await readBlobAsAoa(blob);
-    expect(aoa[0]).toEqual(['slug', 'name_de', 'name_en', 'icon', 'display_order']);
+    expect(aoa[0]).toEqual([
+      'slug',
+      'name_de',
+      'name_en',
+      'icon',
+      'color',
+      'display_order',
+    ]);
+  });
+
+  it('emits the chosen color and an empty cell when color is null', async () => {
+    const blob = exportCategoriesToBlob([
+      cat({ slug: 'a', color: '#e57373' }),
+      cat({ slug: 'b', color: null }),
+    ] as never);
+    const aoa = await readBlobAsAoa(blob);
+    // color is column index 4
+    expect(aoa[1]![4]).toBe('#e57373');
+    expect(aoa[2]![4] === '' || aoa[2]![4] === undefined).toBe(true);
   });
 
   it('sorts rows by display_order ascending', async () => {
@@ -407,6 +426,29 @@ describe('parseCategoriesFromBlob', () => {
       display_order: 5,
       errors: [],
     });
+  });
+
+  it('parses a valid hex color and leaves a blank color as null', async () => {
+    const file = makeXlsx([
+      ['slug', 'name_de', 'name_en', 'icon', 'color', 'display_order'],
+      ['galerie', 'Galerie', '', '', '#e57373', 0],
+      ['atelier', 'Atelier', '', '', '', 1],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.rows[0]).toMatchObject({ color: '#e57373', errors: [] });
+    expect(result.rows[1]).toMatchObject({ color: null, errors: [] });
+  });
+
+  it('flags rows with a malformed color', async () => {
+    const file = makeXlsx([
+      ['slug', 'name_de', 'name_en', 'icon', 'color', 'display_order'],
+      ['galerie', 'Galerie', '', '', 'reddish', 0],
+    ]);
+    const result = await parseCategoriesFromBlob(file);
+    expect(result.rows[0]!.color).toBeNull();
+    expect(result.rows[0]!.errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(/color/i)]),
+    );
   });
 
   it('flags rows with an invalid slug', async () => {

@@ -233,6 +233,7 @@ const CATEGORY_EXPORT_COLUMNS = [
   'name_de',
   'name_en',
   'icon',
+  'color',
   'display_order',
 ] as const;
 
@@ -289,6 +290,7 @@ export const CATEGORY_HEADER_ALIASES: Record<string, readonly string[]> = {
   name_de: ['name_de', 'name de', 'name (de)'],
   name_en: ['name_en', 'name en', 'name (en)'],
   icon: ['icon'],
+  color: ['color', 'farbe'],
   display_order: ['display_order', 'reihenfolge', 'order'],
 };
 
@@ -298,9 +300,13 @@ export interface ParsedCategoryRow {
   name_de: string;
   name_en: string | null;
   icon: string;
+  color: string | null;
   display_order: number;
   errors: string[];
 }
+
+/** Canonical 6-digit `#rrggbb` hex check for imported color cells. */
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 export interface CategoryParseResult {
   rows: ParsedCategoryRow[];
@@ -413,6 +419,7 @@ export async function parseCategoriesFromBlob(
     const name_de = read(raw, 'name_de');
     const name_en_raw = read(raw, 'name_en');
     const icon = read(raw, 'icon');
+    const colorRaw = read(raw, 'color');
     const orderRaw = read(raw, 'display_order');
 
     if (!slug) {
@@ -421,6 +428,15 @@ export async function parseCategoriesFromBlob(
       errors.push('slug must match [a-z0-9-]+');
     }
     if (!name_de) errors.push('name_de is required');
+
+    let color: string | null = null;
+    if (colorRaw !== '') {
+      if (HEX_COLOR_RE.test(colorRaw)) {
+        color = colorRaw;
+      } else {
+        errors.push('color must be a hex value like #e57373');
+      }
+    }
 
     let display_order = 0;
     if (orderRaw === '') {
@@ -441,6 +457,7 @@ export async function parseCategoriesFromBlob(
       name_de,
       name_en: name_en_raw === '' ? null : name_en_raw,
       icon: icon || '✨',
+      color,
       display_order,
       errors,
     });
@@ -466,6 +483,7 @@ export function exportCategoriesToBlob(categories: Category[]): Blob {
     c.name_de,
     cellValue(c.name_en),
     cellValue(c.icon),
+    cellValue(c.color),
     c.display_order,
   ]);
   const aoa: (string | number | '')[][] = [

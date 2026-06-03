@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase, type Category } from '../../lib/supabase';
 import { useEvent } from '../../hooks/useEvent';
+import { CATEGORY_PALETTE, colorForSlug } from '../../lib/map';
 import { exportCategoriesToBlob } from '../../lib/excel';
 import { useToast } from '../../components/ToastProvider';
 import { CategoryImportModal } from '../../components/CategoryImportModal';
@@ -24,6 +25,7 @@ export default function CategoryListPage() {
     name_de: '',
     name_en: '',
     icon: '',
+    color: '',
     display_order: 0,
   });
 
@@ -45,7 +47,14 @@ export default function CategoryListPage() {
   }, [event, reloadTick]);
 
   function resetDraft() {
-    setDraft({ slug: '', name_de: '', name_en: '', icon: '', display_order: 0 });
+    setDraft({
+      slug: '',
+      name_de: '',
+      name_en: '',
+      icon: '',
+      color: '',
+      display_order: 0,
+    });
   }
 
   function openCreate() {
@@ -56,6 +65,7 @@ export default function CategoryListPage() {
       name_de: '',
       name_en: '',
       icon: '',
+      color: '',
       display_order: categories.length,
     });
     setShowForm(true);
@@ -69,6 +79,7 @@ export default function CategoryListPage() {
       name_de: c.name_de,
       name_en: c.name_en ?? '',
       icon: c.icon ?? '',
+      color: c.color ?? '',
       display_order: c.display_order,
     });
     setShowForm(true);
@@ -82,6 +93,7 @@ export default function CategoryListPage() {
       name_de: draft.name_de,
       name_en: draft.name_en,
       icon: draft.icon || '✨',
+      color: draft.color || null,
       display_order: draft.display_order,
     };
     if (editingId === null) {
@@ -183,7 +195,7 @@ export default function CategoryListPage() {
       {showForm && (
         <form
           onSubmit={onSubmit}
-          className="mb-4 grid grid-cols-1 gap-3 rounded border border-white/10 p-3 sm:grid-cols-5"
+          className="mb-4 grid grid-cols-1 gap-3 rounded border border-white/10 p-3 sm:grid-cols-6"
         >
           <label className="block text-xs">
             <span className="block text-white/60">{t('admin.category.slug_label')}</span>
@@ -236,7 +248,46 @@ export default function CategoryListPage() {
               className="input mt-1"
             />
           </label>
-          <div className="flex gap-2 sm:col-span-5">
+          <div className="block text-xs">
+            <span className="block text-white/60">
+              {t('admin.category.color_label')}
+            </span>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="color"
+                aria-label={t('admin.category.color_label')}
+                value={draft.color || colorForSlug(draft.slug || 'x')}
+                onChange={(e) => setDraft({ ...draft, color: e.target.value })}
+                className="h-8 w-10 cursor-pointer rounded border border-white/10 bg-transparent p-0"
+              />
+              <button
+                type="button"
+                onClick={() => setDraft({ ...draft, color: '' })}
+                disabled={draft.color === ''}
+                className="rounded bg-white/10 px-2 py-1 text-xs disabled:opacity-40"
+              >
+                {t('admin.category.color_auto')}
+              </button>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {CATEGORY_PALETTE.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  aria-label={hex}
+                  title={hex}
+                  onClick={() => setDraft({ ...draft, color: hex })}
+                  style={{ backgroundColor: hex }}
+                  className={`h-5 w-5 rounded border ${
+                    draft.color.toLowerCase() === hex.toLowerCase()
+                      ? 'border-white'
+                      : 'border-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 sm:col-span-6">
             <button
               type="submit"
               className="rounded bg-white/20 px-3 py-1 text-sm"
@@ -263,6 +314,7 @@ export default function CategoryListPage() {
           <tr>
             <th className="py-2">{t('admin.category.col_order')}</th>
             <th>{t('admin.category.col_icon')}</th>
+            <th>{t('admin.category.col_color')}</th>
             <th>{t('admin.category.col_slug')}</th>
             <th>{t('admin.category.col_de')}</th>
             <th>{t('admin.category.col_en')}</th>
@@ -274,6 +326,20 @@ export default function CategoryListPage() {
             <tr key={c.id} className="border-b border-white/5">
               <td className="py-2">{c.display_order}</td>
               <td>{c.icon}</td>
+              <td>
+                <span className="inline-flex items-center gap-1">
+                  <span
+                    aria-hidden="true"
+                    style={{ backgroundColor: c.color ?? colorForSlug(c.slug) }}
+                    className="inline-block h-4 w-4 rounded border border-white/20"
+                  />
+                  {!c.color && (
+                    <span className="text-xs text-white/40">
+                      {t('admin.category.color_auto')}
+                    </span>
+                  )}
+                </span>
+              </td>
               <td className="font-mono text-xs">{c.slug}</td>
               <td>{c.name_de}</td>
               <td>{c.name_en}</td>
@@ -322,7 +388,7 @@ export default function CategoryListPage() {
           ))}
           {categories.length === 0 && (
             <tr>
-              <td colSpan={6} className="py-4 text-center text-white/50">
+              <td colSpan={7} className="py-4 text-center text-white/50">
                 {t('admin.category.empty')}
               </td>
             </tr>

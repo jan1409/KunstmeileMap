@@ -43,7 +43,11 @@ export function computeBounds(
   return { south, west, north, east };
 }
 
-const CATEGORY_PALETTE = [
+/**
+ * Curated fallback palette. Also reused as the admin's quick-pick swatches in
+ * the category settings (single source of truth) — keep it exported.
+ */
+export const CATEGORY_PALETTE = [
   '#e57373',
   '#64b5f6',
   '#81c784',
@@ -62,11 +66,23 @@ export function colorForSlug(slug: string): string {
   return CATEGORY_PALETTE[h % CATEGORY_PALETTE.length]!;
 }
 
+/** True for a canonical 6-digit `#rrggbb` hex string. */
+export function isHexColor(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+/**
+ * Resolve a tent's marker color from its categories. Prefers the first
+ * category's admin-chosen `color` when it's a valid hex; otherwise falls back
+ * to the deterministic slug-hash color (and `#888` when uncategorised).
+ */
 export function markerColorForCategories(
-  cats: Array<{ slug: string }>,
+  cats: Array<{ slug: string; color?: string | null }>,
 ): string {
   if (cats.length === 0) return '#888';
-  return colorForSlug(cats[0]!.slug);
+  const first = cats[0]!;
+  if (first.color && isHexColor(first.color)) return first.color;
+  return colorForSlug(first.slug);
 }
 
 /**

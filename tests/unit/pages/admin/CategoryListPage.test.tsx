@@ -160,6 +160,7 @@ describe('CategoryListPage', () => {
       name_de: 'Essen',
       name_en: 'Food',
       icon: '🍞',
+      color: null,
       display_order: 2,
     });
     await waitFor(() => expect(listOrder).toHaveBeenCalledTimes(2));
