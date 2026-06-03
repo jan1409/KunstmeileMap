@@ -14,6 +14,7 @@ describe('markerIcons registry', () => {
       'ice-cream',
       'fish',
       'drink',
+      'food-drink',
       'beer',
       'dessert',
       'coffee',
@@ -34,6 +35,12 @@ describe('markerIcons registry', () => {
   it('markerIconByKey returns the matching entry', () => {
     const entry = markerIconByKey('parking');
     expect(entry?.key).toBe('parking');
+  });
+
+  it('resolves the combined food-drink entry to a defined icon', () => {
+    const entry = markerIconByKey('food-drink');
+    expect(entry?.labelDe).toBe('Essen & Getränke');
+    expect(['object', 'function']).toContain(typeof entry?.Icon);
   });
 
   it('markerIconByKey returns undefined for an unknown or null key', () => {
