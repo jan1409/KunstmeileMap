@@ -24,7 +24,7 @@ export default defineConfig({
   themeConfig: {
     search: { provider: 'local' },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/jpoepke/KunstmeileMap' },
+      { icon: 'github', link: 'https://github.com/jan1409/KunstmeileMap' },
     ],
   },
 

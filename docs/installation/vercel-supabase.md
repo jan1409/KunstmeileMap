@@ -18,7 +18,7 @@ Backend läuft serverlos über Supabase – es wird **kein eigener Server** ben�
 - Das Repository lokal geklont:
 
 ```bash
-git clone https://github.com/jpoepke/KunstmeileMap.git
+git clone https://github.com/jan1409/KunstmeileMap.git
 cd KunstmeileMap
 pnpm install
 ```

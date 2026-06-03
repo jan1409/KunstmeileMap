@@ -53,4 +53,4 @@ Diese Dokumentation ist in drei Bereiche gegliedert:
 
 Die Dokumentation ist zweisprachig (Deutsch / English – Umschalter oben rechts)
 und liegt sowohl als HTML-Website als auch als Markdown direkt im
-[GitHub-Repository](https://github.com/jpoepke/KunstmeileMap/tree/main/docs) vor.
+[GitHub-Repository](https://github.com/jan1409/KunstmeileMap/tree/main/docs) vor.

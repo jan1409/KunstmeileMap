@@ -21,7 +21,7 @@ viele Stände auf einmal:
 
 ::: tip Vorlage nutzen
 Eine vorbereitete Excel-Vorlage liegt im Repository unter
-[`public/import-template.xlsx`](https://github.com/jpoepke/KunstmeileMap/blob/main/public/import-template.xlsx)
+[`public/import-template.xlsx`](https://github.com/jan1409/KunstmeileMap/blob/main/public/import-template.xlsx)
 und ist in der App verlinkt.
 :::
 

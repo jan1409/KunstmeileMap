@@ -18,7 +18,7 @@ runs serverless on Supabase – **no dedicated server** is required.
 - The repository cloned locally:
 
 ```bash
-git clone https://github.com/jpoepke/KunstmeileMap.git
+git clone https://github.com/jan1409/KunstmeileMap.git
 cd KunstmeileMap
 pnpm install
 ```

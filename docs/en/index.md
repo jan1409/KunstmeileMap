@@ -53,4 +53,4 @@ The documentation has three parts:
 
 It is bilingual (German / English – switch at the top right) and available both
 as an HTML site and as Markdown directly in the
-[GitHub repository](https://github.com/jpoepke/KunstmeileMap/tree/main/docs).
+[GitHub repository](https://github.com/jan1409/KunstmeileMap/tree/main/docs).

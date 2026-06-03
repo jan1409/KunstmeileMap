@@ -20,7 +20,7 @@ tents at once:
 
 ::: tip Use the template
 A prepared Excel template lives in the repository at
-[`public/import-template.xlsx`](https://github.com/jpoepke/KunstmeileMap/blob/main/public/import-template.xlsx)
+[`public/import-template.xlsx`](https://github.com/jan1409/KunstmeileMap/blob/main/public/import-template.xlsx)
 and is linked in the app.
 :::
 
