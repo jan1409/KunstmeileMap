@@ -262,7 +262,9 @@
       "remove": "Remove photo",
       "rotate": "Rotate 90°",
       "rotate_error": "Rotation failed: {{message}}",
-      "alt": "Tent photo"
+      "alt": "Tent photo",
+      "drop_hint": "Drag images here to upload",
+      "drop_active": "Drop to upload"
     },
     "event": {
       "default_lat_label": "Default lat",

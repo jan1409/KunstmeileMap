@@ -60,3 +60,38 @@ export function photoPublicUrl(
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}v=${encodeURIComponent(String(options.cacheKey))}`;
 }
+
+/**
+ * Upload image files to a tent: one `tent-photos` storage object per file plus a
+ * `tent_photos` row, ordered from `startOrder`. Shared by the admin file picker
+ * and the desktop drag-and-drop handler. A failed file is skipped (its message
+ * kept as the returned `error`) so the rest still upload — matching the prior
+ * inline behavior.
+ */
+export async function uploadTentPhotos(
+  files: File[],
+  eventId: string,
+  tentId: string,
+  startOrder: number,
+): Promise<{ uploaded: number; error: string | null }> {
+  let uploaded = 0;
+  let error: string | null = null;
+  for (const f of files) {
+    const ext = f.name.split('.').pop() ?? 'jpg';
+    const path = `${eventId}/${tentId}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, f);
+    if (upErr) {
+      error = upErr.message;
+      continue;
+    }
+    await supabase.from('tent_photos').insert({
+      tent_id: tentId,
+      storage_path: path,
+      display_order: startOrder + uploaded,
+    });
+    uploaded += 1;
+  }
+  return { uploaded, error };
+}
