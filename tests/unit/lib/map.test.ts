@@ -5,6 +5,7 @@ import {
   clampZoom,
   computeBounds,
   colorForSlug,
+  isHexColor,
   markerColorForCategories,
   MARKER_DETAIL_ZOOM,
   TENT_FOCUS_ZOOM,
@@ -81,13 +82,42 @@ describe('colorForSlug', () => {
   });
 });
 
+describe('isHexColor', () => {
+  it('accepts a 6-digit #rrggbb hex', () => {
+    expect(isHexColor('#e57373')).toBe(true);
+    expect(isHexColor('#FFFFFF')).toBe(true);
+  });
+  it('rejects malformed values', () => {
+    expect(isHexColor('e57373')).toBe(false); // missing #
+    expect(isHexColor('#fff')).toBe(false); // 3-digit shorthand
+    expect(isHexColor('#gggggg')).toBe(false); // non-hex digits
+    expect(isHexColor('')).toBe(false);
+    expect(isHexColor('red')).toBe(false);
+  });
+});
+
 describe('markerColorForCategories', () => {
   it('returns a default color for an empty list', () => {
     expect(markerColorForCategories([])).toBe('#888');
   });
-  it('returns the color of the first category slug', () => {
+  it('returns the color of the first category slug when no color is set', () => {
     const first = markerColorForCategories([{ slug: 'painting' }]);
     expect(first).toBe(colorForSlug('painting'));
+  });
+  it('prefers an explicit valid hex color over the slug hash', () => {
+    expect(
+      markerColorForCategories([{ slug: 'painting', color: '#123456' }]),
+    ).toBe('#123456');
+  });
+  it('falls back to the slug hash when color is null', () => {
+    expect(
+      markerColorForCategories([{ slug: 'painting', color: null }]),
+    ).toBe(colorForSlug('painting'));
+  });
+  it('falls back to the slug hash when color is an invalid hex', () => {
+    expect(
+      markerColorForCategories([{ slug: 'painting', color: 'not-a-color' }]),
+    ).toBe(colorForSlug('painting'));
   });
 });
 

@@ -9,6 +9,7 @@ const galerie: Category = {
   name_de: 'Galerie',
   name_en: 'Gallery',
   icon: '🎨',
+  color: null,
   display_order: 1,
   created_at: '2026-01-01T00:00:00Z',
 };

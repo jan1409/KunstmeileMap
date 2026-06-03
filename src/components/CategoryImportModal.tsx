@@ -115,6 +115,7 @@ export function CategoryImportModal({
       name_de: r.name_de,
       name_en: r.name_en,
       icon: r.icon,
+      color: r.color,
       display_order: r.display_order,
     }));
 
@@ -200,6 +201,9 @@ export function CategoryImportModal({
                       {t('admin.category.icon_label')}
                     </th>
                     <th className="px-2 py-1">
+                      {t('admin.category.color_label')}
+                    </th>
+                    <th className="px-2 py-1">
                       {t('admin.category.order_label')}
                     </th>
                   </tr>
@@ -235,6 +239,20 @@ export function CategoryImportModal({
                       <td className="px-2 py-1">{row.name_de}</td>
                       <td className="px-2 py-1">{row.name_en ?? ''}</td>
                       <td className="px-2 py-1">{row.icon}</td>
+                      <td className="px-2 py-1">
+                        {row.color ? (
+                          <span className="inline-flex items-center gap-1">
+                            <span
+                              aria-hidden="true"
+                              style={{ backgroundColor: row.color }}
+                              className="inline-block h-3 w-3 rounded border border-white/20"
+                            />
+                            <span className="font-mono">{row.color}</span>
+                          </span>
+                        ) : (
+                          ''
+                        )}
+                      </td>
                       <td className="px-2 py-1">{row.display_order}</td>
                     </tr>
                   ))}
