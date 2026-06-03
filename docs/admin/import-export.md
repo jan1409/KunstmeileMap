@@ -56,6 +56,17 @@ erneuten Re-Import.
 Analog auf der [Kategorien-Seite](/admin/categories): Export als Excel; Import
 per CSV/Excel zum Anlegen oder Aktualisieren von Kategorien.
 
+### Spalten
+
+| Spalte | Pflicht | Hinweis |
+|---|---|---|
+| `slug` | ja | Eindeutige Kennung in Kleinbuchstaben |
+| `name_de` | ja | Name auf Deutsch |
+| `name_en` | nein | Name auf Englisch |
+| `icon` | nein | Emoji-Symbol |
+| `color` | nein | Hex-Farbe (`#RRGGBB`), z. B. `#e57373`; leer = automatische Farbe |
+| `display_order` | nein | Zahl für die Sortierung |
+
 ## Komplette Veranstaltung exportieren
 
 In den [Einstellungen](/admin/events#einstellungen) der Veranstaltung
