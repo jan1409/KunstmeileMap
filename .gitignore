@@ -25,6 +25,10 @@ public/*.spz
 # Brainstorming session state (visual companion)
 .superpowers/
 
+# VitePress build artifacts (docs site)
+docs/.vitepress/cache
+docs/.vitepress/dist
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
