@@ -26,7 +26,14 @@ describe('markerIcons registry', () => {
       'dancing',
       'classical-music',
       'event',
+      'information',
     ]);
+  });
+
+  it('resolves the information entry to a defined icon', () => {
+    const entry = markerIconByKey('information');
+    expect(entry?.labelDe).toBe('Information');
+    expect(['object', 'function']).toContain(typeof entry?.Icon);
   });
 
   it('resolves each performance-act entry to a defined icon', () => {
