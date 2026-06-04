@@ -20,7 +20,28 @@ describe('markerIcons registry', () => {
       'coffee',
       'pizza',
       'parking',
+      'children-attraction',
+      'stilt-walker',
+      'pantomime',
+      'dancing',
+      'classical-music',
+      'event',
     ]);
+  });
+
+  it('resolves each performance-act entry to a defined icon', () => {
+    for (const key of [
+      'children-attraction',
+      'stilt-walker',
+      'pantomime',
+      'dancing',
+      'classical-music',
+      'event',
+    ]) {
+      const entry = markerIconByKey(key);
+      expect(entry?.key).toBe(key);
+      expect(['object', 'function']).toContain(typeof entry?.Icon);
+    }
   });
 
   it('every entry has DE + EN labels and an Icon component', () => {

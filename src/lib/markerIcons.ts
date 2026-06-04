@@ -20,6 +20,12 @@ import {
   Coffee,
   Pizza,
   SquareParking,
+  FerrisWheel,
+  PersonStanding,
+  VenetianMask,
+  Footprints,
+  Music4,
+  Star,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -48,6 +54,27 @@ export const MARKER_ICONS = [
   { key: 'coffee', labelDe: 'Kaffee', labelEn: 'Coffee', Icon: Coffee },
   { key: 'pizza', labelDe: 'Pizza', labelEn: 'Pizza', Icon: Pizza },
   { key: 'parking', labelDe: 'Parkplatz', labelEn: 'Parking', Icon: SquareParking },
+  {
+    key: 'children-attraction',
+    labelDe: 'Kinderattraktion',
+    labelEn: "Children's attraction",
+    Icon: FerrisWheel,
+  },
+  {
+    key: 'stilt-walker',
+    labelDe: 'Stelzenläufer',
+    labelEn: 'Stilt walker',
+    Icon: PersonStanding,
+  },
+  { key: 'pantomime', labelDe: 'Pantomime', labelEn: 'Pantomime', Icon: VenetianMask },
+  { key: 'dancing', labelDe: 'Tanz', labelEn: 'Dancing', Icon: Footprints },
+  {
+    key: 'classical-music',
+    labelDe: 'Klassische Musik',
+    labelEn: 'Classical music',
+    Icon: Music4,
+  },
+  { key: 'event', labelDe: 'Veranstaltung', labelEn: 'Event', Icon: Star },
 ] as const satisfies readonly MarkerIconEntry[];
 
 export type MarkerIconKey = (typeof MARKER_ICONS)[number]['key'];
