@@ -27,6 +27,7 @@ import {
   Music4,
   Star,
   Info,
+  Toilet,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -77,6 +78,7 @@ export const MARKER_ICONS = [
   },
   { key: 'event', labelDe: 'Veranstaltung', labelEn: 'Event', Icon: Star },
   { key: 'information', labelDe: 'Information', labelEn: 'Information', Icon: Info },
+  { key: 'restroom', labelDe: 'Toiletten', labelEn: 'Restrooms', Icon: Toilet },
 ] as const satisfies readonly MarkerIconEntry[];
 
 export type MarkerIconKey = (typeof MARKER_ICONS)[number]['key'];

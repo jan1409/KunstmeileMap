@@ -27,7 +27,14 @@ describe('markerIcons registry', () => {
       'classical-music',
       'event',
       'information',
+      'restroom',
     ]);
+  });
+
+  it('resolves the restroom entry to a defined icon', () => {
+    const entry = markerIconByKey('restroom');
+    expect(entry?.labelDe).toBe('Toiletten');
+    expect(['object', 'function']).toContain(typeof entry?.Icon);
   });
 
   it('resolves the information entry to a defined icon', () => {
