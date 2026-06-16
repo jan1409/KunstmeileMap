@@ -25,6 +25,7 @@ const CategoryListPage = lazy(() => import('./pages/admin/CategoryListPage'));
 const EventSettingsPage = lazy(() => import('./pages/admin/EventSettingsPage'));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage'));
 const PositionsPage = lazy(() => import('./pages/admin/PositionsPage'));
+const ApiDocsPage = lazy(() => import('./pages/admin/ApiDocsPage'));
 
 const adminFallback = (
   <div
@@ -69,6 +70,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: suspended(<DashboardPage />) },
           { path: 'events', element: suspended(<EventListPage />) },
+          { path: 'api-docs', element: suspended(<ApiDocsPage />) },
           {
             path: 'events/:eventSlug/tents',
             element: (

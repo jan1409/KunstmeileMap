@@ -80,6 +80,7 @@ export default defineConfig({
               items: [
                 { text: 'Umgebungsvariablen', link: '/reference/env-vars' },
                 { text: 'Datenmodell', link: '/reference/data-model' },
+                { text: 'REST-API', link: '/reference/api' },
                 { text: 'Fehlerbehebung', link: '/reference/troubleshooting' },
               ],
             },
@@ -146,6 +147,7 @@ export default defineConfig({
               items: [
                 { text: 'Environment Variables', link: '/en/reference/env-vars' },
                 { text: 'Data Model', link: '/en/reference/data-model' },
+                { text: 'REST API', link: '/en/reference/api' },
                 { text: 'Troubleshooting', link: '/en/reference/troubleshooting' },
               ],
             },

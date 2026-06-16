@@ -80,7 +80,12 @@
       "sign_out": "Sign out",
       "sign_out_failed": "Sign out failed: {{message}}",
       "skip_to_main": "Skip to main content",
-      "users": "Users"
+      "users": "Users",
+      "api": "API"
+    },
+    "api": {
+      "heading": "API documentation",
+      "intro": "Interactive reference for the REST API (events, tents, photos). Sign in a machine account to obtain a token, then use \"Authorize\" to try requests."
     },
     "dashboard": {
       "heading": "Welcome",

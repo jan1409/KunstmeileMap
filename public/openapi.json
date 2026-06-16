@@ -1,0 +1,387 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "KunstmeileMap REST API",
+    "version": "1.0.0",
+    "description": "REST API to manage events, their tents, and tent photos, implemented as Supabase Edge Functions.\n\n## Authentication\nEvery request must send **two** credentials:\n- `apikey: <SUPABASE_ANON_KEY>` header\n- `Authorization: Bearer <user access token>` header\n\nObtain the access token by signing a **machine account** in via Supabase Auth (email/password). The account's role determines what it may do.\n\n## Permissions (enforced by database row-level security)\n| Action | admin | owner | editor | contributor |\n|---|---|---|---|---|\n| Events: read | all | own | own | own |\n| Events: create / delete | yes | no | no | no |\n| Events: update | yes | yes | no | no |\n| Tents: create / delete | yes | yes | yes | no |\n| Tents: update | yes | yes | yes | yes |\n| Photos: upload / update / delete | yes | yes | yes | yes |\n\nReads also include published events for any authenticated account."
+  },
+  "servers": [
+    {
+      "url": "https://{projectRef}.supabase.co/functions/v1",
+      "description": "Supabase Edge Functions",
+      "variables": {
+        "projectRef": {
+          "default": "your-project-ref",
+          "description": "Your Supabase project reference id"
+        }
+      }
+    }
+  ],
+  "security": [{ "bearerAuth": [], "apikeyAuth": [] }],
+  "tags": [
+    { "name": "events", "description": "Event CRUD" },
+    { "name": "tents", "description": "Tent CRUD within an event" },
+    { "name": "photos", "description": "Tent photo upload / download / management" }
+  ],
+  "paths": {
+    "/events": {
+      "get": {
+        "tags": ["events"],
+        "summary": "List events",
+        "responses": {
+          "200": {
+            "description": "Events visible to the caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": { "type": "array", "items": { "$ref": "#/components/schemas/Event" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["events"],
+        "summary": "Create an event (admin only)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Event" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/events/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+      "get": {
+        "tags": ["events"],
+        "summary": "Get one event",
+        "responses": {
+          "200": { "description": "Event", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Event" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["events"],
+        "summary": "Update an event (owner or admin)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventInput" } } }
+        },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Event" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["events"],
+        "summary": "Delete an event (admin only)",
+        "responses": {
+          "200": { "$ref": "#/components/responses/Ok" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/tents": {
+      "get": {
+        "tags": ["tents"],
+        "summary": "List tents",
+        "parameters": [
+          { "name": "event_id", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "Filter to one event" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "tents": { "type": "array", "items": { "$ref": "#/components/schemas/Tent" } } }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["tents"],
+        "summary": "Create a tent (editor/owner/admin)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TentInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Tent" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/tents/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+      "get": {
+        "tags": ["tents"],
+        "summary": "Get one tent",
+        "responses": {
+          "200": { "description": "Tent", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Tent" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["tents"],
+        "summary": "Update a tent (contributor/editor/owner/admin)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TentInput" } } }
+        },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Tent" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["tents"],
+        "summary": "Delete a tent (editor/owner/admin)",
+        "responses": {
+          "200": { "$ref": "#/components/responses/Ok" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/photos": {
+      "get": {
+        "tags": ["photos"],
+        "summary": "List a tent's photos",
+        "parameters": [
+          { "name": "tent_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Photos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "photos": { "type": "array", "items": { "$ref": "#/components/schemas/Photo" } } }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "post": {
+        "tags": ["photos"],
+        "summary": "Upload a photo (contributor and up)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "tent_id"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "tent_id": { "type": "string", "format": "uuid" },
+                  "caption_de": { "type": "string" },
+                  "caption_en": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Photo" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/photos/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+      "get": {
+        "tags": ["photos"],
+        "summary": "Get one photo, or download it",
+        "parameters": [
+          { "name": "download", "in": "query", "required": false, "schema": { "type": "string" }, "description": "If present, 302-redirects to the original file" }
+        ],
+        "responses": {
+          "200": { "description": "Photo metadata", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Photo" } } } },
+          "302": { "description": "Redirect to the file (when ?download is set)" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["photos"],
+        "summary": "Update a photo's caption / order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "caption_de": { "type": "string" },
+                  "caption_en": { "type": "string" },
+                  "display_order": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Photo" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["photos"],
+        "summary": "Delete a photo (file + row)",
+        "responses": {
+          "200": { "$ref": "#/components/responses/Ok" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT", "description": "Supabase user access token" },
+      "apikeyAuth": { "type": "apiKey", "in": "header", "name": "apikey", "description": "Supabase anon key" }
+    },
+    "parameters": {
+      "IdPath": { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+    },
+    "responses": {
+      "Ok": { "description": "Success", "content": { "application/json": { "schema": { "type": "object", "properties": { "ok": { "type": "boolean" }, "id": { "type": "string" } } } } } },
+      "BadRequest": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Unauthorized": { "description": "Missing or invalid token", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Forbidden": { "description": "Authenticated but not permitted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "NotFound": { "description": "Not found / not visible", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Conflict": { "description": "Duplicate (e.g. slug already exists)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" }, "message": { "type": "string" } },
+        "required": ["error"]
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "title_de": { "type": "string" },
+          "title_en": { "type": "string", "nullable": true },
+          "year": { "type": "integer" },
+          "starts_at": { "type": "string", "format": "date", "nullable": true },
+          "ends_at": { "type": "string", "format": "date", "nullable": true },
+          "venue_name": { "type": "string", "nullable": true },
+          "venue_address": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["draft", "published", "archived"] },
+          "is_featured": { "type": "boolean" },
+          "default_lat": { "type": "number" },
+          "default_lng": { "type": "number" },
+          "default_zoom": { "type": "integer" }
+        }
+      },
+      "EventInput": {
+        "type": "object",
+        "required": ["slug", "title_de", "year"],
+        "properties": {
+          "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "title_de": { "type": "string" },
+          "title_en": { "type": "string" },
+          "year": { "type": "integer" },
+          "starts_at": { "type": "string", "format": "date" },
+          "ends_at": { "type": "string", "format": "date" },
+          "venue_name": { "type": "string" },
+          "venue_address": { "type": "string" },
+          "status": { "type": "string", "enum": ["draft", "published", "archived"] },
+          "is_featured": { "type": "boolean" },
+          "default_lat": { "type": "number" },
+          "default_lng": { "type": "number" },
+          "default_zoom": { "type": "integer" }
+        }
+      },
+      "Tent": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "event_id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "display_number": { "type": "integer", "nullable": true },
+          "description_de": { "type": "string", "nullable": true },
+          "description_en": { "type": "string", "nullable": true },
+          "address": { "type": "string", "nullable": true },
+          "contact_person": { "type": "string", "nullable": true },
+          "phone": { "type": "string", "nullable": true },
+          "marker_icon": { "type": "string", "nullable": true },
+          "website_url": { "type": "string", "nullable": true },
+          "instagram_url": { "type": "string", "nullable": true },
+          "facebook_url": { "type": "string", "nullable": true },
+          "email_public": { "type": "string", "nullable": true },
+          "lat": { "type": "number", "nullable": true },
+          "lng": { "type": "number", "nullable": true }
+        }
+      },
+      "TentInput": {
+        "type": "object",
+        "required": ["event_id", "slug", "name"],
+        "properties": {
+          "event_id": { "type": "string", "format": "uuid", "description": "Required on create; ignored on update" },
+          "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string" },
+          "display_number": { "type": "integer", "description": "Auto-assigned when omitted" },
+          "description_de": { "type": "string" },
+          "description_en": { "type": "string" },
+          "address": { "type": "string" },
+          "contact_person": { "type": "string" },
+          "phone": { "type": "string", "description": "Internal-only; never shown publicly" },
+          "marker_icon": { "type": "string" },
+          "website_url": { "type": "string", "format": "uri" },
+          "instagram_url": { "type": "string", "format": "uri" },
+          "facebook_url": { "type": "string", "format": "uri" },
+          "email_public": { "type": "string", "format": "email" },
+          "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+          "lng": { "type": "number", "minimum": -180, "maximum": 180 },
+          "category_ids": { "type": "array", "items": { "type": "string", "format": "uuid" }, "description": "Replaces the tent's categories" }
+        }
+      },
+      "Photo": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "tent_id": { "type": "string", "format": "uuid" },
+          "storage_path": { "type": "string" },
+          "caption_de": { "type": "string", "nullable": true },
+          "caption_en": { "type": "string", "nullable": true },
+          "display_order": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "url": { "type": "string", "description": "Original-resolution public URL" },
+          "thumb_url": { "type": "string", "description": "~640px wide" },
+          "full_url": { "type": "string", "description": "Long edge <=1600px, q72" }
+        }
+      }
+    }
+  }
+}
