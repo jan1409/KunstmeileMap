@@ -85,6 +85,7 @@ export default function TentEditPage() {
       slug: values.slug,
       name: values.name,
       contact_person: values.contact_person?.trim() || null,
+      phone: values.phone?.trim() || null,
       description_de: values.description_de || null,
       description_en: values.description_en || null,
       address: values.address || null,

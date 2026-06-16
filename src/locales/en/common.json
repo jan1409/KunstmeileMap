@@ -163,6 +163,8 @@
         "name_label": "Name",
         "contact_person_label": "Contact person",
         "contact_person_placeholder": "Contact person name (optional)",
+        "phone_label": "Phone (internal)",
+        "phone_placeholder": "Internal contact number — not shown publicly",
         "description_de_label": "Beschreibung (DE)",
         "description_en_label": "Description (EN)",
         "address_label": "Address",

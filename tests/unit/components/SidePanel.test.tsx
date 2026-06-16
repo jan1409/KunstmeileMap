@@ -148,6 +148,21 @@ describe('SidePanel', () => {
     expect(screen.queryByText('Anna Müller')).toBeNull();
   });
 
+  it('NEVER renders the internal phone number (it must stay off the public page)', () => {
+    renderWithProviders(
+      <SidePanel
+        tent={makeTent({ phone: '+49 4141 123456' } as Partial<TentWithCategories>)}
+        categories={noCategories}
+        photos={[]}
+        onClose={() => {}}
+        eventId="evt-1"
+        canEdit={false}
+        onPhotosChanged={() => {}}
+      />,
+    );
+    expect(screen.queryByText(/\+49 4141 123456/)).toBeNull();
+  });
+
   it('opens the lightbox with the full-resolution image when a thumbnail is clicked', async () => {
     const user = userEvent.setup();
     renderWithProviders(

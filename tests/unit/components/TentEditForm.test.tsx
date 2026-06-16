@@ -338,6 +338,46 @@ describe('TentEditForm', () => {
     expect(val === '' || val == null).toBe(true);
   });
 
+  it('passes a trimmed internal phone value through to onSubmit', async () => {
+    const user = userEvent.setup();
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/slug/i), 'with-phone');
+    await user.type(screen.getByLabelText(/^name$/i), 'Phone Stand');
+    await user.type(
+      screen.getByLabelText(/Telefon|Phone/i),
+      '+49 4141 123456',
+    );
+    await user.click(screen.getByRole('button', { name: /save|Speichern/i }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]![0].phone).toBe('+49 4141 123456');
+  });
+
+  it('populates phone from initial when editing', () => {
+    render(
+      <TentEditForm
+        categories={sampleCategories}
+        defaultCenter={defaultCenter}
+        defaultZoom={defaultZoom}
+        tileStyle="osm"
+        onTileStyleChange={() => {}}
+        initial={{ slug: 'p', name: 'P', phone: '0123-456' }}
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(screen.getByLabelText(/Telefon|Phone/i)).toHaveValue('0123-456');
+  });
+
   it('renders a marker icon picker', () => {
     render(
       <TentEditForm
