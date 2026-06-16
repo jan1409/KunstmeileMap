@@ -42,6 +42,7 @@ function makeTent(overrides: Partial<ExportTent> = {}): ExportTent {
     instagram_url: null,
     facebook_url: null,
     email_public: null,
+    phone: null,
     lat: null,
     lng: null,
     categories: [],
@@ -105,6 +106,21 @@ describe('renderTentPageHtml', () => {
     // gallery links the local photo file
     expect(html).toContain('3_galerie-nord_photo_01.jpg');
     expect(html.trim().toLowerCase().startsWith('<!doctype html>')).toBe(true);
+  });
+
+  it('includes the internal phone number (admins distribute the HTML export)', () => {
+    const html = renderTentPageHtml(
+      makeTent({ phone: '+49 4141 123456' }),
+      event,
+      [],
+    );
+    expect(html).toContain('Telefon');
+    expect(html).toContain('+49 4141 123456');
+  });
+
+  it('omits the phone field entirely when not set', () => {
+    const html = renderTentPageHtml(makeTent({ phone: null }), event, []);
+    expect(html).not.toContain('Telefon');
   });
 
   it('escapes HTML in user-provided text to prevent broken markup', () => {

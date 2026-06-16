@@ -164,7 +164,7 @@ describe('exportTentsToBlob', () => {
     return XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
   }
 
-  it('produces the 14-column header row in the expected order', async () => {
+  it('produces the 15-column header row in the expected order', async () => {
     const blob = exportTentsToBlob([minimalTent] as never);
     const aoa = await readBlobAsAoa(blob);
     expect(aoa[0]).toEqual([
@@ -182,7 +182,17 @@ describe('exportTentsToBlob', () => {
       'email_public',
       'lat',
       'lng',
+      'phone',
     ]);
+  });
+
+  it('serializes the internal phone in the last column', async () => {
+    const blob = exportTentsToBlob([
+      { ...minimalTent, phone: '+49 4141 123456' },
+    ] as never);
+    const aoa = await readBlobAsAoa(blob);
+    // phone is the 15th column (index 14).
+    expect(aoa[1]![14]).toBe('+49 4141 123456');
   });
 
   it('serializes a tent with its category slugs comma-joined', async () => {
@@ -237,7 +247,7 @@ describe('exportTentsToBlob', () => {
     const blob = exportTentsToBlob([]);
     const aoa = await readBlobAsAoa(blob);
     expect(aoa).toHaveLength(1);
-    expect(aoa[0]).toHaveLength(14);
+    expect(aoa[0]).toHaveLength(15);
   });
 });
 
@@ -267,6 +277,12 @@ describe('pickAlias', () => {
 
   it('returns the canonical-key value (which may be undefined) when nothing matches', () => {
     expect(pickAlias({ name: 'X' }, 'contact_person')).toBeUndefined();
+  });
+
+  it('matches "Telefon" (DE) and "Phone" (EN) for the phone field', () => {
+    expect(pickAlias({ Telefon: '0123' }, 'phone')).toBe('0123');
+    expect(pickAlias({ telefon: '0123' }, 'phone')).toBe('0123');
+    expect(pickAlias({ Phone: '0123' }, 'phone')).toBe('0123');
   });
 });
 
@@ -304,6 +320,18 @@ describe('validateRow with contact_person', () => {
     const r = validateRow(baseRow, ctx);
     expect(r.status).toBe('ok');
     expect(r.parsed?.contact_person).toBeNull();
+  });
+
+  it('parses a trimmed phone value', () => {
+    const r = validateRow({ ...baseRow, phone: '  +49 4141 123456  ' }, ctx);
+    expect(r.status).toBe('ok');
+    expect(r.parsed?.phone).toBe('+49 4141 123456');
+  });
+
+  it('emits null for blank phone', () => {
+    const r = validateRow(baseRow, ctx);
+    expect(r.status).toBe('ok');
+    expect(r.parsed?.phone).toBeNull();
   });
 });
 

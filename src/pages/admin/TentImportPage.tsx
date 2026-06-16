@@ -55,6 +55,7 @@ function normaliseRow(input: Record<string, unknown>): RawRow {
     email_public: cellToString(input.email_public),
     lat: cellToString(input.lat),
     lng: cellToString(input.lng),
+    phone: cellToString(pickAlias(input, 'phone')),
   };
 }
 
@@ -206,6 +207,7 @@ export default function TentImportPage() {
           instagram_url: parsed.instagram_url,
           facebook_url: parsed.facebook_url,
           email_public: parsed.email_public,
+          phone: parsed.phone,
           display_number: parsed.display_number,
           lat: parsed.lat,
           lng: parsed.lng,

@@ -121,6 +121,7 @@ export function renderTentPageHtml(
 
   const fields = [
     field('Ansprechperson', 'Contact person', tent.contact_person ? escapeHtml(tent.contact_person) : null),
+    field('Telefon', 'Phone', tent.phone ? escapeHtml(tent.phone) : null),
     field('Adresse', 'Address', tent.address ? escapeHtml(tent.address) : null),
     field('Website', 'Website', tent.website_url ? link(tent.website_url) : null),
     field('Instagram', 'Instagram', tent.instagram_url ? link(tent.instagram_url) : null),

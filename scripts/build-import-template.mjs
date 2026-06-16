@@ -29,6 +29,7 @@ const HEADERS = [
   'email_public',
   'lat',
   'lng',
+  'phone',
 ];
 
 // One sample row so first-time users see what each cell should look like.
@@ -48,6 +49,7 @@ const SAMPLE = [
   '',
   49,
   8.4,
+  '+49 4141 123456',
 ];
 
 const ws = utils.aoa_to_sheet([HEADERS, SAMPLE]);

@@ -287,6 +287,7 @@ export type Database = {
           lng: number | null
           marker_icon: string | null
           name: string
+          phone: string | null
           slug: string
           updated_at: string
           updated_by: string | null
@@ -309,6 +310,7 @@ export type Database = {
           lng?: number | null
           marker_icon?: string | null
           name: string
+          phone?: string | null
           slug: string
           updated_at?: string
           updated_by?: string | null
@@ -331,6 +333,7 @@ export type Database = {
           lng?: number | null
           marker_icon?: string | null
           name?: string
+          phone?: string | null
           slug?: string
           updated_at?: string
           updated_by?: string | null

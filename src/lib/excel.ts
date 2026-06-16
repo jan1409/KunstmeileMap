@@ -27,6 +27,7 @@ export function parserForFilename(name: string): Parser | null {
  */
 export const HEADER_ALIASES: Record<string, readonly string[]> = {
   contact_person: ['ansprechperson', 'contact person', 'contact_person'],
+  phone: ['phone', 'telefon', 'telefonnummer', 'phone number', 'tel'],
 };
 
 export function pickAlias(input: Record<string, unknown>, canonical: string): unknown {
@@ -88,6 +89,7 @@ export interface RawRow {
   email_public?: string;
   lat?: string;
   lng?: string;
+  phone?: string;
 }
 
 export interface ParsedRow {
@@ -105,6 +107,7 @@ export interface ParsedRow {
   email_public: string | null;
   lat: number | null;
   lng: number | null;
+  phone: string | null;
 }
 
 export interface ValidateCtx {
@@ -206,6 +209,7 @@ export function validateRow(row: RawRow, ctx: ValidateCtx): RowResult {
     email_public: row.email_public?.trim() || null,
     lat,
     lng,
+    phone: row.phone?.trim() || null,
   };
   if (warnings.length > 0) return { status: 'warning', parsed, warnings };
   return { status: 'ok', parsed };
@@ -226,6 +230,7 @@ const TENT_EXPORT_COLUMNS = [
   'email_public',
   'lat',
   'lng',
+  'phone',
 ] as const;
 
 const CATEGORY_EXPORT_COLUMNS = [
@@ -267,6 +272,7 @@ export function exportTentsToBlob(tents: TentWithCategories[]): Blob {
     cellValue(t.email_public),
     cellValue(t.lat),
     cellValue(t.lng),
+    cellValue(t.phone),
   ]);
   const aoa: (string | number | '')[][] = [
     [...TENT_EXPORT_COLUMNS],
