@@ -44,6 +44,23 @@ curl -s -X POST \
 # → { "access_token": "<JWT>", "refresh_token": "…", ... }
 ```
 
+On **Windows PowerShell**, `curl` is an alias for `Invoke-WebRequest` (which
+rejects the `-H` syntax above). Use `curl.exe` for the curl commands, or the
+native form:
+
+```powershell
+$anon = "<ANON_KEY>"
+$body = @{ email = "integration@example.com"; password = "…" } | ConvertTo-Json
+$resp = Invoke-RestMethod -Method Post `
+  -Uri "https://<project-ref>.supabase.co/auth/v1/token?grant_type=password" `
+  -Headers @{ apikey = $anon } -ContentType "application/json" -Body $body
+$token = $resp.access_token
+
+# then call the API:
+Invoke-RestMethod -Uri "https://<project-ref>.supabase.co/functions/v1/events" `
+  -Headers @{ apikey = $anon; Authorization = "Bearer $token" }
+```
+
 The token expires after ~1 hour; use the `refresh_token` to get a new one.
 
 ## Permissions
@@ -76,6 +93,9 @@ Published events are readable by any authenticated account. Denied writes return
 | `PATCH /photos/{id}` · `DELETE /photos/{id}` | Update caption/order / delete |
 
 ## Examples
+
+These use bash + curl. On Windows PowerShell, run them with `curl.exe`, or adapt
+to `Invoke-RestMethod` as shown in the Authentication section above.
 
 Set up shell variables:
 
