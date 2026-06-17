@@ -8,5 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    // Scope to the Vitest suite so the Deno-runtime Edge Function tests under
+    // supabase/functions/ (run via `deno test`) are not picked up by Node.
+    include: ['tests/**/*.{test,spec}.{ts,tsx}'],
   },
 })

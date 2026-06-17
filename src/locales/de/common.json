@@ -80,7 +80,12 @@
       "sign_out": "Abmelden",
       "sign_out_failed": "Abmelden fehlgeschlagen: {{message}}",
       "skip_to_main": "Zum Hauptinhalt springen",
-      "users": "Benutzer"
+      "users": "Benutzer",
+      "api": "API"
+    },
+    "api": {
+      "heading": "API-Dokumentation",
+      "intro": "Interaktive Referenz für die REST-API (Events, Stände, Fotos). Melde ein Maschinenkonto an, um ein Token zu erhalten, und nutze „Authorize“, um Anfragen auszuprobieren."
     },
     "dashboard": {
       "heading": "Willkommen",

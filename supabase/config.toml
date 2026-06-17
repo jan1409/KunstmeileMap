@@ -415,3 +415,24 @@ entrypoint = "./functions/invite-user/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/invite-user/*.html" ]
+
+# Public REST API: events / tents / photos. verify_jwt rejects requests without
+# a valid project JWT; each function additionally requires a real signed-in user
+# and lets Postgres RLS enforce the per-role permissions.
+[functions.events]
+enabled = true
+verify_jwt = true
+import_map = "./functions/events/deno.json"
+entrypoint = "./functions/events/index.ts"
+
+[functions.tents]
+enabled = true
+verify_jwt = true
+import_map = "./functions/tents/deno.json"
+entrypoint = "./functions/tents/index.ts"
+
+[functions.photos]
+enabled = true
+verify_jwt = true
+import_map = "./functions/photos/deno.json"
+entrypoint = "./functions/photos/index.ts"

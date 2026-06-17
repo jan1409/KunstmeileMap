@@ -40,6 +40,7 @@ export default function AdminLayout() {
         <nav className="flex gap-4 text-sm">
           <Link to="/admin">{t('admin.nav.dashboard')}</Link>
           <Link to="/admin/events">{t('admin.nav.events')}</Link>
+          <Link to="/admin/api-docs">{t('admin.nav.api')}</Link>
           {showUsersLink && eventSlugInRoute && (
             <Link to={`/admin/events/${eventSlugInRoute}/users`}>
               {t('admin.nav.users')}
